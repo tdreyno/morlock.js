@@ -1,0 +1,14 @@
+{
+  "name": "morlock",
+  "version": "0.0.0",
+  "dependencies": {},
+  "devDependencies": {
+    "grunt": "~0.4.1",
+    "grunt-es6-module-transpiler": "~0.5.1",
+    "matchdep": "~0.3.0",
+    "grunt-contrib-clean": "~0.5.0",
+    "grunt-mocha-phantomjs": "~0.3.0",
+    "grunt-contrib-uglify": "~0.2.4",
+    "grunt-contrib-concat": "~0.3.0"
+  }
+}
