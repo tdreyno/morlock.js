@@ -1,0 +1,31 @@
+{
+  "name": "morlock",
+  "version": "0.0.0",
+  "description": "Low level libraries for responsive & interactive websites",
+  "dependencies": {},
+  "devDependencies": {
+    "grunt": "~0.4.1",
+    "grunt-es6-module-transpiler": "~0.5.1",
+    "matchdep": "~0.3.0",
+    "grunt-contrib-clean": "~0.5.0",
+    "grunt-mocha-phantomjs": "~0.3.0",
+    "grunt-contrib-uglify": "~0.2.4",
+    "grunt-contrib-concat": "~0.3.0"
+  },
+  "scripts": {
+    "test": "grunt test",
+    "prepublish": "grunt build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/tdreyno/morlock.js.git"
+  },
+  "bugs": {
+    "url": "https://github.com/tdreyno/morlock.js/issues"
+  },
+  "keywords": [
+    "responsive"
+  ],
+  "author": "Thomas Reynolds",
+  "license": "Non-commercial: GPLv3; Commercial: TBD"
+}
