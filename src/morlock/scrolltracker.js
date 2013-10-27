@@ -53,25 +53,18 @@ function ScrollTracker(breakpointController) {
   }, 100);
 
   this.bc_.on('resize', function() {
-<<<<<<< HEAD
-    h = viewportH();
-=======
     h = getViewportHeight();
->>>>>>> ee76be2d3a99a3d820ddb8a63e46bc4bf7be42a9
     self.update_();
   });
 }
 
-<<<<<<< HEAD
-EventTarget.mixin(ScrollTracker.prototype);
-=======
 // jQuery-style event function names.
 makeEventable(ScrollTracker.prototype, {
   'listen': 'on',
   'unlisten': 'off',
   'emit': 'trigger',
 });
->>>>>>> ee76be2d3a99a3d820ddb8a63e46bc4bf7be42a9
+
 
 /**
  * Add tracking for a specific element.
