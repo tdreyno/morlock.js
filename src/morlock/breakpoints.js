@@ -1,5 +1,5 @@
-var EventTarget = __dependency1__.EventTarget;
 
+import { makeEventable } from "./morlock/eventable";
 import { throttle, debounce, testMQ } from "./morlock/util";
 
 function Breakpoint(name, options, controller) {
@@ -27,7 +27,12 @@ function Breakpoint(name, options, controller) {
   this.active_ = false;
 }
 
-EventTarget.mixin(Breakpoint.prototype);
+// jQuery-style event function names.
+makeEventable(Breakpoint.prototype, {
+  'listen': 'on',
+  'unlisten': 'off',
+  'emit': 'trigger',
+});
 
 Breakpoint.prototype.test = function() {
   return testMQ(this.mq_);

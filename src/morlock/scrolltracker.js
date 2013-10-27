@@ -1,15 +1,30 @@
-var EventTarget = __dependency1__.EventTarget;
+import { makeEventable } from "./morlock/eventable";
+import { debounce, getViewportHeight } from "./morlock/util";
 
-import { debounce, rectangle, viewportH } from "./morlock/util";
+var h = getViewportHeight();
 
-var h = viewportH();
+function rectangle(el, cushion) {
+  var o = {};
+  el && !el.nodeType && (el = el[0]);
+  if (!el || 1 !== el.nodeType) { return false; }
+  cushion = typeof cushion == 'number' && cushion || 0;
+  el = el.getBoundingClientRect(); // read-only
+  o['width'] = (o['right'] = el['right'] + cushion) - (o['left'] = el['left'] - cushion);
+  o['height'] = (o['bottom'] = el['bottom'] + cushion) - (o['top'] = el['top'] - cushion);
+  return o;
+}
 
 function ElementTracker(element) {
   this.element_ = element;
   this.isVisible_ = false;
 }
 
-EventTarget.mixin(ElementTracker.prototype);
+// jQuery-style event function names.
+makeEventable(ElementTracker.prototype, {
+  'listen': 'on',
+  'unlisten': 'off',
+  'emit': 'trigger',
+});
 
 ElementTracker.prototype.updateViewport = function() {
   var r = rectangle(this.element_);
@@ -38,12 +53,25 @@ function ScrollTracker(breakpointController) {
   }, 100);
 
   this.bc_.on('resize', function() {
+<<<<<<< HEAD
     h = viewportH();
+=======
+    h = getViewportHeight();
+>>>>>>> ee76be2d3a99a3d820ddb8a63e46bc4bf7be42a9
     self.update_();
   });
 }
 
+<<<<<<< HEAD
 EventTarget.mixin(ScrollTracker.prototype);
+=======
+// jQuery-style event function names.
+makeEventable(ScrollTracker.prototype, {
+  'listen': 'on',
+  'unlisten': 'off',
+  'emit': 'trigger',
+});
+>>>>>>> ee76be2d3a99a3d820ddb8a63e46bc4bf7be42a9
 
 /**
  * Add tracking for a specific element.

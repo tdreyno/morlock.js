@@ -1,78 +1,107 @@
-function throttle(func, wait) {
-  var context, args, timeout, result;
+/**
+ * Backwards compatible Array.prototype.indexOf
+ * @param {Array} list List of items.
+ * @param {Object} item Item to search for.
+ * @return {Number} Index of match or -1 if not found.
+ */
+function indexOf(list, item) {
+  for (var i = 0; i < list.length; i++) {
+    if (list[i] === item) {
+      return i;
+    }
+  }
+
+  return -1;
+}
+
+/**
+ * Throttle a function.
+ * @param {Function} f The function.
+ * @param {Number} delay The delay in ms.
+ */
+function throttle(f, delay) {
+  var timeoutId;
   var previous = 0;
-  var later = function() {
-    previous = +(new Date());
-    timeout = null;
-    result = func.apply(context, args);
-  };
+
   return function() {
     var now = +(new Date());
-    var remaining = wait - (now - previous);
-    context = this;
-    args = arguments;
+    var remaining = delay - (now - previous);
+
     if (remaining <= 0) {
-      clearTimeout(timeout);
-      timeout = null;
+      clearTimeout(timeoutId);
+      timeoutId = null;
       previous = now;
-      result = func.apply(context, args);
-    } else if (!timeout) {
-      timeout = setTimeout(later, remaining);
+
+      f();
+    } else if (!timeoutId) {
+      timeoutId = setTimeout(function() {
+        previous = +(new Date());
+        timeoutId = null;
+
+        f();
+      }, remaining);
     }
-    return result;
   };
 }
 
-function debounce(func, wait, immediate) {
-  var result;
-  var timeout = null;
+/**
+ * Debounce a function.
+ * @param {Function} f The function.
+ * @param {Number} delay The delay in ms.
+ */
+function debounce(f, delay) {
+  var timeoutId = null;
+
   return function() {
-    var context = this, args = arguments;
-    var later = function() {
-      timeout = null;
-      if (!immediate) result = func.apply(context, args);
+    clearTimeout(timeoutId);
+
+    timeoutId = setTimeout(function() {
+      timeoutId = null;
+      f();
+    }, delay);
+  };
+}
+
+/**
+ * Return a function which gets the viewport width or height.
+ * @param {String} dimension The dimension to look up.
+ * @param {String} inner The inner dimension.
+ * @param {String} client The client dimension.
+ * @return {Function} The getter function.
+ */
+function makeViewportGetter_(dimension, inner, client) {
+  if ((docElem[client] < win[inner]) &&
+      testMQ('(min-' + dimension + ':' + win[inner] + 'px)')) {
+    return function() {
+      return win[inner];
     };
-    var callNow = immediate && !timeout;
-    clearTimeout(timeout);
-    timeout = setTimeout(later, wait);
-    if (callNow) result = func.apply(context, args);
-    return result;
-  };
-}
-
-var win = window, docElem = document.documentElement;
-
-function rectangle(el, cushion) {
-  var o = {};
-  el && !el.nodeType && (el = el[0]);
-  if (!el || 1 !== el.nodeType) { return false; }
-  cushion = typeof cushion == 'number' && cushion || 0;
-  el = el.getBoundingClientRect(); // read-only
-  o['width'] = (o['right'] = el['right'] + cushion) - (o['left'] = el['left'] - cushion);
-  o['height'] = (o['bottom'] = el['bottom'] + cushion) - (o['top'] = el['top'] - cushion);
-  return o;
-}
-
-function makeViewportGetter(dim, inner, client) {
-  // @link  responsejs.com/labs/dimensions/
-  // @link  quirksmode.org/mobile/viewports2.html
-  // @link  github.com/ryanve/response.js/issues/17
-  return docElem[client] < win[inner] && testMQ('(min-' + dim + ':' + win[inner] + 'px)') ? function() {
-      return win[inner]; 
-  } : function() {
+  } else {
+    return function() {
       return docElem[client];
-  };
+    };
+  }
 }
 
+var getViewportWidth = makeViewportGetter_('width', 'innerWidth', 'clientWidth');
+var getViewportHeight = makeViewportGetter_('height', 'innerHeight', 'clientHeight');
+
+var win = window;
+var docElem = document.documentElement;
+
+/**
+ * Backwards compatible Media Query matcher.
+ * @param {String} mq Media query to match.
+ * @return {Boolean} Whether it matched.
+ */
 function testMQ(mq) {
   var matchMedia = window.matchMedia || window.msMatchMedia;
   if (matchMedia) {
-    return matchMedia(mq).matches;
+    return !!matchMedia(mq).matches;
   }
 
   var div = document.createElement('div');
   div.id = 'testmq';
-  div.innerHTML += '&#173; <style id="stestmq">@media ' + mq + ' { #testmq { position: absolute; } }</style>';
+  div.innerHTML = '<style id="stestmq">@media ' + mq + ' { #testmq { position: absolute; } }</style>';
   document.body.appendChild(div);
 
   return (window.getComputedStyle ?
@@ -80,8 +109,4 @@ function testMQ(mq) {
           div.currentStyle)['position'] == 'absolute';
 }
 
-
-var viewportW = makeViewportGetter('width', 'innerWidth', 'clientWidth');
-var viewportH = makeViewportGetter('height', 'innerHeight', 'clientHeight');
-
-export { throttle, debounce, rectangle, viewportH, viewportW, testMQ }
+export { indexOf, throttle, debounce, getViewportHeight, getViewportWidth, testMQ };
