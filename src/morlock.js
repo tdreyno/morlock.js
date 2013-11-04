@@ -1,5 +1,14 @@
-import { BreakpointController } from "./morlock/breakpoints";
-import { ResponsiveImage } from "./morlock/responsive-image";
-import { ScrollTracker } from "./morlock/scroll-tracker";
+import { ResizeController } from "morlock/resize-controller";
+import { ResponsiveImage } from "morlock/responsive-image";
+import { ScrollController } from "morlock/scroll-controller";
 
-export { BreakpointController, ResponsiveImage, ScrollTracker };
+// var rc = new ResizeController();
+// rc.add('desktop', { });
+
+// var sc = new ScrollController();
+
+// rc.on('resize', function() {
+//   sc.onResize();
+// });
+
+export { ResizeController, ResponsiveImage, ScrollController };
