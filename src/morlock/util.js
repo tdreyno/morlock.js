@@ -54,16 +54,14 @@ function debounce(f, delay) {
   var timeoutId = null;
 
   return function() {
-  clearTimeout(timeoutId);
+    clearTimeout(timeoutId);
 
-  timeoutId = setTimeout(function() {
-    timeoutId = null;
-    f();
-  }, delay);
+    timeoutId = setTimeout(function() {
+      timeoutId = null;
+      f();
+    }, delay);
   };
 }
-
-var win = window;
 
 /**
  * Return a function which gets the viewport width or height.
@@ -75,15 +73,15 @@ var win = window;
 function makeViewportGetter_(dimension, inner, client) {
   var docElem = document.documentElement;
 
-  if ((docElem[client] < win[inner]) &&
-    testMQ('(min-' + dimension + ':' + win[inner] + 'px)')) {
-  return function() {
-    return win[inner];
-  };
+  if ((docElem[client] < window[inner]) &&
+    testMQ('(min-' + dimension + ':' + window[inner] + 'px)')) {
+    return function() {
+      return window[inner];
+    };
   } else {
-  return function() {
-    return docElem[client];
-  };
+    return function() {
+      return docElem[client];
+    };
   }
 }
 
@@ -249,6 +247,18 @@ function equals(a, b) {
   return a === b;
 }
 
+var when = function(truth, f) {
+  return variadic(function(args) {
+    if ('function' === typeof truth) {
+      truth = apply(truth, args);
+    }
+
+    if (truth) {
+      return apply(f, args);
+    }
+  });
+};
+
 /**
  * Bind a function's "this" value.
  * @param {Function} f The function.
@@ -317,7 +327,9 @@ function variadic(fn) {
 }
 
 function delay(f, ms) {
-  setTimeout(f, ms);
+  return variadic(function(args) {
+    setTimeout(apply(partial, f, args), ms);
+  });
 }
 
 function apply(f, args) {
@@ -398,5 +410,6 @@ export {
   indexOf, throttle, debounce, getViewportHeight, getViewportWidth, testMQ,
   getRect, mapObject, objectKeys, functionBind, partial, arrayIndexOf,
   variadic, map, apply, objectVals, call, push, unshift, equals,
-  delay, unshift, nth, first, compose, select, isTrue, get, shift, eventListener
+  delay, unshift, nth, first, compose, select, isTrue, get, shift, eventListener,
+  when
 };

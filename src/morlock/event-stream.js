@@ -1,23 +1,14 @@
-import {
-  variadic,
-  throttle,
-  delay,
-  map,
-  push,
-  apply,
-  delay,
-  unshift,
-  eventListener
-} from "morlock/util";
+import { variadic, throttle, delay, map, push, apply, delay, unshift,
+         eventListener, compose, when } from "morlock/util";
 
 function makeStream() {
-  var value;
+  var value; // TODO: Some kind of buffer
   var subscribers = [];
 
   return {
     emit: function(v) {
       map(function(s) {
-        s(v);
+        return s(v);
       }, subscribers);
 
       value = v;
@@ -33,6 +24,10 @@ function makeStream() {
   };
 }
 
+function onValue(f, stream) {
+  stream.onValue(f);
+}
+
 function eventStream(target, eventName) {
   var outputStream = makeStream();
   eventListener(target, eventName, outputStream.emit);
@@ -41,31 +36,17 @@ function eventStream(target, eventName) {
 
 var mergeStreams = variadic(function(args) {
   var outputStream = makeStream();
-
-  map(function(s) {
-    s.onValue(outputStream.emit);
-  }, args);
-
+  map(partial(onValue, outputStream.emit), args);
   return outputStream;
 });
 
-var bindStream = variadic(function(stream, f, args) {
+function delayStream(ms, stream) {
   var outputStream = makeStream();
-  
-  stream.onValue(function(v) {
-    apply(f, unshift(args, function() {
-      outputStream.emit(v);
-    }));
-  });
-
+  stream.onValue(delay(outputStream.emit, ms));
   return outputStream;
-});
-
-function delayStream(stream, ms) {
-  return bindStream(stream, delay, ms);
 }
 
-function throttleStream(stream, ms) {
+function throttleStream(ms, stream) {
   var outputStream = makeStream();
   stream.onValue(throttle(outputStream.emit, ms));
   return outputStream;
@@ -73,32 +54,15 @@ function throttleStream(stream, ms) {
 
 function mapStream(f, stream) {
   var outputStream = makeStream();
-  
-  stream.onValue(function(v) {
-    outputStream.emit(f(v));
-  });
-
+  stream.onValue(compose(outputStream.emit, f));
   return outputStream;
 }
 
 function filterStream(f, stream) {
   var outputStream = makeStream();
-  
-  stream.onValue(function(v) {
-    if (f(v)) {
-      outputStream.emit(v);
-    }
-  });
-
+  stream.onValue(when(f, outputStream.emit));
   return outputStream;
 }
 
-export {
-  makeStream,
-  eventStream,
-  delayStream,
-  throttleStream,
-  mapStream,
-  mergeStreams,
-  filterStream
-}
+export { makeStream, eventStream, delayStream, throttleStream, mapStream,
+         mergeStreams, filterStream }

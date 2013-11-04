@@ -7,8 +7,7 @@ import {
   push,
   first,
   testMQ,
-  eventListener,
-  delay
+  eventListener
 } from "morlock/util";
 
 import {
@@ -30,8 +29,8 @@ function makeViewportStream(options) {
   var throttleMs = 'undefined' !== typeof options.throttleMs ? options.throttleMs : 200;
 
   var resizedStream = mergeStreams(
-    throttleStream(eventStream(window, 'resize'), throttleMs),
-    delayStream(eventStream(window, 'orientationchange'), 100)
+    throttleStream(throttleMs, eventStream(window, 'resize')),
+    delayStream(100, eventStream(window, 'orientationchange'))
   );
 
   var breakpointStreams = mapObject(function(val, key) {
@@ -53,7 +52,7 @@ function makeViewportStream(options) {
 
   var breakpointEvents = apply(mergeStreams, objectVals(breakpointStreams));
 
-  delay(function() {
+  setTimeout(function() {
     window.dispatchEvent(new Event('resize'));
   }, 1);
 
