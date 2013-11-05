@@ -1,21 +1,16 @@
-import {
-  objectKeys,
-  partial,
-  equals,
-  first,
-  compose,
-  isTrue,
-  select,
-  get,
-  shift
-} from "morlock/util";
-
+import { objectKeys, partial, equals, first, compose, isTrue, select, get,
+         shift } from "morlock/util";
 import { mapStream, filterStream } from "morlock/event-stream";
 import { makeViewportStream, EVENT_TYPES } from "morlock/resize-stream";
 
 function filterbyType(stream, type) {
   var doesTypeMatch = compose(partial(equals, type), first);
   return filterStream(doesTypeMatch, stream);
+}
+
+function getActiveBreakpoints(activeBreakpoints) {
+  var isActive = compose(isTrue, partial(get, activeBreakpoints));
+  return select(isActive, objectKeys(activeBreakpoints));
 }
 
 var ResizeController = function(options) {
@@ -42,10 +37,7 @@ var ResizeController = function(options) {
     }
   });
 
-  this.getActiveBreakpoints = function() {
-    var isActive = compose(isTrue, partial(get, activeBreakpoints));
-    return select(isActive, objectKeys(activeBreakpoints));
-  };
+  this.getActiveBreakpoints = partial(getActiveBreakpoints, activeBreakpoints);
 };
 
 export { ResizeController }

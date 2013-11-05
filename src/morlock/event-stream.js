@@ -1,12 +1,15 @@
 import { variadic, throttle, delay, map, push, apply, delay, unshift,
-         eventListener, compose, when } from "morlock/util";
+         eventListener, compose, when, partial } from "morlock/util";
+
+var nextID = 0;
 
 function makeStream() {
   var value; // TODO: Some kind of buffer
   var subscribers = [];
+  var streamID = nextID++;
 
   return {
-    emit: function(v) {
+    emit: function emit(v) {
       map(function(s) {
         return s(v);
       }, subscribers);
@@ -14,11 +17,11 @@ function makeStream() {
       value = v;
     },
 
-    val: function() {
+    val: function val() {
       return value;
     },
 
-    onValue: function(cb) {
+    onValue: function onValue(cb) {
       subscribers.push(cb);
     }
   };
@@ -34,7 +37,7 @@ function eventStream(target, eventName) {
   return outputStream;
 }
 
-var mergeStreams = variadic(function(args) {
+var mergeStreams = variadic(function mergeStreams(args) {
   var outputStream = makeStream();
   map(partial(onValue, outputStream.emit), args);
   return outputStream;
@@ -57,6 +60,7 @@ function mapStream(f, stream) {
   stream.onValue(compose(outputStream.emit, f));
   return outputStream;
 }
+
 
 function filterStream(f, stream) {
   var outputStream = makeStream();

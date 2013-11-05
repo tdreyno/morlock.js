@@ -247,17 +247,18 @@ function equals(a, b) {
   return a === b;
 }
 
-var when = function(truth, f) {
-  return variadic(function(args) {
+function when(truth, f) {
+  return function() {
+    var whatIsTruth = truth; // Do not mutate original var :(
     if ('function' === typeof truth) {
-      truth = apply(truth, args);
+      whatIsTruth = apply(truth, arguments);
     }
 
-    if (truth) {
-      return apply(f, args);
+    if (whatIsTruth) {
+      return apply(f, arguments);
     }
-  });
-};
+  };
+}
 
 /**
  * Bind a function's "this" value.
@@ -278,7 +279,7 @@ function functionBind(f, obj) {
 /**
  * Partially apply a function.
  */
-var partial = variadic(function(f, args) {
+var partial = variadic(function partial(f, args) {
   return variadic(function(args2) {
     return f.apply(this, args.concat(args2));
   });
@@ -292,13 +293,13 @@ var partial = variadic(function(f, args) {
  */
 function arrayIndexOf(arr, val) {
   if (Array.prototype.indexOf) {
-  return arr.indexOf(val);
+    return arr.indexOf(val);
   }
 
   for (var i = 0; i < arr.length; i++) {
-  if (arr[i] === val) {
-    return i;
-  }
+    if (arr[i] === val) {
+      return i;
+    }
   }
 
   return -1;
