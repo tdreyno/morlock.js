@@ -1,7 +1,7 @@
 import { partial, equals } from "morlock/core/util";
 import { filterStream } from "morlock/core/stream";
 import { makeScrollEndStream } from "morlock/streams/scroll-stream";
-import { makeViewportStream, EVENT_TYPES, filterByType } from "morlock/streams/viewport-stream";
+import { makeResizeStream } from "morlock/streams/resize-stream";
 import { makeElementTrackerStream } from "morlock/streams/element-tracker-stream";
 
 var ScrollController = function ScrollController(options) {
@@ -17,8 +17,7 @@ var ScrollController = function ScrollController(options) {
     }
   };
 
-  var viewportStream = makeViewportStream();
-  var resizeStream = filterByType(viewportStream, EVENT_TYPES.RESIZE);
+  var resizeStream = makeResizeStream();
 
   this.observeElement = function observeElement(elem) {
     var trackerStream = makeElementTrackerStream(elem, scrollEndStream, resizeStream);

@@ -1,38 +1,55 @@
 import { objectKeys, partial, equals, first, compose, isTrue, select, get,
-         shift } from "morlock/core/util";
-import { mapStream, filterStream } from "morlock/core/stream";
-import { makeViewportStream, EVENT_TYPES, filterByType } from "morlock/streams/viewport-stream";
-
-function getActiveBreakpoints(activeBreakpoints) {
-  var isActive = compose(isTrue, partial(get, activeBreakpoints));
-  return select(isActive, objectKeys(activeBreakpoints));
-}
+         shift, nth } from "morlock/core/util";
+import { mapStream } from "morlock/core/stream";
+import { makeResizeStream } from "morlock/streams/resize-stream";
+import { makeBreakpointStream } from "morlock/streams/breakpoint-stream";
 
 var ResizeController = function ResizeController(options) {
   if (!(this instanceof ResizeController)) {
     return new ResizeController(options);
   }
 
-  var viewportStream = makeViewportStream(options);
+  options = options || {};
 
-  this.on = function(name, cb) {
-    var eventType = EVENT_TYPES[name.toUpperCase()];
-    if ('undefined' !== typeof eventType) {
-      mapStream(shift, filterByType(viewportStream, eventType)).onValue(cb);
+  var resizeStream = makeResizeStream(options);
+
+  var breakpointStream;
+  if ('undefined' !== typeof options.breakpoints) {
+    breakpointStream = makeBreakpointStream(options.breakpoints, resizeStream);
+  }
+
+  this.on = function(eventType, cb) {
+    if ('resize' === eventType) {
+      mapStream(function() {
+        return [window.innerWidth, window.innerHeight];
+      }, resizeStream).onValue(cb);
+    } else if ('breakpoint' === eventType) {
+      if (breakpointStream) {
+        mapStream(function(v) {
+          return [first(v), v[1] ? 'enter' : 'exit'];
+        }, breakpointStream).onValue(cb);
+      }
     }
   };
 
   var activeBreakpoints = {};
 
-  filterByType(viewportStream, EVENT_TYPES.BREAKPOINT).onValue(function(e) {
-    if ('enter' === e[2]) {
-      activeBreakpoints[e[1]] = true;
-    } else if ('exit' === e[2]) {
-      activeBreakpoints[e[1]] = false;
-    }
-  });
+  if (breakpointStream) {
+    breakpointStream.onValue(function(e) {
+      var eventType = first(e);
 
-  this.getActiveBreakpoints = partial(getActiveBreakpoints, activeBreakpoints);
+      if ('enter' === eventType) {
+        activeBreakpoints[e[1]] = true;
+      } else if ('exit' === eventType) {
+        activeBreakpoints[e[1]] = false;
+      }
+    });
+  }
+
+  this.getActiveBreakpoints = function getActiveBreakpoints(activeBreakpoints) {
+    var isActive = compose(isTrue, partial(get, activeBreakpoints));
+    return select(isActive, objectKeys(activeBreakpoints));
+  };
 };
 
 export { ResizeController }
