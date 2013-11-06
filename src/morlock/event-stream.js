@@ -1,5 +1,6 @@
 import { variadic, throttle, delay, map, push, apply, delay, unshift,
-         eventListener, compose, when, partial } from "morlock/util";
+         eventListener, compose, when, partial,
+         debounce } from "morlock/util";
 
 var nextID = 0;
 
@@ -55,12 +56,17 @@ function throttleStream(ms, stream) {
   return outputStream;
 }
 
+function debounceStream(ms, stream) {
+  var outputStream = makeStream();
+  stream.onValue(debounce(outputStream.emit, ms));
+  return outputStream;
+}
+
 function mapStream(f, stream) {
   var outputStream = makeStream();
   stream.onValue(compose(outputStream.emit, f));
   return outputStream;
 }
-
 
 function filterStream(f, stream) {
   var outputStream = makeStream();
@@ -69,4 +75,4 @@ function filterStream(f, stream) {
 }
 
 export { makeStream, eventStream, delayStream, throttleStream, mapStream,
-         mergeStreams, filterStream }
+         mergeStreams, filterStream, debounceStream }

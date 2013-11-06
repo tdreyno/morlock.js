@@ -7,7 +7,9 @@ import {
   push,
   first,
   testMQ,
-  eventListener
+  eventListener,
+  equals,
+  compose
 } from "morlock/util";
 
 import {
@@ -26,6 +28,7 @@ var EVENT_TYPES = {
 };
 
 function makeViewportStream(options) {
+  options = options || {};
   var throttleMs = 'undefined' !== typeof options.throttleMs ? options.throttleMs : 200;
 
   var resizedStream = mergeStreams(
@@ -87,4 +90,9 @@ function breakpointToString(options) {
   return mq;
 }
 
-export { makeViewportStream, EVENT_TYPES }
+function filterByType(stream, type) {
+  var doesTypeMatch = compose(partial(equals, type), first);
+  return filterStream(doesTypeMatch, stream);
+}
+
+export { makeViewportStream, EVENT_TYPES, filterByType }

@@ -4,7 +4,9 @@
   <title>morlock.js Debugger</title>
 </head>
 <body>
-  <div id="mocha"></div>
+  <div style="height: 1000px;"></div>
+  <div id="hi" style="height: 500px; background: red;"></div>
+  <div style="height: 5000px;"></div>
   <script data-main="dist/morlock-0.0.0.js" src="test/vendor/require.js"></script>
   <script>
     require(['morlock'], function(m) {
@@ -22,6 +24,22 @@
 
       rc.on('breakpoint', function(e) {
         console.log('breakpoint', e);
+      });
+
+      sc = new m.ScrollController({
+        debounceMs: 400
+      });
+
+      sc.on('scrollEnd', function(e) {
+        console.log('scrollEnd');
+      });
+
+      var observer = sc.observeElement(document.getElementById('hi'));
+      observer.on('enter', function() {
+        console.log('enter');
+      });
+      observer.on('exit', function() {
+        console.log('exit');
       });
     });
   </script>

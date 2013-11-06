@@ -1,34 +1,34 @@
 import { getViewportHeight, getRect } from "morlock/util";
+import { makeStream } from "morlock/event-stream";
 
-function ElementTracker(element) {
-  this.element_ = element;
-  this.isVisible_ = false;
-  this.viewportHeight_ = getViewportHeight();
+function makeElementTrackerStream(element, scrollStream, resizeStream) {
+  var trackerStream = makeStream();
+  var viewportHeight;;
+  var isVisible = false;
+
+  function updateViewport() {
+    viewportHeight = getViewportHeight();
+    didUpdateViewport();
+  }
+  
+  function didUpdateViewport() {
+    var r = getRect(element);
+    var inY = !!r && r.bottom >= 0 && r.top <= viewportHeight;
+
+    if (isVisible && !inY) {
+      isVisible = false;
+      trackerStream.emit('exit');
+    } else if (!isVisible && inY) {
+      isVisible = true;
+      trackerStream.emit('enter');
+    }
+  }
+
+  scrollStream.onValue(didUpdateViewport);
+  resizeStream.onValue(updateViewport);
+  updateViewport();
+
+  return trackerStream;
 }
 
-// jQuery-style event function names.
-// makeEventable(ElementTracker.prototype, {
-//   'listen': 'on',
-//   'unlisten': 'off',
-//   'emit': 'trigger',
-// });
-
-ElementTracker.prototype.updateViewportHeight = function(viewportHeight) {
-  h = viewportHeight;
-  this.updateViewport();
-};
-
-ElementTracker.prototype.updateViewport = function() {
-  var r = getRect(this.element_);
-  var inY = !!r && r.bottom >= 0 && r.top <= this.viewportHeight_;
-
-  if (this.isVisible_ && !inY) {
-    this.isVisible_ = false;
-    this.trigger('exit');
-  } else if (!this.isVisible_ && inY) {
-    this.isVisible_ = true;
-    this.trigger('enter');
-  }
-};
-
-export { ElementTracker }
+export { makeElementTrackerStream }

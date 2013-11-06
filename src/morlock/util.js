@@ -73,8 +73,7 @@ function debounce(f, delay) {
 function makeViewportGetter_(dimension, inner, client) {
   var docElem = document.documentElement;
 
-  if ((docElem[client] < window[inner]) &&
-    testMQ('(min-' + dimension + ':' + window[inner] + 'px)')) {
+  if (testMQ('(min-' + dimension + ':' + window[inner] + 'px)')) {
     return function() {
       return window[inner];
     };
