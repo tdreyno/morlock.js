@@ -210,32 +210,36 @@ function get(obj, key) {
   return obj[key];
 }
 
+function isEmpty(arr) {
+  return !arr.length;
+}
+
 function objectVals(obj) {
   return map(partial(get, obj), objectKeys(obj));
 }
 
+function reduce(f, arr, val) {
+  return (function recur(f, input, output) {
+    return isEmpty(input)
+      ? output
+      : recur(f, shift(input), f(output, first(input)));
+  })(f, arr, val);
+}
+
 function select(f, arr) {
-  var output = [];
-
-  for (var i = 0; i < arr.length; i++) {
-    if (f(arr[i]) === true) {
-      output.push(arr[i]);
-    }
-  }
-
-  return output;
+  return reduce(function(sum, v) {
+    return isTrue(v)
+      ? push(sum, v)
+      : sum;
+  }, arr, []);
 }
 
 function reject(f, arr) {
-  var output = [];
-
-  for (var i = 0; i < arr.length; i++) {
-    if (f(arr[i]) === false) {
-      output.push(arr[i]);
-    }
-  }
-
-  return output;
+  return reduce(function(sum, v) {
+    return !isTrue(v)
+      ? push(sum, v)
+      : sum;
+  }, arr, []);
 }
 
 function not(v) {
@@ -392,24 +396,10 @@ var compose = variadic(function(fns) {
   };
 });
 
-function eventListener(target, eventName, cb) {
-  if (target.addEventListener) {
-    target.addEventListener(eventName, cb, false);
-    return function() {
-      target.removeEventListener(eventName, cb, false);
-    };
-  } else if (target.attachEvent) {
-    target.attachEvent('on' + eventName, cb);
-    return function() {
-      target.detachEvent('on' + eventName, cb);
-    };
-  }
-}
-
 export {
   indexOf, throttle, debounce, getViewportHeight, getViewportWidth, testMQ,
   getRect, mapObject, objectKeys, functionBind, partial, arrayIndexOf,
   variadic, map, apply, objectVals, call, push, unshift, equals,
   delay, unshift, nth, first, compose, select, isTrue, get, shift, eventListener,
-  when
+  when, reduce
 };

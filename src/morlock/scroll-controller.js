@@ -3,6 +3,7 @@ import { makeScrollEndStream } from "morlock/scroll-stream";
 import { makeViewportStream, EVENT_TYPES, filterByType } from "morlock/viewport-stream";
 import { makeElementTrackerStream } from "morlock/element-tracker";
 import { filterStream } from "morlock/event-stream";
+
 var ScrollController = function(options) {
   if (!(this instanceof ScrollController)) {
     return new ScrollController(options);
