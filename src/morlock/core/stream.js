@@ -1,6 +1,6 @@
 import { variadic, throttle, delay, map, push, apply, delay, unshift,
          eventListener, compose, when, partial,
-         debounce } from "morlock/util";
+         debounce } from "morlock/core/util";
 
 var nextID = 0;
 

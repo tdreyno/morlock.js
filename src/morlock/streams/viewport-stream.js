@@ -1,26 +1,7 @@
-import {
-  objectKeys,
-  objectVals,
-  partial,
-  mapObject,
-  apply,
-  push,
-  first,
-  testMQ,
-  eventListener,
-  equals,
-  compose
-} from "morlock/util";
-
-import {
-  makeStream,
-  eventStream,
-  throttleStream,
-  delayStream,
-  mergeStreams,
-  mapStream,
-  filterStream
-} from "morlock/event-stream";
+import { objectKeys, objectVals, partial, mapObject, apply, push, first,
+         testMQ, eventListener, equals, compose } from "morlock/core/util";
+import { makeStream, eventStream, throttleStream, delayStream, mergeStreams,
+         mapStream, filterStream } from "morlock/core/stream";
 
 var EVENT_TYPES = {
   RESIZE: 0,

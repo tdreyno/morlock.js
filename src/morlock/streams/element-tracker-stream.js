@@ -1,5 +1,5 @@
-import { getViewportHeight, getRect } from "morlock/util";
-import { makeStream } from "morlock/event-stream";
+import { getViewportHeight, getRect } from "morlock/core/util";
+import { makeStream } from "morlock/core/stream";
 
 function makeElementTrackerStream(element, scrollStream, resizeStream) {
   var trackerStream = makeStream();

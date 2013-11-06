@@ -1,10 +1,10 @@
-import { partial, equals } from "morlock/util";
-import { makeScrollEndStream } from "morlock/scroll-stream";
-import { makeViewportStream, EVENT_TYPES, filterByType } from "morlock/viewport-stream";
-import { makeElementTrackerStream } from "morlock/element-tracker";
-import { filterStream } from "morlock/event-stream";
+import { partial, equals } from "morlock/core/util";
+import { filterStream } from "morlock/core/stream";
+import { makeScrollEndStream } from "morlock/streams/scroll-stream";
+import { makeViewportStream, EVENT_TYPES, filterByType } from "morlock/streams/viewport-stream";
+import { makeElementTrackerStream } from "morlock/streams/element-tracker-stream";
 
-var ScrollController = function(options) {
+var ScrollController = function ScrollController(options) {
   if (!(this instanceof ScrollController)) {
     return new ScrollController(options);
   }

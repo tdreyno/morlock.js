@@ -1,7 +1,4 @@
-import {
-  eventStream,
-  debounceStream
-} from "morlock/event-stream";
+import { eventStream, debounceStream } from "morlock/core/stream";
 
 function makeScrollEndStream(options) {
   options = options || {};

@@ -1,14 +1,4 @@
-import { ResizeController } from "morlock/resize-controller";
+import { ResizeController } from "morlock/controllers/resize-controller";
 import { ResponsiveImage } from "morlock/responsive-image";
-import { ScrollController } from "morlock/scroll-controller";
-
-// var rc = new ResizeController();
-// rc.add('desktop', { });
-
-// var sc = new ScrollController();
-
-// rc.on('resize', function() {
-//   sc.onResize();
-// });
-
+import { ScrollController } from "morlock/controllers/scroll-controller";
 export { ResizeController, ResponsiveImage, ScrollController };

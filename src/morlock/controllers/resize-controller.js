@@ -1,14 +1,14 @@
 import { objectKeys, partial, equals, first, compose, isTrue, select, get,
-         shift } from "morlock/util";
-import { mapStream, filterStream } from "morlock/event-stream";
-import { makeViewportStream, EVENT_TYPES, filterByType } from "morlock/viewport-stream";
+         shift } from "morlock/core/util";
+import { mapStream, filterStream } from "morlock/core/stream";
+import { makeViewportStream, EVENT_TYPES, filterByType } from "morlock/streams/viewport-stream";
 
 function getActiveBreakpoints(activeBreakpoints) {
   var isActive = compose(isTrue, partial(get, activeBreakpoints));
   return select(isActive, objectKeys(activeBreakpoints));
 }
 
-var ResizeController = function(options) {
+var ResizeController = function ResizeController(options) {
   if (!(this instanceof ResizeController)) {
     return new ResizeController(options);
   }
