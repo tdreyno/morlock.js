@@ -9,7 +9,7 @@
   <div style="height: 5000px;"></div>
   <script data-main="dist/morlock-0.0.0.js" src="test/vendor/require.js"></script>
   <script>
-    require(['morlock'], function(m) {
+    require(['morlock', 'morlock/core/stream', 'morlock/streams/resize-stream'], function(m, s, r) {
       rc = new m.ResizeController({
         breakpoints: {
           'mobile': { max: 767 },
@@ -21,6 +21,16 @@
       rc.on('resize', function(e) {
         console.log('resize', e[0], e[1]);
       });
+
+      var timeoutStream = s.timeoutStream(1000);
+      var resizeStream = r.makeResizeStream({ throttleMs: 0 });
+      var dimensionsStream = s.mapStream(function() {
+        return [window.innerWidth, window.innerHeight];
+      }, resizeStream);
+
+      s.sampleStream(dimensionsStream, timeoutStream).onValue(function(v) {
+        console.log('Every 1000ms', v);
+      })
 
       rc.on('breakpoint', function(e) {
         console.log('breakpoint', e);

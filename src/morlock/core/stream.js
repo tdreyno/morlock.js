@@ -37,12 +37,20 @@ function makeStream() {
   };
 }
 
+function streamEmit(stream, val) {
+  return stream.emit(val);
+}
+
+function streamValue(stream) {
+  return stream.val();
+}
+
 function onValue(f, stream) {
-  stream.onValue(f);
+  return stream.onValue(f);
 }
 
 function onSubscription(f, stream) {
-  stream.onSubscription(f);
+  return stream.onSubscription(f);
 }
 
 function eventStream(target, eventName) {
@@ -54,6 +62,12 @@ function eventStream(target, eventName) {
   var attachListener = partial(eventListener, target, eventName, outputStream.emit);
   onSubscription(once(attachListener), outputStream);
 
+  return outputStream;
+}
+
+function timeoutStream(ms) {
+  var outputStream = makeStream();
+  setInterval(outputStream.emit, ms);
   return outputStream;
 }
 
@@ -71,7 +85,8 @@ function delayStream(ms, stream) {
 
 function throttleStream(ms, stream) {
   var outputStream = makeStream();
-  stream.onValue(throttle(outputStream.emit, ms));
+  var f = ms > 0 ? throttle(outputStream.emit, ms) : outputStream.emit;
+  stream.onValue(f);
   return outputStream;
 }
 
@@ -93,5 +108,11 @@ function filterStream(f, stream) {
   return outputStream;
 }
 
+function sampleStream(sourceStream, sampleStream) {
+  var outputStream = makeStream();
+  sampleStream.onValue(compose(outputStream.emit, sourceStream.val));
+  return outputStream;
+}
+
 export { makeStream, eventStream, delayStream, throttleStream, mapStream,
-         mergeStreams, filterStream, debounceStream }
+         mergeStreams, filterStream, debounceStream, sampleStream, timeoutStream }
