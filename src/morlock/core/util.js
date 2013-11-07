@@ -396,10 +396,20 @@ var compose = variadic(function(fns) {
   };
 });
 
+var once = variadic(function(f, args) {
+  var hasRun = false;
+  return function() {
+    if (!hasRun) {
+      hasRun = true;
+      return apply(f, args);
+    }
+  };
+});
+
 export {
   indexOf, throttle, debounce, getViewportHeight, getViewportWidth, testMQ,
   getRect, mapObject, objectKeys, functionBind, partial, arrayIndexOf,
   variadic, map, apply, objectVals, call, push, unshift, equals,
   delay, unshift, nth, first, compose, select, isTrue, get, shift, eventListener,
-  when, reduce
+  when, reduce, once
 };

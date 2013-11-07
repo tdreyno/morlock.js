@@ -1,12 +1,13 @@
 import { variadic, throttle, delay, map, push, apply, delay, unshift,
          eventListener, compose, when, partial,
-         debounce } from "morlock/core/util";
+         debounce, once } from "morlock/core/util";
 
 var nextID = 0;
 
 function makeStream() {
   var value; // TODO: Some kind of buffer
   var subscribers = [];
+  var subscriberSubscribers = [];
   var streamID = nextID++;
 
   return {
@@ -22,8 +23,16 @@ function makeStream() {
       return value;
     },
 
+    onSubscription: function onValue(cb) {
+      subscriberSubscribers.push(cb);
+    },
+
     onValue: function onValue(cb) {
       subscribers.push(cb);
+
+      map(function(s) {
+        return s(cb);
+      }, subscriberSubscribers);
     }
   };
 }
@@ -32,9 +41,19 @@ function onValue(f, stream) {
   stream.onValue(f);
 }
 
+function onSubscription(f, stream) {
+  stream.onSubscription(f);
+}
+
 function eventStream(target, eventName) {
   var outputStream = makeStream();
-  eventListener(target, eventName, outputStream.emit);
+
+  /**
+   * Lazily subscribes to a dom event.
+   */
+  var attachListener = partial(eventListener, target, eventName, outputStream.emit);
+  onSubscription(once(attachListener), outputStream);
+
   return outputStream;
 }
 
