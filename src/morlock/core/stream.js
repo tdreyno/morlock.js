@@ -4,7 +4,7 @@ import { variadic, throttle, delay, map, push, apply, delay, unshift,
 
 var nextID = 0;
 
-function makeStream() {
+function makeStream(trackSubscribers) {
   var value; // TODO: Some kind of buffer
   var subscribers = [];
   var subscriberSubscribers = [];
@@ -24,15 +24,19 @@ function makeStream() {
     },
 
     onSubscription: function onValue(cb) {
-      subscriberSubscribers.push(cb);
+      if (trackSubscribers) {
+        subscriberSubscribers.push(cb);
+      }
     },
 
     onValue: function onValue(cb) {
       subscribers.push(cb);
 
-      map(function(s) {
-        return s(cb);
-      }, subscriberSubscribers);
+      if (trackSubscribers) {
+        map(function(s) {
+          return s(cb);
+        }, subscriberSubscribers);
+      }
     }
   };
 }
@@ -54,7 +58,7 @@ function onSubscription(f, stream) {
 }
 
 function eventStream(target, eventName) {
-  var outputStream = makeStream();
+  var outputStream = makeStream(true);
 
   /**
    * Lazily subscribes to a dom event.
@@ -66,8 +70,30 @@ function eventStream(target, eventName) {
 }
 
 function timeoutStream(ms) {
-  var outputStream = makeStream();
-  setInterval(outputStream.emit, ms);
+  var outputStream = makeStream(true);
+
+  /**
+   * Lazily subscribes to a timeout event.
+   */
+  var attachListener = partial(setInterval, outputStream.emit, ms);
+  onSubscription(once(attachListener), outputStream);
+
+  return outputStream;
+}
+
+function requestAnimationFrameStream() {
+  var outputStream = makeStream(true);
+
+  /**
+   * Lazily subscribes to a raf event.
+   */
+  function sendEvent(t) {
+    outputStream.emit(t);
+    requestAnimationFrame(sendEvent);
+  }
+
+  onSubscription(once(sendEvent), outputStream);
+
   return outputStream;
 }
 
@@ -115,4 +141,5 @@ function sampleStream(sourceStream, sampleStream) {
 }
 
 export { makeStream, eventStream, delayStream, throttleStream, mapStream,
-         mergeStreams, filterStream, debounceStream, sampleStream, timeoutStream }
+         mergeStreams, filterStream, debounceStream, sampleStream, timeoutStream,
+         requestAnimationFrameStream }
