@@ -1,6 +1,6 @@
 import { objectKeys, partial, equals, first, compose, isTrue, select, get,
          shift, nth } from "morlock/core/util";
-import { mapStream } from "morlock/core/stream";
+module Stream from "morlock/core/stream";
 import { makeResizeStream } from "morlock/streams/resize-stream";
 import { makeBreakpointStream } from "morlock/streams/breakpoint-stream";
 
@@ -20,14 +20,14 @@ var ResizeController = function ResizeController(options) {
 
   this.on = function(eventType, cb) {
     if ('resize' === eventType) {
-      mapStream(function() {
+      Stream.onValue(Stream.map(function() {
         return [window.innerWidth, window.innerHeight];
-      }, resizeStream).onValue(cb);
+      }, resizeStream), cb);
     } else if ('breakpoint' === eventType) {
       if (breakpointStream) {
-        mapStream(function(v) {
+        Stream.onValue(Stream.map(function(v) {
           return [first(v), v[1] ? 'enter' : 'exit'];
-        }, breakpointStream).onValue(cb);
+        }, breakpointStream), cb);
       }
     }
   };
@@ -35,7 +35,7 @@ var ResizeController = function ResizeController(options) {
   var activeBreakpoints = {};
 
   if (breakpointStream) {
-    breakpointStream.onValue(function(e) {
+    Stream.onValue(breakpointStream, function(e) {
       var eventType = first(e);
 
       if ('enter' === eventType) {
@@ -52,4 +52,4 @@ var ResizeController = function ResizeController(options) {
   };
 };
 
-export { ResizeController }
+export { ResizeController };

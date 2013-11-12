@@ -1,9 +1,9 @@
 import { getViewportHeight, getRect } from "morlock/core/util";
-import { makeStream } from "morlock/core/stream";
+module Stream from "morlock/core/stream";
 
 function makeElementTrackerStream(element, scrollStream, resizeStream) {
-  var trackerStream = makeStream();
-  var viewportHeight;;
+  var trackerStream = Stream.create();
+  var viewportHeight;
   var isVisible = false;
 
   function updateViewport() {
@@ -24,11 +24,11 @@ function makeElementTrackerStream(element, scrollStream, resizeStream) {
     }
   }
 
-  scrollStream.onValue(didUpdateViewport);
-  resizeStream.onValue(updateViewport);
+  Stream.onValue(scrollStream, didUpdateViewport);
+  Stream.onValue(resizeStream, updateViewport);
   updateViewport();
 
   return trackerStream;
 }
 
-export { makeElementTrackerStream }
+export { makeElementTrackerStream };

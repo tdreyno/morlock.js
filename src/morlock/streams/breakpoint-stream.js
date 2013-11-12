@@ -1,26 +1,26 @@
 import { objectVals, partial, mapObject, apply, push,
          testMQ } from "morlock/core/util";
-import { makeStream, mergeStreams, mapStream } from "morlock/core/stream";
+module Stream from "morlock/core/stream";
 
 function makeBreakpointStream(breakpoints, resizedStream) {
   var breakpointStreams = mapObject(function(val, key) {
-    var s = makeStream();
+    var s = Stream.create();
 
     var mq = breakpointToString(val);
 
-    resizedStream.onValue(function() {
-      var wasActive = s.val();
+    Stream.onValue(resizedStream, function() {
+      var wasActive = Stream.getValue(s);
       wasActive = 'undefined' !== typeof wasActive ? wasActive : false;
 
       if (wasActive !== testMQ(mq)) {
-        s.emit(!wasActive);
+        Stream.emit(s, !wasActive);
       }
     });
 
-    return mapStream(partial(push, [key]), s);
+    return Stream.map(partial(push, [key]), s);
   }, breakpoints);
 
-  return apply(mergeStreams, objectVals(breakpointStreams));
+  return apply(Stream.merge, objectVals(breakpointStreams));
 }
 
 function breakpointToString(options) {

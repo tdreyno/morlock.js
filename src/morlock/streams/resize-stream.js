@@ -1,16 +1,17 @@
 import { objectKeys, objectVals, partial, mapObject, apply, push, first,
          testMQ, eventListener, equals, compose } from "morlock/core/util";
-import { makeStream, eventStream, throttleStream, delayStream, mergeStreams,
-         mapStream, filterStream } from "morlock/core/stream";
+module Stream from "morlock/core/stream";
 
 function makeResizeStream(options) {
   options = options || {};
   var throttleMs = 'undefined' !== typeof options.throttleMs ? options.throttleMs : 200;
 
-  var resizedStream = mergeStreams(
-    throttleStream(throttleMs, eventStream(window, 'resize')),
-    delayStream(100, eventStream(window, 'orientationchange'))
-  );
+  // var resizedStream = Stream.merge(
+  //   Stream.throttle(throttleMs, Stream.createFromEvents(window, 'resize')),
+  //   Stream.delay(100, Stream.createFromEvents(window, 'orientationchange'))
+  // );
+
+  var resizedStream = Stream.throttle(throttleMs, Stream.createFromEvents(window, 'resize'));
 
   setTimeout(function() {
     window.dispatchEvent(new Event('resize'));

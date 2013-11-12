@@ -1,145 +1,154 @@
-import { variadic, throttle, delay, map, push, apply, delay, unshift,
-         eventListener, compose, when, partial,
-         debounce, once } from "morlock/core/util";
+import { debounce as debounceCall,
+         throttle as throttleCall,
+         delay as delayCall,
+         map as mapArray,
+         variadic, push, apply, unshift, eventListener, compose, when,
+         partial, once } from "morlock/core/util";
 
 var nextID = 0;
 
-function makeStream(trackSubscribers) {
-  var value; // TODO: Some kind of buffer
-  var subscribers = [];
-  var subscriberSubscribers = [];
-  var streamID = nextID++;
+/**
+ * Ghetto Record implementation.
+ */
+function Stream(trackSubscribers) {
+  if (!(this instanceof Stream)) {
+    return new Stream(trackSubscribers);
+  }
 
-  return {
-    emit: function emit(v) {
-      map(function(s) {
-        return s(v);
-      }, subscribers);
-
-      value = v;
-    },
-
-    val: function val() {
-      return value;
-    },
-
-    onSubscription: function onValue(cb) {
-      if (trackSubscribers) {
-        subscriberSubscribers.push(cb);
-      }
-    },
-
-    onValue: function onValue(cb) {
-      subscribers.push(cb);
-
-      if (trackSubscribers) {
-        map(function(s) {
-          return s(cb);
-        }, subscriberSubscribers);
-      }
-    }
-  };
+  this.trackSubscribers = !!trackSubscribers;
+  this.subscribers = [];
+  this.subscriberSubscribers = this.trackSubscribers ? [] : null;
+  this.streamID = nextID++;
+  this.value = null; // TODO: Some kind of buffer
 }
 
-function streamEmit(stream, val) {
-  return stream.emit(val);
+function create(trackSubscribers) {
+  return new Stream(trackSubscribers);
 }
 
-function streamValue(stream) {
-  return stream.val();
+function emit(stream, val) {
+  mapArray(function(s) {
+    return s(val);
+  }, stream.subscribers);
+
+  stream.value = val;
 }
 
-function onValue(f, stream) {
-  return stream.onValue(f);
+function getValue(stream) {
+  return stream.value;
 }
 
-function onSubscription(f, stream) {
-  return stream.onSubscription(f);
+function onValue(stream, f) {
+  stream.subscribers.push(f);
+
+  if (stream.trackSubscribers) {
+    mapArray(function(s) {
+      return s(f);
+    }, stream.subscriberSubscribers);
+  }
 }
 
-function eventStream(target, eventName) {
-  var outputStream = makeStream(true);
+function onSubscription(stream, f) {
+  if (stream.trackSubscribers) {
+    stream.subscriberSubscribers.push(f);
+  }
+}
+
+function createFromEvents(target, eventName) {
+  var outputStream = create(true);
+  var boundEmit = partial(emit, outputStream);
 
   /**
    * Lazily subscribes to a dom event.
    */
-  var attachListener = partial(eventListener, target, eventName, outputStream.emit);
-  onSubscription(once(attachListener), outputStream);
+  var attachListener = partial(eventListener, target, eventName, boundEmit);
+  onSubscription(outputStream, once(attachListener));
 
   return outputStream;
 }
 
-function timeoutStream(ms) {
-  var outputStream = makeStream(true);
+function timeout(ms) {
+  var outputStream = create(true);
+  var boundEmit = partial(emit, outputStream);
 
   /**
    * Lazily subscribes to a timeout event.
    */
-  var attachListener = partial(setInterval, outputStream.emit, ms);
-  onSubscription(once(attachListener), outputStream);
+  var attachListener = partial(setInterval, boundEmit, ms);
+  onSubscription(outputStream, once(attachListener));
 
   return outputStream;
 }
 
-function requestAnimationFrameStream() {
-  var outputStream = makeStream(true);
+function createFromRAF() {
+  var outputStream = create(true);
+  var boundEmit = partial(emit, outputStream);
 
   /**
    * Lazily subscribes to a raf event.
    */
   function sendEvent(t) {
-    outputStream.emit(t);
+    boundEmit(t);
     requestAnimationFrame(sendEvent);
   }
 
-  onSubscription(once(sendEvent), outputStream);
+  onSubscription(outputStream, once(sendEvent));
 
   return outputStream;
 }
 
-var mergeStreams = variadic(function mergeStreams(args) {
-  var outputStream = makeStream();
-  map(partial(onValue, outputStream.emit), args);
+var merge = variadic(function merge(args) {
+  var outputStream = create();
+  var boundEmit = partial(emit, outputStream);
+  mapArray(function(stream) {
+    return onValue(stream, boundEmit);
+  }, args);
   return outputStream;
 });
 
-function delayStream(ms, stream) {
-  var outputStream = makeStream();
-  stream.onValue(delay(outputStream.emit, ms));
+function delay(ms, stream) {
+  var outputStream = create();
+  var boundEmit = partial(emit, outputStream);
+  onValue(stream, delayCall(boundEmit, ms));
   return outputStream;
 }
 
-function throttleStream(ms, stream) {
-  var outputStream = makeStream();
-  var f = ms > 0 ? throttle(outputStream.emit, ms) : outputStream.emit;
-  stream.onValue(f);
+function throttle(ms, stream) {
+  var outputStream = create();
+  var boundEmit = partial(emit, outputStream);
+  var f = ms > 0 ? throttleCall(boundEmit, ms) : boundEmit;
+  onValue(stream, f);
   return outputStream;
 }
 
-function debounceStream(ms, stream) {
-  var outputStream = makeStream();
-  stream.onValue(debounce(outputStream.emit, ms));
+function debounce(ms, stream) {
+  var outputStream = create();
+  var boundEmit = partial(emit, outputStream);
+  onValue(stream, debounceCall(boundEmit, ms));
   return outputStream;
 }
 
-function mapStream(f, stream) {
-  var outputStream = makeStream();
-  stream.onValue(compose(outputStream.emit, f));
+function map(f, stream) {
+  var outputStream = create();
+  var boundEmit = partial(emit, outputStream);
+  onValue(stream, compose(boundEmit, f));
   return outputStream;
 }
 
-function filterStream(f, stream) {
-  var outputStream = makeStream();
-  stream.onValue(when(f, outputStream.emit));
+function filter(f, stream) {
+  var outputStream = create();
+  var boundEmit = partial(emit, outputStream);
+  onValue(stream, when(f, boundEmit));
   return outputStream;
 }
 
-function sampleStream(sourceStream, sampleStream) {
-  var outputStream = makeStream();
-  sampleStream.onValue(compose(outputStream.emit, sourceStream.val));
+function sample(sourceStream, sampleStream) {
+  var outputStream = create();
+  var boundEmit = partial(emit, outputStream);
+  onValue(sampleStream, compose(boundEmit, partial(getValue, sourceStream)));
   return outputStream;
 }
 
-export { makeStream, eventStream, delayStream, throttleStream, mapStream,
-         mergeStreams, filterStream, debounceStream, sampleStream, timeoutStream,
-         requestAnimationFrameStream }
+export { create, emit, getValue, onValue, onSubscription, createFromEvents,
+         timeout, createFromRAF, merge, delay, throttle, debounce, map,
+         filter, sample };

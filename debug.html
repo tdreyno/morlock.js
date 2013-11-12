@@ -22,17 +22,17 @@
         console.log('resize', e[0], e[1]);
       });
 
-      var timeoutStream = s.timeoutStream(1000);
+      var timeoutStream = s.timeout(1000);
       var resizeStream = r.makeResizeStream({ throttleMs: 0 });
-      var dimensionsStream = s.mapStream(function() {
+      var dimensionsStream = s.map(function() {
         return [window.innerWidth, window.innerHeight];
       }, resizeStream);
 
-      s.sampleStream(dimensionsStream, timeoutStream).onValue(function(v) {
+      s.onValue(s.sample(dimensionsStream, timeoutStream), function(v) {
         console.log('Every 1000ms', v);
-      })
+      });
 
-      // s.requestAnimationFrameStream().onValue(function(t) {
+      // s.createFromRAF().onValue(function(t) {
       //   console.log(t)
       // })
 
