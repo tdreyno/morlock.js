@@ -1,8 +1,8 @@
 import { objectKeys, partial, equals, first, compose, isTrue, select, get,
          shift, nth } from "morlock/core/util";
 module Stream from "morlock/core/stream";
-import { makeResizeStream } from "morlock/streams/resize-stream";
-import { makeBreakpointStream } from "morlock/streams/breakpoint-stream";
+module BreakpointStream from "morlock/streams/breakpoint-stream";
+module ResizeStream from "morlock/streams/resize-stream";
 
 var ResizeController = function ResizeController(options) {
   if (!(this instanceof ResizeController)) {
@@ -11,11 +11,11 @@ var ResizeController = function ResizeController(options) {
 
   options = options || {};
 
-  var resizeStream = makeResizeStream(options);
+  var resizeStream = ResizeStream.create(options);
 
   var breakpointStream;
   if ('undefined' !== typeof options.breakpoints) {
-    breakpointStream = makeBreakpointStream(options.breakpoints, resizeStream);
+    breakpointStream = BreakpointStream.create(options.breakpoints, resizeStream);
   }
 
   this.on = function(eventType, cb) {
@@ -52,4 +52,4 @@ var ResizeController = function ResizeController(options) {
   };
 };
 
-export { ResizeController };
+export default = ResizeController;

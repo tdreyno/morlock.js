@@ -2,7 +2,7 @@ import { objectVals, partial, mapObject, apply, push,
          testMQ } from "morlock/core/util";
 module Stream from "morlock/core/stream";
 
-function makeBreakpointStream(breakpoints, resizedStream) {
+function create(breakpoints, resizedStream) {
   var breakpointStreams = mapObject(function(val, key) {
     var s = Stream.create();
 
@@ -44,4 +44,4 @@ function breakpointToString(options) {
   return mq;
 }
 
-export { makeBreakpointStream }
+export { create }

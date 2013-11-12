@@ -210,6 +210,16 @@ function get(obj, key) {
   return obj[key];
 }
 
+function set(obj, key, v) {
+  obj[key] = v;
+}
+
+function flip(f) {
+  return variadic(function(args) {
+    apply(f, args.reverse());
+  });
+}
+
 function isEmpty(arr) {
   return !arr.length;
 }
@@ -387,6 +397,12 @@ function push(arr, v) {
   return arr2;
 }
 
+function sortBy(arr, f) {
+  var arr2 = arr.slice(0);
+  Array.prototype.sort.call(arr2, f);
+  return arr2;
+}
+
 var compose = variadic(function(fns) {
   return function(value) {
     for (var i = fns.length - 1; i >= 0; --i) {
@@ -406,10 +422,14 @@ var once = variadic(function(f, args) {
   };
 });
 
+function parseInteger(str) {
+  return parseInt(str, 10);
+}
+
 export {
   indexOf, throttle, debounce, getViewportHeight, getViewportWidth, testMQ,
   getRect, mapObject, objectKeys, functionBind, partial, arrayIndexOf,
   variadic, map, apply, objectVals, call, push, unshift, equals,
   delay, unshift, nth, first, compose, select, isTrue, get, shift, eventListener,
-  when, reduce, once
+  when, reduce, once, sortBy, parseInteger, set, flip
 };

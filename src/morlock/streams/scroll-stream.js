@@ -1,6 +1,6 @@
 module Stream from "morlock/core/stream";
 
-function makeScrollEndStream(options) {
+function create(options) {
   options = options || {};
   var debounceMs = 'undefined' !== typeof options.debounceMs ? options.debounceMs : 200;
 
@@ -16,4 +16,4 @@ function makeScrollEndStream(options) {
   return scrollEndStream;
 }
 
-export { makeScrollEndStream };
+export { create };

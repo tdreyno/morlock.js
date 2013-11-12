@@ -1,15 +1,15 @@
 import { partial, equals } from "morlock/core/util";
 module Stream from "morlock/core/stream";
-import { makeScrollEndStream } from "morlock/streams/scroll-stream";
-import { makeResizeStream } from "morlock/streams/resize-stream";
-import { makeElementTrackerStream } from "morlock/streams/element-tracker-stream";
+module ScrollEndStream from "morlock/streams/scroll-stream";
+module ResizeStream from "morlock/streams/resize-stream";
+module ElementTrackerStream from "morlock/streams/element-tracker-stream";
 
 var ScrollController = function ScrollController(options) {
   if (!(this instanceof ScrollController)) {
     return new ScrollController(options);
   }
 
-  var scrollEndStream = makeScrollEndStream(options);
+  var scrollEndStream = ScrollEndStream.create(options);
 
   this.on = function(name, cb) {
     if ('scrollEnd' === name) {
@@ -17,10 +17,10 @@ var ScrollController = function ScrollController(options) {
     }
   };
 
-  var resizeStream = makeResizeStream();
+  var resizeStream = ResizeStream.create();
 
   this.observeElement = function observeElement(elem) {
-    var trackerStream = makeElementTrackerStream(elem, scrollEndStream, resizeStream);
+    var trackerStream = ElementTrackerStream.create(elem, scrollEndStream, resizeStream);
 
     return {
       on: function(name, cb) {
@@ -30,4 +30,4 @@ var ScrollController = function ScrollController(options) {
   };
 };
 
-export { ScrollController };
+export default = ScrollController;

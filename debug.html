@@ -4,12 +4,13 @@
   <title>morlock.js Debugger</title>
 </head>
 <body>
+  <div class="js-responsive-image">
   <div style="height: 1000px;"></div>
   <div id="hi" style="height: 500px; background: red;"></div>
   <div style="height: 5000px;"></div>
   <script data-main="dist/morlock-0.0.0.js" src="test/vendor/require.js"></script>
   <script>
-    require(['morlock', 'morlock/core/stream', 'morlock/streams/resize-stream'], function(m, s, r) {
+    require(['morlock', 'morlock/core/stream', 'morlock/core/util', 'morlock/streams/resize-stream'], function(m, s, u, r) {
       rc = new m.ResizeController({
         breakpoints: {
           'mobile': { max: 767 },
@@ -23,7 +24,7 @@
       });
 
       var timeoutStream = s.timeout(1000);
-      var resizeStream = r.makeResizeStream({ throttleMs: 0 });
+      var resizeStream = r.create({ throttleMs: 0 });
       var dimensionsStream = s.map(function() {
         return [window.innerWidth, window.innerHeight];
       }, resizeStream);
@@ -32,12 +33,18 @@
         console.log('Every 1000ms', v);
       });
 
-      // s.createFromRAF().onValue(function(t) {
+      // s.onValue(s.createFromRAF(), function(t) {
       //   console.log(t)
       // })
 
+      var responsiveImages = u.map(function(elem) {
+        return m.ResponsiveImage.createFromElement(elem);
+      }, document.getElementsByClassName('js-responsive-image'));
+
       rc.on('breakpoint', function(e) {
         console.log('breakpoint', e);
+
+        u.map(m.ResponsiveImage.update, responsiveImages);
       });
 
       sc = new m.ScrollController({
