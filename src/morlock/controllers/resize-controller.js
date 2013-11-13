@@ -36,17 +36,11 @@ var ResizeController = function ResizeController(options) {
 
   if (breakpointStream) {
     Stream.onValue(breakpointStream, function(e) {
-      var eventType = first(e);
-
-      if ('enter' === eventType) {
-        activeBreakpoints[e[1]] = true;
-      } else if ('exit' === eventType) {
-        activeBreakpoints[e[1]] = false;
-      }
+      activeBreakpoints[e[0]] = e[1];
     });
   }
 
-  this.getActiveBreakpoints = function getActiveBreakpoints(activeBreakpoints) {
+  this.getActiveBreakpoints = function getActiveBreakpoints() {
     var isActive = compose(isTrue, partial(get, activeBreakpoints));
     return select(isActive, objectKeys(activeBreakpoints));
   };

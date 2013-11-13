@@ -154,13 +154,10 @@ function getRect(elem, buffer) {
  * @return {Object} The resulting object.
  */
 function mapObject(f, obj) {
-  var out = {};
-
-  map(function(key) {
-    out[key] = f(obj[key], key);
-  }, objectKeys(obj));
-
-  return out;
+  return reduce(function(sum, v) {
+    sum[v] = f(obj[v], v);
+    return sum;
+  }, objectKeys(obj), {});
 }
 
 /**
@@ -170,13 +167,9 @@ function mapObject(f, obj) {
  * @return {Object} The resulting object.
  */
 function map(f, arr) {
-  var out = [];
-
-  for (var i = 0; i < arr.length; i++) {
-    out.push(f(arr[i]));
-  }
-
-  return out;
+  return reduce(function(sum, v) {
+    return push(sum, f(v));
+  }, arr, []);
 }
 
 /**
@@ -227,7 +220,7 @@ function flip(f) {
 }
 
 function isEmpty(arr) {
-  return !arr.length;
+  return arr.length <= 0;
 }
 
 function objectVals(obj) {
@@ -274,26 +267,24 @@ function tailCall(fn /*, args*/) {
 }
 
 function reduce(f, arr, val) {
-  return (function recur(f, input, output) {
-    return isEmpty(input)
-      ? output
-      : recur(f, shift(input), f(output, first(input)));
-  })(f, arr, val);
+  var _reduce = trampoline(function myself(sum, list) {
+    return !isEmpty(list) ?
+      tailCall(myself, f(sum, first(list)), rest(list)) :
+      sum;
+  });
+
+  return _reduce(val, arr);
 }
 
 function select(f, arr) {
   return reduce(function(sum, v) {
-    return isTrue(v)
-      ? push(sum, v)
-      : sum;
+    return isTrue(f(v)) ? push(sum, v) : sum;
   }, arr, []);
 }
 
 function reject(f, arr) {
   return reduce(function(sum, v) {
-    return !isTrue(v)
-      ? push(sum, v)
-      : sum;
+    return !isTrue(f(v)) ? push(sum, v) : sum;
   }, arr, []);
 }
 
