@@ -1,3 +1,11 @@
+function slice(arr, pos) {
+  return Array.prototype.slice.call(arr, pos);
+}
+
+function copyArray(arr) {
+  return slice(arr, 0);
+}
+
 /**
  * Backwards compatible Array.prototype.indexOf
  * @param {Array} list List of items.
@@ -177,10 +185,8 @@ function map(f, arr) {
  * @param {String} fName The function.
  * @return {Object} The resulting object.
  */
-function invokeObject() {
-  var args = Array.prototype.slice.call(arguments, 1);
-  var obj = args.shift();
-  var fName = args.shift();
+function invokeObject(obj, fName /* args */) {
+  var args = slice(arguments, 2);
 
   return mapObject(function(val) {
     return val[fName].apply(val, args);
@@ -215,9 +221,9 @@ function set(obj, key, v) {
 }
 
 function flip(f) {
-  return variadic(function(args) {
-    apply(f, args.reverse());
-  });
+  return function() {
+    apply(f, Array.prototype.reverse.call(arguments));
+  };
 }
 
 function isEmpty(arr) {
@@ -226,6 +232,45 @@ function isEmpty(arr) {
 
 function objectVals(obj) {
   return map(partial(get, obj), objectKeys(obj));
+}
+
+function Thunk(fn) {
+  this.fn = fn;
+}
+
+Thunk.prototype.exec = function () {
+  return this.fn();
+};
+    
+function trampoline(fn) {
+  var trampolined = function() {
+    var result = fn.apply(this, arguments);
+    
+    while (result instanceof Thunk) {
+      result = result.exec();
+    }
+    
+    return result;
+  };
+
+  trampolined.original_fn = fn;
+
+  return trampolined;
+}
+
+function tailCall(fn /*, args*/) {
+  var self = this;
+  var args = rest(arguments);
+
+  if (fn.original_fn instanceof Function) {
+    return new Thunk(function() {
+      return fn.original_fn.apply(self, args);
+    });
+  } else {
+    return new Thunk(function() {
+      return fn.apply(self, args);
+    });
+  }
 }
 
 function reduce(f, arr, val) {
@@ -292,11 +337,14 @@ function functionBind(f, obj) {
 /**
  * Partially apply a function.
  */
-var partial = variadic(function partial(f, args) {
-  return variadic(function(args2) {
+function partial(f /*, args*/) {
+  var args = rest(arguments);
+
+  return function() {
+    var args2 = slice(arguments, 0);
     return f.apply(this, args.concat(args2));
-  });
-});
+  };
+}
 
 /**
  * Find out if an array contains a value.
@@ -318,41 +366,24 @@ function arrayIndexOf(arr, val) {
   return -1;
 }
 
-function variadic(fn) {
-  var argLength = fn.length;
-
-  if (argLength < 1) {
-    return fn;
-  } else if (argLength === 1)  {
-    return function() {
-      return fn.call(this, Array.prototype.slice.call(arguments, 0));
-    };
-  } else {
-    return function () {
-      var numberOfArgs = arguments.length,
-          namedArgs = Array.prototype.slice.call(arguments, 0, argLength - 1),
-          numberOfMissingNamedArgs = Math.max(argLength - numberOfArgs - 1, 0),
-          argPadding = new Array(numberOfMissingNamedArgs),
-          variadicArgs = Array.prototype.slice.call(arguments, fn.length - 1);
-
-      return fn.apply(this, namedArgs.concat(argPadding).concat([variadicArgs]));
-    };
-  }
-}
-
 function delay(f, ms) {
-  return variadic(function(args) {
-    setTimeout(apply(partial, f, args), ms);
-  });
+  return function() {
+    setTimeout(apply(partial, f, arguments), ms);
+  };
 }
 
 function apply(f, args) {
   return f.apply(null, args);
 }
 
-var call = variadic(function(f, args) {
-  return apply(f, args);
-});
+function rest(arr, fromStart) {
+  fromStart = ('undefined' !== typeof fromStart) ? fromStart : 1;
+  return slice(arr, fromStart);
+}
+
+function call(f /*, args */) {
+  return apply(f, rest(arguments));
+}
 
 function eventListener(target, eventName, cb) {
   if (target.addEventListener) {
@@ -372,7 +403,10 @@ function nth(idx, arr) {
   return arr[idx];
 }
 
-var first = partial(nth, 0);
+function first(arr) {
+  return arr[0];
+}
+
 var isTrue = partial(equals, true);
 
 function toArray(v) {
@@ -380,39 +414,42 @@ function toArray(v) {
 }
 
 function unshift(arr, v) {
-  var arr2 = arr.slice(0);
+  var arr2 = copyArray(arr);
   Array.prototype.unshift.call(arr2, v);
   return arr2;
 }
 
 function shift(arr, v) {
-  var arr2 = arr.slice(0);
+  var arr2 = copyArray(arr);
   Array.prototype.shift.call(arr2, v);
   return arr2;
 }
 
 function push(arr, v) {
-  var arr2 = arr.slice(0);
+  var arr2 = copyArray(arr);
   Array.prototype.push.call(arr2, v);
   return arr2;
 }
 
 function sortBy(arr, f) {
-  var arr2 = arr.slice(0);
+  var arr2 = copyArray(arr);
   Array.prototype.sort.call(arr2, f);
   return arr2;
 }
 
-var compose = variadic(function(fns) {
+function compose(/*fns*/) {
+  var fns = arguments;
+
   return function(value) {
     for (var i = fns.length - 1; i >= 0; --i) {
       value = fns[i](value);
     }
     return value;
   };
-});
+}
 
-var once = variadic(function(f, args) {
+function once(f /*, args*/) {
+  var args = rest(arguments);
   var hasRun = false;
   return function() {
     if (!hasRun) {
@@ -420,7 +457,7 @@ var once = variadic(function(f, args) {
       return apply(f, args);
     }
   };
-});
+}
 
 function parseInteger(str) {
   return parseInt(str, 10);
@@ -429,7 +466,7 @@ function parseInteger(str) {
 export {
   indexOf, throttle, debounce, getViewportHeight, getViewportWidth, testMQ,
   getRect, mapObject, objectKeys, functionBind, partial, arrayIndexOf,
-  variadic, map, apply, objectVals, call, push, unshift, equals,
+  map, apply, objectVals, call, push, unshift, equals,
   delay, unshift, nth, first, compose, select, isTrue, get, shift, eventListener,
-  when, reduce, once, sortBy, parseInteger, set, flip
+  when, reduce, once, sortBy, parseInteger, set, flip, trampoline, tailCall
 };

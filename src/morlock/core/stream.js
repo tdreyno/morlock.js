@@ -2,7 +2,7 @@ import { debounce as debounceCall,
          throttle as throttleCall,
          delay as delayCall,
          map as mapArray,
-         variadic, push, apply, unshift, eventListener, compose, when,
+         first, rest, push, apply, unshift, eventListener, compose, when,
          partial, once } from "morlock/core/util";
 
 var nextID = 0;
@@ -97,14 +97,16 @@ function createFromRAF() {
   return outputStream;
 }
 
-var merge = variadic(function merge(args) {
+function merge(/*args*/) {
   var outputStream = create();
   var boundEmit = partial(emit, outputStream);
+  
   mapArray(function(stream) {
     return onValue(stream, boundEmit);
-  }, args);
+  }, arguments);
+
   return outputStream;
-});
+}
 
 function delay(ms, stream) {
   var outputStream = create();
