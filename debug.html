@@ -8,60 +8,62 @@
   <div style="height: 1000px;"></div>
   <div id="hi" style="height: 500px; background: red;"></div>
   <div style="height: 5000px;"></div>
-  <script data-main="dist/morlock-0.0.0.js" src="test/vendor/require.js"></script>
+  <script src="dist/morlock-0.0.0.js"></script>
   <script>
-    require(['morlock', 'morlock/core/stream', 'morlock/core/util', 'morlock/streams/resize-stream'], function(m, s, u, r) {
-      rc = new m.ResizeController({
-        breakpoints: {
-          'mobile': { max: 767 },
-          'tablet': { min: 768, max: 1043 },
-          'desktop': { min: 1044 }
-        }
-      });
+    rc = new ResizeController({
+      breakpoints: {
+        'mobile': { max: 767 },
+        'tablet': { min: 768, max: 1043 },
+        'desktop': { min: 1044 }
+      }
+    });
 
-      rc.on('resize', function(e) {
-        console.log('resize', e[0], e[1]);
-      });
+    rc.on('resize', function(e) {
+      console.log('resize', e[0], e[1]);
+    });
 
-      var timeoutStream = s.timeout(1000);
-      var resizeStream = r.create({ throttleMs: 0 });
-      var dimensionsStream = s.map(function() {
-        return [window.innerWidth, window.innerHeight];
-      }, resizeStream);
+    // var timeoutStream = s.timeout(1000);
+    // var resizeStream = r.create({ throttleMs: 0 });
+    // var dimensionsStream = s.map(function() {
+    //   return [window.innerWidth, window.innerHeight];
+    // }, resizeStream);
 
-      s.onValue(s.sample(dimensionsStream, timeoutStream), function(v) {
-        console.log('Every 1000ms', v);
-      });
+    // s.onValue(s.sample(dimensionsStream, timeoutStream), function(v) {
+    //   console.log('Every 1000ms', v);
+    // });
 
-      // s.onValue(s.createFromRAF(), function(t) {
-      //   console.log(t)
-      // })
+    // s.onValue(s.createFromRAF(), function(t) {
+    //   console.log(t)
+    // })
 
-      var responsiveImages = u.map(function(elem) {
-        return m.ResponsiveImage.createFromElement(elem);
-      }, document.getElementsByClassName('js-responsive-image'));
+    var responsiveImages = [];
+    var elems = document.getElementsByClassName('js-responsive-image');
+    for (var i = 0; i < elems.length; i++) {
+      responsiveImages.push(ResponsiveImage.createFromElement(elems[i]));
+    }
 
-      rc.on('breakpoint', function(e) {
-        console.log('breakpoint', e);
+    rc.on('breakpoint', function(e) {
+      console.log('breakpoint', e);
 
-        u.map(m.ResponsiveImage.update, responsiveImages);
-      });
+      for (var i = 0; i < responsiveImages.length; i++) {
+        ResponsiveImage.update(responsiveImages[i]);
+      }
+    });
 
-      sc = new m.ScrollController({
-        debounceMs: 400
-      });
+    sc = new ScrollController({
+      debounceMs: 400
+    });
 
-      sc.on('scrollEnd', function(e) {
-        console.log('scrollEnd');
-      });
+    sc.on('scrollEnd', function(e) {
+      console.log('scrollEnd');
+    });
 
-      var observer = sc.observeElement(document.getElementById('hi'));
-      observer.on('enter', function() {
-        console.log('enter');
-      });
-      observer.on('exit', function() {
-        console.log('exit');
-      });
+    var observer = sc.observeElement(document.getElementById('hi'));
+    observer.on('enter', function() {
+      console.log('enter');
+    });
+    observer.on('exit', function() {
+      console.log('exit');
     });
   </script>
 </body>
