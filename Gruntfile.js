@@ -18,7 +18,7 @@ module.exports = function (grunt) {
           expand: true,
           cwd: 'src/',
           src: ['**/*.js'],
-          dest: 'dist/'
+          dest: 'tmp/'
         }]
       }
     },
@@ -29,8 +29,8 @@ module.exports = function (grunt) {
           name: "../vendor/almond",
           include: ["morlock"],
           insertRequire: ['morlock'],
-          baseUrl: "dist/",
-          out: 'dist/<%= pkg.name %>-<%= pkg.version %>.js',
+          baseUrl: "tmp/",
+          out: 'dist/<%= pkg.name %>-<%= pkg.version %>.min.js',
           wrap: {
             startFile: 'frags/start.frag',
             endFile: 'frags/end.frag'
@@ -39,36 +39,24 @@ module.exports = function (grunt) {
       }
     },
 
-    // concat: {
-    //   dist: {
-    //     src: ['dist/<%= pkg.name %>/*.js'],
-    //     dest: 'dist/<%= pkg.name %>-<%= pkg.version %>.js'
-    //   },
-    //   test: {
-    //     src: ['dist/<%= pkg.name %>-<%= pkg.version %>.min.js'],
-    //     dest: 'tmp/<%= pkg.name %>.min.js'
-    //   }
-    // },
-
-    // uglify: {
-    //   dist: {
-    //     options: {
-    //       banner: '/*! <%= pkg.name %> - v<%= pkg.version %> - ' +
-    //       '<%= grunt.template.today("yyyy-mm-dd") %> */',
-    //       mangle: true
-    //     },
-    //     files: {
-    //       'dist/<%= pkg.name %>-<%= pkg.version %>.min.js': ['dist/<%= pkg.name %>-<%= pkg.version %>.js'],
-    //     }
-    //   }
-    // },
+    compress: {
+      dist: {
+        options: {
+          mode: 'gzip'
+        },
+        expand: true,
+        cwd: 'dist/',
+        src: ['*.js'],
+        dest: 'dist/'
+      }
+    },
 
     mocha_phantomjs: {
       all: ["test/**/*.html"]
     }
   });
 
-  this.registerTask('build', ['clean', 'transpile:amd', 'requirejs:dist']);
+  this.registerTask('build', ['clean', 'transpile:amd', 'requirejs:dist', 'compress:dist']);
   grunt.registerTask('test', ['build', 'mocha_phantomjs']);
   grunt.registerTask('default', [
     'build'

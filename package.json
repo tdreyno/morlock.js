@@ -1,6 +1,6 @@
 {
   "name": "morlock",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Low level libraries for responsive & interactive websites",
   "dependencies": {},
   "devDependencies": {
@@ -11,7 +11,8 @@
     "grunt-mocha-phantomjs": "~0.3.0",
     "grunt-contrib-uglify": "~0.2.4",
     "grunt-contrib-concat": "~0.3.0",
-    "grunt-contrib-requirejs": "~0.4.1"
+    "grunt-contrib-requirejs": "~0.4.1",
+    "grunt-contrib-compress": "~0.5.2"
   },
   "scripts": {
     "test": "grunt test",

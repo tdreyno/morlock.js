@@ -398,6 +398,10 @@ function first(arr) {
   return arr[0];
 }
 
+function last(arr) {
+  return arr[arr.length - 1];
+}
+
 var isTrue = partial(equals, true);
 
 function toArray(v) {
@@ -458,6 +462,7 @@ export {
   indexOf, throttle, debounce, getViewportHeight, getViewportWidth, testMQ,
   getRect, mapObject, objectKeys, functionBind, partial, arrayIndexOf,
   map, apply, objectVals, call, push, unshift, equals,
-  delay, unshift, nth, first, compose, select, isTrue, get, shift, eventListener,
-  when, reduce, once, sortBy, parseInteger, set, flip, trampoline, tailCall
+  delay, unshift, nth, first, last, compose, select, isTrue, get, shift, eventListener,
+  when, reduce, once, sortBy, parseInteger, set, flip, trampoline, tailCall,
+  copyArray
 };
