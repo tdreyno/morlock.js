@@ -4,7 +4,14 @@ module Stream from "morlock/core/stream";
 module BreakpointStream from "morlock/streams/breakpoint-stream";
 module ResizeStream from "morlock/streams/resize-stream";
 
-var ResizeController = function ResizeController(options) {
+/**
+ * Provides a familiar OO-style API for tracking resize events.
+ * @constructor
+ * @param {Object=} options The options passed to the resize tracker.
+ * @return {Object} The API with a `on` function to attach callbacks
+ *   to resize events and breakpoint changes.
+ */
+function ResizeController(options) {
   if (!(this instanceof ResizeController)) {
     return new ResizeController(options);
   }
@@ -44,6 +51,6 @@ var ResizeController = function ResizeController(options) {
     var isActive = compose(isTrue, partial(get, activeBreakpoints));
     return select(isActive, objectKeys(activeBreakpoints));
   };
-};
+}
 
 export default = ResizeController;

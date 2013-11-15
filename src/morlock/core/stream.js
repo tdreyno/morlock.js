@@ -3,8 +3,9 @@ import { debounce as debounceCall,
          delay as delayCall,
          map as mapArray,
          first, rest, push, apply, unshift, eventListener, compose, when,
-         partial, once } from "morlock/core/util";
+         partial, once, copyArray, flip, call } from "morlock/core/util";
 
+// Internal tracking of how many streams have been created.
 var nextID = 0;
 
 /**
@@ -27,9 +28,7 @@ function create(trackSubscribers) {
 }
 
 function emit(stream, val) {
-  mapArray(function(s) {
-    return s(val);
-  }, stream.subscribers);
+  mapArray(partial(flip(call), val), stream.subscribers);
 
   stream.value = val;
 }
@@ -42,9 +41,7 @@ function onValue(stream, f) {
   stream.subscribers.push(f);
 
   if (stream.trackSubscribers) {
-    mapArray(function(s) {
-      return s(f);
-    }, stream.subscriberSubscribers);
+    mapArray(partial(flip(call), f), stream.subscriberSubscribers);
   }
 }
 
@@ -97,58 +94,54 @@ function createFromRAF() {
   return outputStream;
 }
 
-function merge(/*args*/) {
+function merge(/* streams */) {
+  var streams = copyArray(arguments);
   var outputStream = create();
   var boundEmit = partial(emit, outputStream);
   
   mapArray(function(stream) {
     return onValue(stream, boundEmit);
-  }, arguments);
+  }, streams);
 
+  return outputStream;
+}
+
+function duplicateStreamOnEmit(stream, f, args) {
+  var outputStream = create();
+  var boundEmit = partial(emit, outputStream);
+  var boundArgs = map(function(v) {
+    return v === ':e:' ? boundEmit : v;
+  }, args);
+  onValue(stream, partial(f, boundArgs));
   return outputStream;
 }
 
 function delay(ms, stream) {
-  var outputStream = create();
-  var boundEmit = partial(emit, outputStream);
-  onValue(stream, delayCall(boundEmit, ms));
-  return outputStream;
+  if (ms <= 0) { return stream; }
+  return duplicateStreamOnEmit(stream, delayCall, [':e:', ms]);
 }
 
 function throttle(ms, stream) {
-  var outputStream = create();
-  var boundEmit = partial(emit, outputStream);
-  var f = ms > 0 ? throttleCall(boundEmit, ms) : boundEmit;
-  onValue(stream, f);
-  return outputStream;
+  if (ms <= 0) { return stream; }
+  return duplicateStreamOnEmit(stream, throttleCall, [':e:', ms]);
 }
 
 function debounce(ms, stream) {
-  var outputStream = create();
-  var boundEmit = partial(emit, outputStream);
-  onValue(stream, debounceCall(boundEmit, ms));
-  return outputStream;
+  if (ms <= 0) { return stream; }
+  return duplicateStreamOnEmit(stream, debounceCall, [':e:', ms]);
 }
 
 function map(f, stream) {
-  var outputStream = create();
-  var boundEmit = partial(emit, outputStream);
-  onValue(stream, compose(boundEmit, f));
-  return outputStream;
+  return duplicateStreamOnEmit(stream, compose, [':e:', f]);
 }
 
 function filter(f, stream) {
-  var outputStream = create();
-  var boundEmit = partial(emit, outputStream);
-  onValue(stream, when(f, boundEmit));
-  return outputStream;
+  return duplicateStreamOnEmit(stream, when, [f, ':e:']);
 }
 
 function sample(sourceStream, sampleStream) {
-  var outputStream = create();
-  var boundEmit = partial(emit, outputStream);
-  onValue(sampleStream, compose(boundEmit, partial(getValue, sourceStream)));
-  return outputStream;
+  return duplicateStreamOnEmit(stream,
+    compose, [':e:', partial(getValue, sourceStream)]);
 }
 
 export { create, emit, getValue, onValue, onSubscription, createFromEvents,

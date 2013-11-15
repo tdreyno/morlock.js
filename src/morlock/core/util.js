@@ -363,6 +363,10 @@ function delay(f, ms) {
   };
 }
 
+function defer(f, ms) {
+  return delay(f, 'undefined' !== typeof ms ? 1 : ms);
+}
+
 function apply(f, args) {
   return f.apply(null, args);
 }
@@ -464,5 +468,5 @@ export {
   map, apply, objectVals, call, push, unshift, equals,
   delay, unshift, nth, first, last, compose, select, isTrue, get, shift, eventListener,
   when, reduce, once, sortBy, parseInteger, set, flip, trampoline, tailCall,
-  copyArray
+  copyArray, defer
 };

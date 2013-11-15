@@ -6,3 +6,4 @@ Gemfile.lock
 bin
 .bundle
 build
+npm-debug.log
