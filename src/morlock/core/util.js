@@ -468,5 +468,5 @@ export {
   map, apply, objectVals, call, push, unshift, equals,
   delay, unshift, nth, first, last, compose, select, isTrue, get, shift, eventListener,
   when, reduce, once, sortBy, parseInteger, set, flip, trampoline, tailCall,
-  copyArray, defer
+  copyArray, defer, slice
 };
