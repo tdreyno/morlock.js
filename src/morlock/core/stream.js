@@ -2,6 +2,7 @@ import { debounce as debounceCall,
          throttle as throttleCall,
          delay as delayCall,
          map as mapArray,
+         apply,
          first, rest, push, apply, unshift, eventListener, compose, when,
          partial, once, copyArray, flip, call } from "morlock/core/util";
 
@@ -64,7 +65,7 @@ function createFromEvents(target, eventName) {
   return outputStream;
 }
 
-function timeout(ms) {
+function interval(ms) {
   var outputStream = create(true);
   var boundEmit = partial(emit, outputStream);
 
@@ -72,6 +73,19 @@ function timeout(ms) {
    * Lazily subscribes to a timeout event.
    */
   var attachListener = partial(setInterval, boundEmit, ms);
+  onSubscription(outputStream, once(attachListener));
+
+  return outputStream;
+}
+
+function timeout(ms) {
+  var outputStream = create(true);
+  var boundEmit = partial(emit, outputStream);
+
+  /**
+   * Lazily subscribes to a timeout event.
+   */
+  var attachListener = partial(setTimeout, boundEmit, ms);
   onSubscription(outputStream, once(attachListener));
 
   return outputStream;
@@ -106,44 +120,44 @@ function merge(/* streams */) {
   return outputStream;
 }
 
-function duplicateStreamOnEmit(stream, f, args) {
+function _duplicateStreamOnEmit(stream, f, args) {
   var outputStream = create();
   var boundEmit = partial(emit, outputStream);
-  var boundArgs = map(function(v) {
+  var boundArgs = mapArray(function(v) {
     return v === ':e:' ? boundEmit : v;
   }, args);
-  onValue(stream, partial(f, boundArgs));
+  onValue(stream, apply(apply, [f, boundArgs]));
   return outputStream;
 }
 
 function delay(ms, stream) {
   if (ms <= 0) { return stream; }
-  return duplicateStreamOnEmit(stream, delayCall, [':e:', ms]);
+  return _duplicateStreamOnEmit(stream, delayCall, [':e:', ms]);
 }
 
 function throttle(ms, stream) {
   if (ms <= 0) { return stream; }
-  return duplicateStreamOnEmit(stream, throttleCall, [':e:', ms]);
+  return _duplicateStreamOnEmit(stream, throttleCall, [':e:', ms]);
 }
 
 function debounce(ms, stream) {
   if (ms <= 0) { return stream; }
-  return duplicateStreamOnEmit(stream, debounceCall, [':e:', ms]);
+  return _duplicateStreamOnEmit(stream, debounceCall, [':e:', ms]);
 }
 
 function map(f, stream) {
-  return duplicateStreamOnEmit(stream, compose, [':e:', f]);
+  return _duplicateStreamOnEmit(stream, compose, [':e:', f]);
 }
 
 function filter(f, stream) {
-  return duplicateStreamOnEmit(stream, when, [f, ':e:']);
+  return _duplicateStreamOnEmit(stream, when, [f, ':e:']);
 }
 
 function sample(sourceStream, sampleStream) {
-  return duplicateStreamOnEmit(stream,
+  return _duplicateStreamOnEmit(sampleStream,
     compose, [':e:', partial(getValue, sourceStream)]);
 }
 
 export { create, emit, getValue, onValue, onSubscription, createFromEvents,
          timeout, createFromRAF, merge, delay, throttle, debounce, map,
-         filter, sample };
+         filter, sample, interval };
