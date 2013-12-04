@@ -1,4 +1,3 @@
-import { defer } from "morlock/core/util";
 module Stream from "morlock/core/stream";
 
 /**
@@ -24,9 +23,9 @@ function create(options) {
                  Stream.createFromEvents(window, 'orientationchange'))
   );
 
-  defer(function() {
+  setTimeout(function() {
     window.dispatchEvent(new Event('resize'));
-  });
+  }, 10);
 
   return resizedStream;
 }

@@ -8,7 +8,7 @@
   <div style="height: 1000px;"></div>
   <div id="hi" style="height: 500px; background: red;"></div>
   <div style="height: 5000px;"></div>
-  <script src="dist/morlock-0.0.0.js"></script>
+  <script src="dist/morlock-0.0.1.min.js"></script>
   <script>
     rc = new ResizeController({
       breakpoints: {
@@ -22,13 +22,13 @@
       console.log('resize', e[0], e[1]);
     });
 
-    // var timeoutStream = s.timeout(1000);
+    // var intervalStream = s.interval(1000);
     // var resizeStream = r.create({ throttleMs: 0 });
     // var dimensionsStream = s.map(function() {
     //   return [window.innerWidth, window.innerHeight];
     // }, resizeStream);
 
-    // s.onValue(s.sample(dimensionsStream, timeoutStream), function(v) {
+    // s.onValue(s.sample(dimensionsStream, intervalStream), function(v) {
     //   console.log('Every 1000ms', v);
     // });
 

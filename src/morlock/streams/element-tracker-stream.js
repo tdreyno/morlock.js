@@ -25,10 +25,10 @@ function create(element, scrollStream, resizeStream) {
 
     if (isVisible && !inY) {
       isVisible = false;
-      trackerStream.emit('exit');
+      Stream.emit(trackerStream, 'exit');
     } else if (!isVisible && inY) {
       isVisible = true;
-      trackerStream.emit('enter');
+      Stream.emit(trackerStream, 'enter');
     }
   }
 
