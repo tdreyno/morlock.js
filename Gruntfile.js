@@ -56,12 +56,21 @@ module.exports = function (grunt) {
     },
 
     mocha_phantomjs: {
-      all: ["test/**/*.html"]
+      all: ["test/*.html"]
+    },
+
+    casperjs: {
+      options: {
+        async: {
+          parallel: true
+        }
+      },
+      files: ['test/casperjs/**/*.js']
     }
   });
 
   this.registerTask('build', ['clean', 'transpile:amd', 'requirejs:dist', 'compress:dist']);
-  grunt.registerTask('test', ['build', 'mocha_phantomjs']);
+  grunt.registerTask('test', ['build', 'mocha_phantomjs', 'casperjs']);
   grunt.registerTask('default', [
     'build'
   ]);
