@@ -1,7 +1,18 @@
+/**
+ * Slice an array.
+ * @param {Array} arr The original array.
+ * @param {Number} pos The position to slice from.
+ * @return {Array} New sliced array.
+ */
 function slice(arr, pos) {
   return Array.prototype.slice.call(arr, pos);
 }
 
+/**
+ * Shallow copy an array.
+ * @param {Array} arr The original array.
+ * @return {Array} New copied array.
+ */
 function copyArray(arr) {
   return slice(arr, 0);
 }
@@ -13,6 +24,10 @@ function copyArray(arr) {
  * @return {Number} Index of match or -1 if not found.
  */
 function indexOf(list, item) {
+  if (Array.prototype.indexOf) {
+    return list.indexOf(item);
+  }
+
   for (var i = 0; i < list.length; i++) {
     if (list[i] === item) {
       return i;
@@ -173,20 +188,6 @@ function map(f, arr) {
 }
 
 /**
- * Call a function over an object.
- * @param {Object} obj The object.
- * @param {String} fName The function.
- * @return {Object} The resulting object.
- */
-function invokeObject(obj, fName /* args */) {
-  var args = slice(arguments, 2);
-
-  return mapObject(function(val) {
-    return val[fName].apply(val, args);
-  }, obj);
-}
-
-/**
  * Get the keys of an object.
  * @param {Object} obj The object.
  * @return {Array} An array of keys.
@@ -198,24 +199,45 @@ function objectKeys(obj) {
 
   var out = [];
 
-  mapObject(obj, function(_, key) {
-    out.push(key);
-  });
+  for (var key in obj) {
+    if (obj.hasOwnProperty(key)) {
+      out.push(key);
+    }
+  }
 
   return out;
 }
 
+/**
+ * Get a value on an object.
+ * @param {Object} obj The object.
+ * @param {String} key The key.
+ * @return {Object} Some result.
+ */
 function get(obj, key) {
   return obj[key];
 }
 
+/**
+ * Set a value on an object.
+ * @param {Object} obj The object.
+ * @param {String} key The key.
+ * @param {String} v The value.
+ */
 function set(obj, key, v) {
   obj[key] = v;
 }
 
+// function invoke(fName/*, args */) {
+//   var args = rest(arguments);
+//   return function(obj) {
+//     return obj[fName].apply(obj, args);
+//   };
+// }
+
 function flip(f) {
   return function() {
-    apply(f, Array.prototype.reverse.call(arguments));
+    return apply(f, Array.prototype.reverse.call(arguments));
   };
 }
 
@@ -337,29 +359,9 @@ function partial(f /*, args*/) {
   };
 }
 
-/**
- * Find out if an array contains a value.
- * @param {Array} arr The array.
- * @param {Object} val The value.
- * @return {Number} The index of match or -1.
- */
-function arrayIndexOf(arr, val) {
-  if (Array.prototype.indexOf) {
-    return arr.indexOf(val);
-  }
-
-  for (var i = 0; i < arr.length; i++) {
-    if (arr[i] === val) {
-      return i;
-    }
-  }
-
-  return -1;
-}
-
 function delay(f, ms) {
   return function() {
-    setTimeout(apply(partial, f, arguments), ms);
+    setTimeout(partial(f, arguments), ms);
   };
 }
 
@@ -408,10 +410,6 @@ function last(arr) {
 
 var isTrue = partial(equals, true);
 
-function toArray(v) {
-  return [v];
-}
-
 function unshift(arr, v) {
   var arr2 = copyArray(arr);
   Array.prototype.unshift.call(arr2, v);
@@ -427,6 +425,12 @@ function shift(arr, v) {
 function push(arr, v) {
   var arr2 = copyArray(arr);
   Array.prototype.push.call(arr2, v);
+  return arr2;
+}
+
+function pop(arr, v) {
+  var arr2 = copyArray(arr);
+  Array.prototype.pop.call(arr2, v);
   return arr2;
 }
 
@@ -464,9 +468,9 @@ function parseInteger(str) {
 
 export {
   indexOf, throttle, debounce, getViewportHeight, getViewportWidth, testMQ,
-  getRect, mapObject, objectKeys, functionBind, partial, arrayIndexOf,
-  map, apply, objectVals, call, push, unshift, equals,
+  getRect, mapObject, objectKeys, functionBind, partial,
+  map, apply, objectVals, call, push, pop, unshift, equals, not,
   delay, unshift, nth, first, last, compose, select, isTrue, get, shift, eventListener,
   when, reduce, once, sortBy, parseInteger, set, flip, trampoline, tailCall,
-  copyArray, defer, slice
+  copyArray, defer, slice, isEmpty, reject, rest
 };
