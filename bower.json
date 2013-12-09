@@ -1,8 +1,8 @@
 {
   "name": "morlock",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Low level libraries for responsive & interactive websites",
-  "main": "dist/masonry.js",
+  "main": "dist/morlock.js",
   "dependencies": {},
   "devDependencies": {},
   "ignore": [
