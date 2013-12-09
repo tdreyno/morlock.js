@@ -71,12 +71,12 @@ module.exports = function (grunt) {
     release: {
       options: {
         file: 'bower.json',
-        npm: false,
+        npm: false/*,
         github: { 
           repo: 'tdreyno/morlock.js',
           usernameVar: 'GITHUB_USERNAME',
           passwordVar: 'GITHUB_MORLOCK_KEY'
-        }
+        }*/
       }
     }
   });

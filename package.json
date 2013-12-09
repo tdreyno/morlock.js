@@ -1,6 +1,5 @@
 {
   "name": "morlock",
-  "version": "0.0.0",
   "description": "Low level libraries for responsive & interactive websites",
   "dependencies": {},
   "devDependencies": {
