@@ -11,7 +11,7 @@ module.exports = function (grunt) {
 
     clean: {
       build: {
-        src: ["dist", "tmp"]
+        src: ["dist"]
       }
     },
 
@@ -22,7 +22,7 @@ module.exports = function (grunt) {
           expand: true,
           cwd: 'src/',
           src: ['**/*.js'],
-          dest: 'tmp/'
+          dest: 'dist/'
         }]
       }
     },
@@ -31,10 +31,10 @@ module.exports = function (grunt) {
       dist: {
         options: {
           name: "../vendor/almond",
-          include: ["morlock"],
-          insertRequire: ['morlock'],
-          baseUrl: "tmp/",
-          out: 'dist/<%= pkg.name %>-<%= pkg.version %>.min.js',
+          include: ["morlock/base"],
+          insertRequire: ['morlock/base'],
+          baseUrl: "dist/",
+          out: 'dist/<%= pkg.name %>.min.js',
           wrap: {
             startFile: 'frags/start.frag',
             endFile: 'frags/end.frag'
@@ -66,6 +66,19 @@ module.exports = function (grunt) {
         }
       },
       files: ['test/casperjs/**/*.js']
+    },
+
+    release: {
+      options: {
+        bump: false,
+        file: 'bower.json',
+        npm: false,
+        github: { 
+          repo: 'tdreyno/morlock.js',
+          usernameVar: 'GITHUB_USERNAME',
+          passwordVar: 'GITHUB_MORLOCK_KEY'
+        }
+      }
     }
   });
 

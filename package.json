@@ -1,6 +1,6 @@
 {
   "name": "morlock",
-  "version": "0.0.1",
+  "version": "0.0.0",
   "description": "Low level libraries for responsive & interactive websites",
   "dependencies": {},
   "devDependencies": {
@@ -14,7 +14,8 @@
     "grunt-contrib-requirejs": "~0.4.1",
     "grunt-contrib-compress": "~0.5.2",
     "grunt-contrib-jshint": "~0.7.1",
-    "grunt-casperjs": "~1.4.0"
+    "grunt-casperjs": "~1.4.0",
+    "grunt-release": "~0.6.0"
   },
   "scripts": {
     "test": "grunt test",
