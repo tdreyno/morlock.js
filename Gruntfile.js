@@ -70,7 +70,6 @@ module.exports = function (grunt) {
 
     release: {
       options: {
-        bump: false,
         file: 'bower.json',
         npm: false,
         github: { 

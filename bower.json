@@ -1,10 +1,27 @@
 {
   "name": "morlock",
-  "version": "0.0.1",
+  "version": "0.0.0",
   "description": "Low level libraries for responsive & interactive websites",
   "main": "dist/masonry.js",
   "dependencies": {
   },
   "devDependencies": {
-  }
+  },
+  "ignore": [
+    "**/.*",
+    "_*",
+    "docs",
+    "frags",
+    "src",
+    "test",
+    "vendor",
+    "debug.html"
+  ],
+  "keywords": [
+    "responsive",
+    "functional",
+    "streams"
+  ],
+  "author": "Thomas Reynolds",
+  "license": "Non-commercial: GPLv3; Commercial: TBD"
 }
