@@ -1,13 +1,14 @@
 define("morlock/controllers/scroll-controller", 
-  ["morlock/core/util","morlock/core/stream","morlock/streams/scroll-stream","morlock/streams/resize-stream","morlock/streams/element-tracker-stream","exports"],
-  function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __dependency5__, __exports__) {
+  ["morlock/core/util","morlock/core/stream","morlock/streams/scroll-stream","morlock/streams/resize-stream","morlock/streams/element-tracker-stream","morlock/streams/scroll-tracker-stream","exports"],
+  function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __dependency5__, __dependency6__, __exports__) {
     "use strict";
     var partial = __dependency1__.partial;
     var equals = __dependency1__.equals;
     var Stream = __dependency2__;
-    var ScrollEndStream = __dependency3__;
+    var ScrollStream = __dependency3__;
     var ResizeStream = __dependency4__;
     var ElementTrackerStream = __dependency5__;
+    var ScrollTrackerStream = __dependency6__;
 
     /**
      * Provides a familiar OO-style API for tracking scroll events.
@@ -22,7 +23,7 @@ define("morlock/controllers/scroll-controller",
         return new ScrollController(options);
       }
 
-      var scrollEndStream = ScrollEndStream.create(options);
+      var scrollEndStream = ScrollStream.create(options);
 
       this.on = function(name, cb) {
         if ('scrollEnd' === name) {
@@ -42,6 +43,35 @@ define("morlock/controllers/scroll-controller",
         };
       };
     }
+
+    ScrollController.observeScrollPosition = function observeScrollPosition(scrollY, options) {
+      var stream = ScrollTrackerStream.create(scrollY);
+
+      return {
+        on: function(/* name, cb */) {
+          var name = 'both';
+          var cb;
+
+          if (arguments.length === 1) {
+            cb = arguments[0];
+          } else {
+            name = arguments[0];
+            cb = arguments[1];
+          }
+
+          var filteredStream;
+          if (name === 'both') {
+            filteredStream = stream;
+          } else {
+            filteredStream = Stream.filter(partial(equals, name), stream);
+          }
+
+          Stream.onValue(filteredStream, cb);
+
+          return this;
+        }
+      };
+    };
 
     __exports__["default"] = ScrollController;
   });

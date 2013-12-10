@@ -29,5 +29,15 @@ define("morlock/streams/scroll-stream",
       return scrollEndStream;
     }
 
+    function createFromEvents() {
+      return Stream.map(
+        function() {
+          return window.scrollY;
+        },
+        Stream.createFromEvents(window, 'scroll')
+      );
+    }
+
     __exports__.create = create;
+    __exports__.createFromEvents = createFromEvents;
   });

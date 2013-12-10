@@ -1,8 +1,9 @@
 import { partial, equals } from "morlock/core/util";
 module Stream from "morlock/core/stream";
-module ScrollEndStream from "morlock/streams/scroll-stream";
+module ScrollStream from "morlock/streams/scroll-stream";
 module ResizeStream from "morlock/streams/resize-stream";
 module ElementTrackerStream from "morlock/streams/element-tracker-stream";
+module ScrollTrackerStream from "morlock/streams/scroll-tracker-stream";
 
 /**
  * Provides a familiar OO-style API for tracking scroll events.
@@ -17,7 +18,7 @@ function ScrollController(options) {
     return new ScrollController(options);
   }
 
-  var scrollEndStream = ScrollEndStream.create(options);
+  var scrollEndStream = ScrollStream.create(options);
 
   this.on = function(name, cb) {
     if ('scrollEnd' === name) {
@@ -37,5 +38,34 @@ function ScrollController(options) {
     };
   };
 }
+
+ScrollController.observeScrollPosition = function observeScrollPosition(scrollY, options) {
+  var stream = ScrollTrackerStream.create(scrollY);
+
+  return {
+    on: function(/* name, cb */) {
+      var name = 'both';
+      var cb;
+
+      if (arguments.length === 1) {
+        cb = arguments[0];
+      } else {
+        name = arguments[0];
+        cb = arguments[1];
+      }
+
+      var filteredStream;
+      if (name === 'both') {
+        filteredStream = stream;
+      } else {
+        filteredStream = Stream.filter(stream, partial(equals, name));
+      }
+
+      Stream.onValue(cb);
+
+      return this;
+    }
+  };
+};
 
 export default = ScrollController;
