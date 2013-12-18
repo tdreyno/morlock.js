@@ -25,4 +25,13 @@ function create(options) {
   return scrollEndStream;
 }
 
-export { create };
+function createFromEvents() {
+  return Stream.map(
+    function() {
+      return window.scrollY;
+    },
+    Stream.createFromEvents(window, 'scroll')
+  );
+}
+
+export { create, createFromEvents };

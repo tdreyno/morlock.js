@@ -65,6 +65,14 @@
     observer.on('exit', function() {
       console.log('exit');
     });
+
+
+   ScrollController.observeScrollPosition(200)
+    .on('before', function() {
+      console.log('before 200');
+    }).on('after', function() {
+      console.log('after 200');
+    });
   </script>
 </body>
 </html>
