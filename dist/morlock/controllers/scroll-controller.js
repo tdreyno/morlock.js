@@ -63,10 +63,10 @@ define("morlock/controllers/scroll-controller",
           if (name === 'both') {
             filteredStream = stream;
           } else {
-            filteredStream = Stream.filter(partial(equals, name), stream);
+            filteredStream = Stream.filter(stream, partial(equals, name));
           }
 
-          Stream.onValue(filteredStream, cb);
+          Stream.onValue(cb);
 
           return this;
         }
