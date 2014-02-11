@@ -197,6 +197,8 @@ define("morlock/core/util",
      * @return {Array} An array of keys.
      */
     function objectKeys(obj) {
+      if (!obj) { return []; }
+
       if (Object.keys) {
         return Object.keys(obj);
       }
@@ -246,7 +248,7 @@ define("morlock/core/util",
     }
 
     function isEmpty(arr) {
-      return arr.length <= 0;
+      return !(arr && arr.length);
     }
 
     function objectVals(obj) {

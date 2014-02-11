@@ -193,6 +193,8 @@ function map(f, arr) {
  * @return {Array} An array of keys.
  */
 function objectKeys(obj) {
+  if (!obj) { return []; }
+
   if (Object.keys) {
     return Object.keys(obj);
   }
@@ -242,7 +244,7 @@ function flip(f) {
 }
 
 function isEmpty(arr) {
-  return arr.length <= 0;
+  return !(arr && arr.length);
 }
 
 function objectVals(obj) {

@@ -33,8 +33,8 @@ define("morlock/core/stream",
       }
 
       this.trackSubscribers = !!trackSubscribers;
-      this.subscribers = [];
-      this.subscriberSubscribers = this.trackSubscribers ? [] : null;
+      this.subscribers = null;
+      this.subscriberSubscribers = null;
       this.streamID = nextID++;
       this.value = null; // TODO: Some kind of buffer
     }
@@ -54,6 +54,7 @@ define("morlock/core/stream",
     }
 
     function onValue(stream, f) {
+      stream.subscribers = stream.subscribers || [];
       stream.subscribers.push(f);
 
       if (stream.trackSubscribers) {
@@ -63,6 +64,7 @@ define("morlock/core/stream",
 
     function onSubscription(stream, f) {
       if (stream.trackSubscribers) {
+        stream.subscriberSubscribers = stream.subscriberSubscribers || [];
         stream.subscriberSubscribers.push(f);
       }
     }

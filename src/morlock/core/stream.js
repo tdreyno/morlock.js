@@ -18,8 +18,8 @@ function Stream(trackSubscribers) {
   }
 
   this.trackSubscribers = !!trackSubscribers;
-  this.subscribers = [];
-  this.subscriberSubscribers = this.trackSubscribers ? [] : null;
+  this.subscribers = null;
+  this.subscriberSubscribers = null;
   this.streamID = nextID++;
   this.value = null; // TODO: Some kind of buffer
 }
@@ -39,6 +39,7 @@ function getValue(stream) {
 }
 
 function onValue(stream, f) {
+  stream.subscribers = stream.subscribers || [];
   stream.subscribers.push(f);
 
   if (stream.trackSubscribers) {
@@ -48,6 +49,7 @@ function onValue(stream, f) {
 
 function onSubscription(stream, f) {
   if (stream.trackSubscribers) {
+    stream.subscriberSubscribers = stream.subscriberSubscribers || [];
     stream.subscriberSubscribers.push(f);
   }
 }
