@@ -18,7 +18,7 @@ define("morlock/streams/scroll-stream",
 
       var scrollEndStream = Stream.debounce(
         debounceMs,
-        Stream.createFromEvents(window, 'scroll')
+        createFromEvents()
       );
 
       // It's going to space, will you just give it a second!
@@ -31,7 +31,7 @@ define("morlock/streams/scroll-stream",
 
     function createFromEvents() {
       return Stream.map(
-        function() {
+        function getWindowPosition() {
           return window.scrollY;
         },
         Stream.createFromEvents(window, 'scroll')
@@ -39,5 +39,4 @@ define("morlock/streams/scroll-stream",
     }
 
     __exports__.create = create;
-    __exports__.createFromEvents = createFromEvents;
   });

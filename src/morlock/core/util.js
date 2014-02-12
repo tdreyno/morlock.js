@@ -468,11 +468,15 @@ function parseInteger(str) {
   return parseInt(str, 10);
 }
 
+function constantly(val) {
+  return val;
+}
+
 export {
   indexOf, throttle, debounce, getViewportHeight, getViewportWidth, testMQ,
   getRect, mapObject, objectKeys, functionBind, partial,
   map, apply, objectVals, call, push, pop, unshift, equals, not,
   delay, unshift, nth, first, last, compose, select, isTrue, get, shift, eventListener,
   when, reduce, once, sortBy, parseInteger, set, flip, trampoline, tailCall,
-  copyArray, defer, slice, isEmpty, reject, rest
+  copyArray, defer, slice, isEmpty, reject, rest, constantly
 };

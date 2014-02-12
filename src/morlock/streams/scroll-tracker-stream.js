@@ -10,19 +10,18 @@ module ScrollStream from "morlock/streams/scroll-stream";
  * @param {Stream} resizeStream A stream emitting resize events.
  * @return {Stream} The resulting stream.
  */
-
-function create(scrollY, scrollPositionStream) {
-  scrollPositionStream = scrollPositionStream || ScrollStream.createFromEvents();
+function create(targetScrollY, scrollPositionStream) {
+  scrollPositionStream = scrollPositionStream || ScrollStream.create({ debounceMs: 0 });
   var overTheLineStream = Stream.create();
   var pastScrollY = false;
 
-  Stream.onValue(scrollPositionStream, function(scrollTop){
-    if (pastScrollY && (scrollTop < scrollY)) {
+  Stream.onValue(scrollPositionStream, function(){
+    if (pastScrollY && (window.scrollY < targetScrollY)) {
       pastScrollY = false;
-      Stream.emit(overTheLineStream, 'before');
-    } else if (!pastScrollY && (scrollTop >= scrollY)) {
+      Stream.emit(overTheLineStream, ['before', targetScrollY]);
+    } else if (!pastScrollY && (window.scrollY >= targetScrollY)) {
       pastScrollY = true;
-      Stream.emit(overTheLineStream, 'after');
+      Stream.emit(overTheLineStream, ['after', targetScrollY]);
     }
   });
 

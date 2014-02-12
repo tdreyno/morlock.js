@@ -34,6 +34,7 @@ module.exports = function (grunt) {
           include: ["morlock/base"],
           insertRequire: ['morlock/base'],
           baseUrl: "dist/",
+          // optimize: 'none',
           out: 'dist/<%= pkg.name %>.min.js',
           wrap: {
             startFile: 'frags/start.frag',

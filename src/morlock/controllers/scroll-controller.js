@@ -1,4 +1,4 @@
-import { partial, equals } from "morlock/core/util";
+import { partial, equals, compose, constantly } from "morlock/core/util";
 module Stream from "morlock/core/stream";
 module ScrollStream from "morlock/streams/scroll-stream";
 module ResizeStream from "morlock/streams/resize-stream";
@@ -33,39 +33,44 @@ function ScrollController(options) {
 
     return {
       on: function on(name, cb) {
-        Stream.onValue(Stream.filter(partial(equals, name), trackerStream), cb);
+        var matchingStream = Stream.filter(partial(equals, name), trackerStream);
+        Stream.onValue(matchingStream, cb);
+
+        return this;
+      }
+    };
+  };
+
+  this.observePosition = function observePosition(targetScrollY) {
+    var trackerStream = ScrollTrackerStream.create(targetScrollY, scrollEndStream);
+
+    return {
+      on: function on(/* name, cb */) {
+        var name = 'both';
+        var cb;
+
+        if (arguments.length === 1) {
+          cb = arguments[0];
+        } else {
+          name = arguments[0];
+          cb = arguments[1];
+        }
+
+        var filteredStream;
+        if (name === 'both') {
+          filteredStream = trackerStream;
+        } else {
+          var first = require('morlock/core/util').first;
+          var matchesName = compose(partial(equals, name), first);
+          filteredStream = Stream.filter(matchesName, trackerStream);
+        }
+
+        Stream.onValue(filteredStream, cb);
+
+        return this;
       }
     };
   };
 }
-
-ScrollController.observeScrollPosition = function observeScrollPosition(scrollY, options) {
-  var stream = ScrollTrackerStream.create(scrollY);
-
-  return {
-    on: function(/* name, cb */) {
-      var name = 'both';
-      var cb;
-
-      if (arguments.length === 1) {
-        cb = arguments[0];
-      } else {
-        name = arguments[0];
-        cb = arguments[1];
-      }
-
-      var filteredStream;
-      if (name === 'both') {
-        filteredStream = stream;
-      } else {
-        filteredStream = Stream.filter(stream, partial(equals, name));
-      }
-
-      Stream.onValue(cb);
-
-      return this;
-    }
-  };
-};
 
 export default = ScrollController;

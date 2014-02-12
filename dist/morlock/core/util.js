@@ -472,6 +472,10 @@ define("morlock/core/util",
       return parseInt(str, 10);
     }
 
+    function constantly(val) {
+      return val;
+    }
+
     __exports__.indexOf = indexOf;
     __exports__.throttle = throttle;
     __exports__.debounce = debounce;
@@ -518,4 +522,5 @@ define("morlock/core/util",
     __exports__.isEmpty = isEmpty;
     __exports__.reject = reject;
     __exports__.rest = rest;
+    __exports__.constantly = constantly;
   });

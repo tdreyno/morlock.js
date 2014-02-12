@@ -14,7 +14,7 @@ function create(options) {
 
   var scrollEndStream = Stream.debounce(
     debounceMs,
-    Stream.createFromEvents(window, 'scroll')
+    createFromEvents()
   );
 
   // It's going to space, will you just give it a second!
@@ -27,11 +27,11 @@ function create(options) {
 
 function createFromEvents() {
   return Stream.map(
-    function() {
+    function getWindowPosition() {
       return window.scrollY;
     },
     Stream.createFromEvents(window, 'scroll')
   );
 }
 
-export { create, createFromEvents };
+export { create };
