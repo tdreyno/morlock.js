@@ -14,15 +14,18 @@ function create(targetScrollY, scrollPositionStream) {
   scrollPositionStream = scrollPositionStream || ScrollStream.create({ debounceMs: 0 });
   var overTheLineStream = Stream.create();
   var pastScrollY = false;
+  var firstRun = true;
 
   Stream.onValue(scrollPositionStream, function(){
-    if (pastScrollY && (window.scrollY < targetScrollY)) {
+    if ((firstRun || pastScrollY) && (window.scrollY < targetScrollY)) {
       pastScrollY = false;
       Stream.emit(overTheLineStream, ['before', targetScrollY]);
-    } else if (!pastScrollY && (window.scrollY >= targetScrollY)) {
+    } else if ((firstRun || !pastScrollY) && (window.scrollY >= targetScrollY)) {
       pastScrollY = true;
       Stream.emit(overTheLineStream, ['after', targetScrollY]);
     }
+
+    firstRun = false;
   });
 
   setTimeout(function() {

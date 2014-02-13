@@ -71,6 +71,13 @@
     }).on('after', function() {
       console.log('after 200');
     });
+
+    morlock.position.before(400, function() {
+      console.log('before 400');
+    });
+    morlock.position.after(400, function() {
+      console.log('after 400');
+    });
   </script>
 </body>
 </html>

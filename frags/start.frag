@@ -12,6 +12,7 @@
     root.ResizeController = parts.ResizeController;
     root.ResponsiveImage = parts.ResponsiveImage;
     root.ScrollController = parts.ScrollController;
+    root.morlock = parts.morlock;
   }
 }(this, function () {
   //almond, and your modules will be inlined here
