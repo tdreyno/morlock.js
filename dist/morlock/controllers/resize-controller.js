@@ -47,6 +47,8 @@ define("morlock/controllers/resize-controller",
             Stream.onValue(Stream.map(function(v) {
               return [first(v), v[1] ? 'enter' : 'exit'];
             }, breakpointStream), cb);
+          } else {
+            // No breakpoints defined.
           }
         }
       };

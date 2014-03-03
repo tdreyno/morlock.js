@@ -27,7 +27,7 @@ define("morlock/streams/breakpoint-stream",
 
         Stream.onValue(resizeStream, function() {
           var wasActive = Stream.getValue(s);
-          wasActive = 'undefined' !== typeof wasActive ? wasActive : false;
+          wasActive = wasActive !== null ? wasActive : false;
 
           if (wasActive !== testMQ(mq)) {
             Stream.emit(s, !wasActive);
