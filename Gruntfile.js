@@ -28,18 +28,27 @@ module.exports = function (grunt) {
     },
 
     requirejs: {
+      options: {
+        name: "../vendor/almond",
+        include: ["morlock/base"],
+        insertRequire: ['morlock/base'],
+        baseUrl: "dist/",
+        wrap: {
+          startFile: 'frags/start.frag',
+          endFile: 'frags/end.frag'
+        }
+      },
+
       dist: {
         options: {
-          name: "../vendor/almond",
-          include: ["morlock/base"],
-          insertRequire: ['morlock/base'],
-          baseUrl: "dist/",
-          // optimize: 'none',
-          out: 'dist/<%= pkg.name %>.min.js',
-          wrap: {
-            startFile: 'frags/start.frag',
-            endFile: 'frags/end.frag'
-          }
+          out: 'dist/<%= pkg.name %>.min.js'
+        }
+      },
+
+      dev: {
+        options: {
+          optimize: 'none',
+          out: 'dist/<%= pkg.name %>.js'
         }
       }
     },
@@ -82,7 +91,7 @@ module.exports = function (grunt) {
     }
   });
 
-  this.registerTask('build', ['clean', 'transpile:amd', 'requirejs:dist', 'compress:dist']);
+  this.registerTask('build', ['clean', 'transpile:amd', 'requirejs', 'compress:dist']);
   grunt.registerTask('test', ['build', 'mocha_phantomjs', 'casperjs']);
   grunt.registerTask('default', [
     'build'
