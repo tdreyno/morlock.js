@@ -583,12 +583,15 @@ define("morlock/core/util",
       }
       
       var bounds = elem.getBoundingClientRect();
+      var topWithCeiling = (window.scrollY < 0) ? bounds.top + window.scrollY : bounds.top;
+
+      console.log('top', topWithCeiling);
       
       var rect = {
         right: bounds.right + buffer,
         left: bounds.left - buffer,
         bottom: bounds.bottom + buffer,
-        top: bounds.top - buffer
+        top: topWithCeiling - buffer
       };
 
       rect.width = rect.right - rect.left;
@@ -977,6 +980,7 @@ define("morlock/core/stream",
     var copyArray = __dependency1__.copyArray;
     var flip = __dependency1__.flip;
     var call = __dependency1__.call;
+    var indexOf = __dependency1__.indexOf;
 
     // Internal tracking of how many streams have been created.
     var nextID = 0;
@@ -1016,6 +1020,15 @@ define("morlock/core/stream",
 
       if (stream.trackSubscribers) {
         mapArray(partial(flip(call), f), stream.subscriberSubscribers);
+      }
+    }
+
+    function offValue(stream, f) {
+      if (stream.subscribers) {
+        var idx = indexOf(stream.subscribers, f);
+        if (idx !== -1) {
+          stream.subscribers.splice(idx, 1);
+        }
       }
     }
 
@@ -1136,6 +1149,7 @@ define("morlock/core/stream",
     __exports__.emit = emit;
     __exports__.getValue = getValue;
     __exports__.onValue = onValue;
+    __exports__.offValue = offValue;
     __exports__.onSubscription = onSubscription;
     __exports__.createFromEvents = createFromEvents;
     __exports__.timeout = timeout;
@@ -1522,28 +1536,42 @@ define("morlock/controllers/scroll-controller",
       this.observePosition = function observePosition(targetScrollY) {
         var trackerStream = ScrollTrackerStream.create(targetScrollY, scrollEndStream);
 
+        var first = require('morlock/core/util').first;
+        var beforeStream = Stream.filter(compose(partial(equals, 'before'), first), trackerStream);
+        var afterStream = Stream.filter(compose(partial(equals, 'after'), first), trackerStream);
+
+        function onOffStream(args, f) {
+          var name = 'both';
+          var cb;
+
+          if (args.length === 1) {
+            cb = args[0];
+          } else {
+            name = args[0];
+            cb = args[1];
+          }
+
+          var filteredStream;
+          if (name === 'both') {
+            filteredStream = trackerStream;
+          } else if (name === 'before') {
+            filteredStream = beforeStream;
+          } else if (name === 'after') {
+            filteredStream = afterStream;
+          }
+
+          f(filteredStream, cb);
+        }
+
         return {
           on: function on(/* name, cb */) {
-            var name = 'both';
-            var cb;
+            onOffStream(arguments, Stream.onValue);
 
-            if (arguments.length === 1) {
-              cb = arguments[0];
-            } else {
-              name = arguments[0];
-              cb = arguments[1];
-            }
+            return this;
+          },
 
-            var filteredStream;
-            if (name === 'both') {
-              filteredStream = trackerStream;
-            } else {
-              var first = require('morlock/core/util').first;
-              var matchesName = compose(partial(equals, name), first);
-              filteredStream = Stream.filter(matchesName, trackerStream);
-            }
-
-            Stream.onValue(filteredStream, cb);
+          off: function(/* name, cb */) {
+            onOffStream(arguments, Stream.offValue);
 
             return this;
           }

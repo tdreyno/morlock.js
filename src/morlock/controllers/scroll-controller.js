@@ -44,28 +44,42 @@ function ScrollController(options) {
   this.observePosition = function observePosition(targetScrollY) {
     var trackerStream = ScrollTrackerStream.create(targetScrollY, scrollEndStream);
 
+    var first = require('morlock/core/util').first;
+    var beforeStream = Stream.filter(compose(partial(equals, 'before'), first), trackerStream);
+    var afterStream = Stream.filter(compose(partial(equals, 'after'), first), trackerStream);
+
+    function onOffStream(args, f) {
+      var name = 'both';
+      var cb;
+
+      if (args.length === 1) {
+        cb = args[0];
+      } else {
+        name = args[0];
+        cb = args[1];
+      }
+
+      var filteredStream;
+      if (name === 'both') {
+        filteredStream = trackerStream;
+      } else if (name === 'before') {
+        filteredStream = beforeStream;
+      } else if (name === 'after') {
+        filteredStream = afterStream;
+      }
+
+      f(filteredStream, cb);
+    }
+
     return {
       on: function on(/* name, cb */) {
-        var name = 'both';
-        var cb;
+        onOffStream(arguments, Stream.onValue);
 
-        if (arguments.length === 1) {
-          cb = arguments[0];
-        } else {
-          name = arguments[0];
-          cb = arguments[1];
-        }
+        return this;
+      },
 
-        var filteredStream;
-        if (name === 'both') {
-          filteredStream = trackerStream;
-        } else {
-          var first = require('morlock/core/util').first;
-          var matchesName = compose(partial(equals, name), first);
-          filteredStream = Stream.filter(matchesName, trackerStream);
-        }
-
-        Stream.onValue(filteredStream, cb);
+      off: function(/* name, cb */) {
+        onOffStream(arguments, Stream.offValue);
 
         return this;
       }

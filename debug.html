@@ -66,11 +66,29 @@
       console.log('exit');
     });
 
-    sc.observePosition(200).on('before', function() {
-      console.log('before 200');
-    }).on('after', function() {
-      console.log('after 200');
-    });
+    setTimeout(function() {
+      console.log('GO!')
+      var onBefore = function() {
+        console.log('ONOFF: before 200');
+      };
+      var onAfter = function() {
+        console.log('ONOFF: after 200');
+      };
+      var observer = sc.observePosition(200).on('before', onBefore).on('after', onAfter);
+
+      rc.on('resize', function() {
+        observer.off('before', onBefore).off('after', onAfter);
+
+        onBefore = function() {
+          console.log('ONOFF: before 400');
+        };
+        onAfter = function() {
+          console.log('ONOFF: after 400');
+        };
+
+        observer = sc.observePosition(400).on('before', onBefore).on('after', onAfter);
+      })
+    }, 2000);
 
     morlock.position.before(400, function() {
       console.log('before 400');

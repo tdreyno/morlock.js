@@ -152,12 +152,15 @@ define("morlock/core/util",
       }
       
       var bounds = elem.getBoundingClientRect();
+      var topWithCeiling = (window.scrollY < 0) ? bounds.top + window.scrollY : bounds.top;
+
+      console.log('top', topWithCeiling);
       
       var rect = {
         right: bounds.right + buffer,
         left: bounds.left - buffer,
         bottom: bounds.bottom + buffer,
-        top: bounds.top - buffer
+        top: topWithCeiling - buffer
       };
 
       rect.width = rect.right - rect.left;

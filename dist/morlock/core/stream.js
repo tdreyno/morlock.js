@@ -20,6 +20,7 @@ define("morlock/core/stream",
     var copyArray = __dependency1__.copyArray;
     var flip = __dependency1__.flip;
     var call = __dependency1__.call;
+    var indexOf = __dependency1__.indexOf;
 
     // Internal tracking of how many streams have been created.
     var nextID = 0;
@@ -59,6 +60,15 @@ define("morlock/core/stream",
 
       if (stream.trackSubscribers) {
         mapArray(partial(flip(call), f), stream.subscriberSubscribers);
+      }
+    }
+
+    function offValue(stream, f) {
+      if (stream.subscribers) {
+        var idx = indexOf(stream.subscribers, f);
+        if (idx !== -1) {
+          stream.subscribers.splice(idx, 1);
+        }
       }
     }
 
@@ -179,6 +189,7 @@ define("morlock/core/stream",
     __exports__.emit = emit;
     __exports__.getValue = getValue;
     __exports__.onValue = onValue;
+    __exports__.offValue = offValue;
     __exports__.onSubscription = onSubscription;
     __exports__.createFromEvents = createFromEvents;
     __exports__.timeout = timeout;

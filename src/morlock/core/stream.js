@@ -4,7 +4,7 @@ import { debounce as debounceCall,
          map as mapArray,
          apply,
          first, rest, push, apply, unshift, eventListener, compose, when,
-         partial, once, copyArray, flip, call } from "morlock/core/util";
+         partial, once, copyArray, flip, call, indexOf } from "morlock/core/util";
 
 // Internal tracking of how many streams have been created.
 var nextID = 0;
@@ -44,6 +44,15 @@ function onValue(stream, f) {
 
   if (stream.trackSubscribers) {
     mapArray(partial(flip(call), f), stream.subscriberSubscribers);
+  }
+}
+
+function offValue(stream, f) {
+  if (stream.subscribers) {
+    var idx = indexOf(stream.subscribers, f);
+    if (idx !== -1) {
+      stream.subscribers.splice(idx, 1);
+    }
   }
 }
 
@@ -160,6 +169,6 @@ function sample(sourceStream, sampleStream) {
     compose, [':e:', partial(getValue, sourceStream)]);
 }
 
-export { create, emit, getValue, onValue, onSubscription, createFromEvents,
+export { create, emit, getValue, onValue, offValue, onSubscription, createFromEvents,
          timeout, createFromRAF, merge, delay, throttle, debounce, map,
          filter, sample, interval };
