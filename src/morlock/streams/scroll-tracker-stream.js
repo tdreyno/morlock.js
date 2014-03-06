@@ -16,11 +16,11 @@ function create(targetScrollY, scrollPositionStream) {
   var pastScrollY = false;
   var firstRun = true;
 
-  Stream.onValue(scrollPositionStream, function(){
-    if ((firstRun || pastScrollY) && (window.scrollY < targetScrollY)) {
+  Stream.onValue(scrollPositionStream, function(currentScrollY){
+    if ((firstRun || pastScrollY) && (currentScrollY < targetScrollY)) {
       pastScrollY = false;
       Stream.emit(overTheLineStream, ['before', targetScrollY]);
-    } else if ((firstRun || !pastScrollY) && (window.scrollY >= targetScrollY)) {
+    } else if ((firstRun || !pastScrollY) && (currentScrollY >= targetScrollY)) {
       pastScrollY = true;
       Stream.emit(overTheLineStream, ['after', targetScrollY]);
     }

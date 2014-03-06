@@ -26,11 +26,33 @@ function create(options) {
 }
 
 function createFromEvents() {
+  var oldScrollY;
+  var scrollDirty = true;
+
+  Stream.onValue(Stream.createFromEvents(window, 'scroll'), function() {
+    scrollDirty = true;
+  });
+
+  var rAF = Stream.createFromRAF();
+
+  var didChangeOnRAFStream = Stream.filter(function() {
+    if (!scrollDirty) { return false; }
+    scrollDirty = false;
+
+    var newScrollY = window.scrollY;
+    if (oldScrollY !== newScrollY) {
+      oldScrollY = newScrollY;
+      return true;
+    }
+
+    return false;
+  }, rAF);
+
   return Stream.map(
     function getWindowPosition() {
-      return window.scrollY;
+      return oldScrollY;
     },
-    Stream.createFromEvents(window, 'scroll')
+    didChangeOnRAFStream
   );
 }
 

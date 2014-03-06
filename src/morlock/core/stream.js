@@ -4,7 +4,7 @@ import { debounce as debounceCall,
          map as mapArray,
          apply,
          first, rest, push, apply, unshift, eventListener, compose, when,
-         partial, once, copyArray, flip, call, indexOf } from "morlock/core/util";
+         partial, once, copyArray, flip, call, indexOf, rAF } from "morlock/core/util";
 
 // Internal tracking of how many streams have been created.
 var nextID = 0;
@@ -111,7 +111,7 @@ function createFromRAF() {
    */
   function sendEvent(t) {
     boundEmit(t);
-    requestAnimationFrame(sendEvent);
+    rAF(sendEvent);
   }
 
   onSubscription(outputStream, once(sendEvent));

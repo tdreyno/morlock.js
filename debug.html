@@ -58,6 +58,14 @@
       console.log('scrollEnd');
     });
 
+    sc2 = new ScrollController({
+      debounceMs: 0
+    });
+
+    sc2.on('scrollEnd', function(e) {
+      
+    });
+
     var observer = sc.observeElement(document.getElementById('hi'));
     observer.on('enter', function() {
       console.log('enter');

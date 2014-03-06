@@ -19,8 +19,8 @@ function create(element, scrollStream, resizeStream) {
     didUpdateViewport();
   }
   
-  function didUpdateViewport() {
-    var r = getRect(element);
+  function didUpdateViewport(currentScrollY) {
+    var r = getRect(element, null, currentScrollY);
     var inY = !!r && r.bottom >= 0 && r.top <= viewportHeight;
 
     if (isVisible && !inY) {

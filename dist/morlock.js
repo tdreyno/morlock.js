@@ -513,10 +513,11 @@ define("morlock/core/util",
 
       return function() {
         clearTimeout(timeoutId);
+        var lastArgs = arguments;
 
         timeoutId = setTimeout(function() {
           timeoutId = null;
-          f();
+          f.apply(null, lastArgs);
         }, delay);
       };
     }
@@ -570,8 +571,9 @@ define("morlock/core/util",
      * Calculate the rectangle of the element with an optional buffer.
      * @param {Element} elem The element.
      * @param {Number} buffer An extra padding.
+     * @param {Number} currentScrollY The known scrollY value.
      */
-    function getRect(elem, buffer) {
+    function getRect(elem, buffer, currentScrollY) {
       buffer = typeof buffer == 'number' && buffer || 0;
 
       if (elem && !elem.nodeType) {
@@ -583,9 +585,12 @@ define("morlock/core/util",
       }
       
       var bounds = elem.getBoundingClientRect();
-      var topWithCeiling = (window.scrollY < 0) ? bounds.top + window.scrollY : bounds.top;
 
-      console.log('top', topWithCeiling);
+      if ('undefined' === typeof currentScrollY) {
+        currentScrollY = window.scrollY;
+      }
+
+      var topWithCeiling = (currentScrollY < 0) ? bounds.top + currentScrollY : bounds.top;
       
       var rect = {
         right: bounds.right + buffer,
@@ -910,6 +915,29 @@ define("morlock/core/util",
       return val;
     }
 
+    var rAF = (function() {
+      var correctRAF = window.requestAnimationFrame;
+      var lastTime = 0;
+      var vendors = ['webkit', 'moz'];
+
+      for (var x = 0; x < vendors.length && !correctRAF; ++x) {
+        correctRAF = window[vendors[x]+'RequestAnimationFrame'];
+      }
+
+      if (!correctRAF) {
+        correctRAF = function(callback, element) {
+          var currTime = new Date().getTime();
+          var timeToCall = Math.max(0, 16 - (currTime - lastTime));
+          var id = window.setTimeout(function() { callback(currTime + timeToCall); },
+            timeToCall);
+          lastTime = currTime + timeToCall;
+          return id;
+        };
+      }
+
+      return correctRAF;
+    }());
+
     __exports__.indexOf = indexOf;
     __exports__.throttle = throttle;
     __exports__.debounce = debounce;
@@ -957,6 +985,7 @@ define("morlock/core/util",
     __exports__.reject = reject;
     __exports__.rest = rest;
     __exports__.constantly = constantly;
+    __exports__.rAF = rAF;
   });
 define("morlock/core/stream", 
   ["morlock/core/util","exports"],
@@ -981,6 +1010,7 @@ define("morlock/core/stream",
     var flip = __dependency1__.flip;
     var call = __dependency1__.call;
     var indexOf = __dependency1__.indexOf;
+    var rAF = __dependency1__.rAF;
 
     // Internal tracking of how many streams have been created.
     var nextID = 0;
@@ -1087,7 +1117,7 @@ define("morlock/core/stream",
        */
       function sendEvent(t) {
         boundEmit(t);
-        requestAnimationFrame(sendEvent);
+        rAF(sendEvent);
       }
 
       onSubscription(outputStream, once(sendEvent));
@@ -1381,11 +1411,33 @@ define("morlock/streams/scroll-stream",
     }
 
     function createFromEvents() {
+      var oldScrollY;
+      var scrollDirty = true;
+
+      Stream.onValue(Stream.createFromEvents(window, 'scroll'), function() {
+        scrollDirty = true;
+      });
+
+      var rAF = Stream.createFromRAF();
+
+      var didChangeOnRAFStream = Stream.filter(function() {
+        if (!scrollDirty) { return false; }
+        scrollDirty = false;
+
+        var newScrollY = window.scrollY;
+        if (oldScrollY !== newScrollY) {
+          oldScrollY = newScrollY;
+          return true;
+        }
+
+        return false;
+      }, rAF);
+
       return Stream.map(
         function getWindowPosition() {
-          return window.scrollY;
+          return oldScrollY;
         },
-        Stream.createFromEvents(window, 'scroll')
+        didChangeOnRAFStream
       );
     }
 
@@ -1417,8 +1469,8 @@ define("morlock/streams/element-tracker-stream",
         didUpdateViewport();
       }
       
-      function didUpdateViewport() {
-        var r = getRect(element);
+      function didUpdateViewport(currentScrollY) {
+        var r = getRect(element, null, currentScrollY);
         var inY = !!r && r.bottom >= 0 && r.top <= viewportHeight;
 
         if (isVisible && !inY) {
@@ -1462,11 +1514,11 @@ define("morlock/streams/scroll-tracker-stream",
       var pastScrollY = false;
       var firstRun = true;
 
-      Stream.onValue(scrollPositionStream, function(){
-        if ((firstRun || pastScrollY) && (window.scrollY < targetScrollY)) {
+      Stream.onValue(scrollPositionStream, function(currentScrollY){
+        if ((firstRun || pastScrollY) && (currentScrollY < targetScrollY)) {
           pastScrollY = false;
           Stream.emit(overTheLineStream, ['before', targetScrollY]);
-        } else if ((firstRun || !pastScrollY) && (window.scrollY >= targetScrollY)) {
+        } else if ((firstRun || !pastScrollY) && (currentScrollY >= targetScrollY)) {
           pastScrollY = true;
           Stream.emit(overTheLineStream, ['after', targetScrollY]);
         }

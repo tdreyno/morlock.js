@@ -21,6 +21,7 @@ define("morlock/core/stream",
     var flip = __dependency1__.flip;
     var call = __dependency1__.call;
     var indexOf = __dependency1__.indexOf;
+    var rAF = __dependency1__.rAF;
 
     // Internal tracking of how many streams have been created.
     var nextID = 0;
@@ -127,7 +128,7 @@ define("morlock/core/stream",
        */
       function sendEvent(t) {
         boundEmit(t);
-        requestAnimationFrame(sendEvent);
+        rAF(sendEvent);
       }
 
       onSubscription(outputStream, once(sendEvent));
