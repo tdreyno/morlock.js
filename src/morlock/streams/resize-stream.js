@@ -28,7 +28,9 @@ function create(options) {
   );
 
   setTimeout(function() {
-    window.dispatchEvent(new Event('resize'));
+    var evObj = document.createEvent('HTMLEvents');
+    evObj.initEvent( 'resize', true, true );
+    window.dispatchEvent(evObj);
   }, 10);
 
   return resizedStream;

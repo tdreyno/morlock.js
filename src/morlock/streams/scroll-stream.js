@@ -19,7 +19,9 @@ function create(options) {
 
   // It's going to space, will you just give it a second!
   setTimeout(function() {
-    window.dispatchEvent(new Event('scroll'));
+    var evObj = document.createEvent('HTMLEvents');
+    evObj.initEvent( 'scroll', true, true );
+    window.dispatchEvent(evObj);
   }, 10);
 
   return scrollEndStream;
