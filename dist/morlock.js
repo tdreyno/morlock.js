@@ -1004,6 +1004,7 @@ define("morlock/core/stream",
     var eventListener = __dependency1__.eventListener;
     var compose = __dependency1__.compose;
     var when = __dependency1__.when;
+    var equals = __dependency1__.equals;
     var partial = __dependency1__.partial;
     var once = __dependency1__.once;
     var copyArray = __dependency1__.copyArray;
@@ -1170,6 +1171,10 @@ define("morlock/core/stream",
       return _duplicateStreamOnEmit(stream, when, [f, ':e:']);
     }
 
+    function filterFirst(val, stream) {
+      return filter(compose(partial(equals, val), first), stream);
+    }
+
     function sample(sourceStream, sampleStream) {
       return _duplicateStreamOnEmit(sampleStream,
         compose, [':e:', partial(getValue, sourceStream)]);
@@ -1190,6 +1195,7 @@ define("morlock/core/stream",
     __exports__.debounce = debounce;
     __exports__.map = map;
     __exports__.filter = filter;
+    __exports__.filterFirst = filterFirst;
     __exports__.sample = sample;
     __exports__.interval = interval;
   });
@@ -1547,6 +1553,7 @@ define("morlock/controllers/scroll-controller",
     var equals = __dependency1__.equals;
     var compose = __dependency1__.compose;
     var constantly = __dependency1__.constantly;
+    var first = __dependency1__.first;
     var Stream = __dependency2__;
     var ScrollStream = __dependency3__;
     var ResizeStream = __dependency4__;
@@ -1566,6 +1573,8 @@ define("morlock/controllers/scroll-controller",
         return new ScrollController(options);
       }
 
+      this.id = ScrollController.nextID++;
+
       var scrollEndStream = ScrollStream.create(options);
 
       this.on = function(name, cb) {
@@ -1576,13 +1585,55 @@ define("morlock/controllers/scroll-controller",
 
       var resizeStream = ResizeStream.create();
 
+      ScrollController.instances[this.id] = this;
+
+      // TODO: better tear down
+      this.destroy = function destroy() {
+        delete ScrollController.instances[this.id];
+      };
+
       this.observeElement = function observeElement(elem) {
         var trackerStream = ElementTrackerStream.create(elem, scrollEndStream, resizeStream);
 
+        var enterStream = Stream.filter(partial(equals, 'enter'), trackerStream);
+        var exitStream = Stream.filter(partial(equals, 'exit'), trackerStream);
+
+        function onOffStream(args, f) {
+          var name = 'both';
+          var cb;
+
+          if (args.length === 1) {
+            cb = args[0];
+          } else {
+            name = args[0];
+            cb = args[1];
+          }
+
+          var filteredStream;
+          if (name === 'both') {
+            filteredStream = trackerStream;
+          } else if (name === 'enter') {
+            filteredStream = enterStream;
+          } else if (name === 'exit') {
+            filteredStream = exitStream;
+          }
+
+          f(filteredStream, cb);
+          
+          if ((f === Stream.onValue) && (trackerStream.value === name)) {
+            Stream.emit(filteredStream, trackerStream.value);
+          }
+        }
+
         return {
-          on: function on(name, cb) {
-            var matchingStream = Stream.filter(partial(equals, name), trackerStream);
-            Stream.onValue(matchingStream, cb);
+          on: function on(/* name, cb */) {
+            onOffStream(arguments, Stream.onValue);
+
+            return this;
+          },
+
+          off: function(/* name, cb */) {
+            onOffStream(arguments, Stream.offValue);
 
             return this;
           }
@@ -1592,9 +1643,8 @@ define("morlock/controllers/scroll-controller",
       this.observePosition = function observePosition(targetScrollY) {
         var trackerStream = ScrollTrackerStream.create(targetScrollY, scrollEndStream);
 
-        var first = require('morlock/core/util').first;
-        var beforeStream = Stream.filter(compose(partial(equals, 'before'), first), trackerStream);
-        var afterStream = Stream.filter(compose(partial(equals, 'after'), first), trackerStream);
+        var beforeStream = Stream.filterFirst('before', trackerStream);
+        var afterStream = Stream.filterFirst('after', trackerStream);
 
         function onOffStream(args, f) {
           var name = 'both';
@@ -1635,11 +1685,14 @@ define("morlock/controllers/scroll-controller",
       };
     }
 
+    ScrollController.instances = {};
+    ScrollController.nextID = 1;
+
     __exports__["default"] = ScrollController;
   });
 define("morlock/core/responsive-image", 
-  ["morlock/core/util","exports"],
-  function(__dependency1__, __exports__) {
+  ["morlock/core/util","morlock/controllers/scroll-controller","exports"],
+  function(__dependency1__, __dependency2__, __exports__) {
     
     var map = __dependency1__.map;
     var mapObject = __dependency1__.mapObject;
@@ -1649,6 +1702,11 @@ define("morlock/core/responsive-image",
     var set = __dependency1__.set;
     var flip = __dependency1__.flip;
     var testMQ = __dependency1__.testMQ;
+    var ScrollController = __dependency2__["default"];
+
+    var sharedSC = new ScrollController({
+      debounceMs: 0
+    });
 
     /**
      * Ghetto Record implementation.
@@ -1668,6 +1726,7 @@ define("morlock/core/responsive-image",
       this.hasRetina = false;
       this.preserveAspectRatio = false;
       this.knownDimensions = null;
+      this.hasLoaded = false;
     }
 
     function create(imageMap) {
@@ -1679,6 +1738,17 @@ define("morlock/core/responsive-image",
         applyAspectRatioPadding(image);
       }
 
+      if (imageMap.lazyLoad) {
+        var observer = sharedSC.observeElement(imageMap.element);
+        function onEnter() {
+          observer.off('enter', onEnter);
+
+          image.lazyLoad = false;
+          update(image, true);
+        };
+        observer.on('enter', onEnter);
+      }
+
       return image;
     }
 
@@ -1687,6 +1757,7 @@ define("morlock/core/responsive-image",
       imageMap.element = element;
       imageMap.src = element.getAttribute('data-src');
 
+      imageMap.lazyLoad = element.getAttribute('data-lazyload') === 'true';
       imageMap.hasWebp = element.getAttribute('data-hasWebp') === 'true';
       imageMap.isFlexible = element.getAttribute('data-isFlexible') !== 'false';
       imageMap.hasRetina = (element.getAttribute('data-hasRetina') === 'true') && (window.devicePixelRatio > 1.5);
@@ -1742,6 +1813,10 @@ define("morlock/core/responsive-image",
      * Detect the current breakpoint and update the element if necessary.
      */
     function update(image) {
+      if (image.lazyLoad) {
+        return;
+      }
+
       var foundBreakpoint;
 
       for (var i = 0; i < image.knownSizes.length; i++) {
@@ -1766,6 +1841,7 @@ define("morlock/core/responsive-image",
 
     /**
      * Load the requested image.
+     * @param {ResponsiveImage} image The ResponsiveImage instance.
      * @param {String} s Filename.
      */
     function loadImageForBreakpoint(image, s) {
@@ -1789,7 +1865,15 @@ define("morlock/core/responsive-image",
      * @param {Element} img Image element.
      */
     function setImage(image, img) {
-      if (image.type === 'img') {
+      if (!image.hasLoaded) {
+        image.hasLoaded = true;
+
+        setTimeout(function() {
+          image.element.className += ' loaded';
+        }, 100);
+      }
+
+      if (image.element.tagName.toLowerCase() === 'img') {
         return setImageTag(image, img);
       } else {
         return setDivTag(image, img);

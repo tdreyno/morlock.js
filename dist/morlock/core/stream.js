@@ -15,6 +15,7 @@ define("morlock/core/stream",
     var eventListener = __dependency1__.eventListener;
     var compose = __dependency1__.compose;
     var when = __dependency1__.when;
+    var equals = __dependency1__.equals;
     var partial = __dependency1__.partial;
     var once = __dependency1__.once;
     var copyArray = __dependency1__.copyArray;
@@ -181,6 +182,10 @@ define("morlock/core/stream",
       return _duplicateStreamOnEmit(stream, when, [f, ':e:']);
     }
 
+    function filterFirst(val, stream) {
+      return filter(compose(partial(equals, val), first), stream);
+    }
+
     function sample(sourceStream, sampleStream) {
       return _duplicateStreamOnEmit(sampleStream,
         compose, [':e:', partial(getValue, sourceStream)]);
@@ -201,6 +206,7 @@ define("morlock/core/stream",
     __exports__.debounce = debounce;
     __exports__.map = map;
     __exports__.filter = filter;
+    __exports__.filterFirst = filterFirst;
     __exports__.sample = sample;
     __exports__.interval = interval;
   });

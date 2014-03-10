@@ -1,6 +1,6 @@
 define("morlock/core/responsive-image", 
-  ["morlock/core/util","exports"],
-  function(__dependency1__, __exports__) {
+  ["morlock/core/util","morlock/controllers/scroll-controller","exports"],
+  function(__dependency1__, __dependency2__, __exports__) {
     "use strict";
     var map = __dependency1__.map;
     var mapObject = __dependency1__.mapObject;
@@ -10,6 +10,11 @@ define("morlock/core/responsive-image",
     var set = __dependency1__.set;
     var flip = __dependency1__.flip;
     var testMQ = __dependency1__.testMQ;
+    var ScrollController = __dependency2__["default"];
+
+    var sharedSC = new ScrollController({
+      debounceMs: 0
+    });
 
     /**
      * Ghetto Record implementation.
@@ -29,6 +34,7 @@ define("morlock/core/responsive-image",
       this.hasRetina = false;
       this.preserveAspectRatio = false;
       this.knownDimensions = null;
+      this.hasLoaded = false;
     }
 
     function create(imageMap) {
@@ -40,6 +46,17 @@ define("morlock/core/responsive-image",
         applyAspectRatioPadding(image);
       }
 
+      if (imageMap.lazyLoad) {
+        var observer = sharedSC.observeElement(imageMap.element);
+        function onEnter() {
+          observer.off('enter', onEnter);
+
+          image.lazyLoad = false;
+          update(image, true);
+        };
+        observer.on('enter', onEnter);
+      }
+
       return image;
     }
 
@@ -48,6 +65,7 @@ define("morlock/core/responsive-image",
       imageMap.element = element;
       imageMap.src = element.getAttribute('data-src');
 
+      imageMap.lazyLoad = element.getAttribute('data-lazyload') === 'true';
       imageMap.hasWebp = element.getAttribute('data-hasWebp') === 'true';
       imageMap.isFlexible = element.getAttribute('data-isFlexible') !== 'false';
       imageMap.hasRetina = (element.getAttribute('data-hasRetina') === 'true') && (window.devicePixelRatio > 1.5);
@@ -103,6 +121,10 @@ define("morlock/core/responsive-image",
      * Detect the current breakpoint and update the element if necessary.
      */
     function update(image) {
+      if (image.lazyLoad) {
+        return;
+      }
+
       var foundBreakpoint;
 
       for (var i = 0; i < image.knownSizes.length; i++) {
@@ -127,6 +149,7 @@ define("morlock/core/responsive-image",
 
     /**
      * Load the requested image.
+     * @param {ResponsiveImage} image The ResponsiveImage instance.
      * @param {String} s Filename.
      */
     function loadImageForBreakpoint(image, s) {
@@ -150,7 +173,15 @@ define("morlock/core/responsive-image",
      * @param {Element} img Image element.
      */
     function setImage(image, img) {
-      if (image.type === 'img') {
+      if (!image.hasLoaded) {
+        image.hasLoaded = true;
+
+        setTimeout(function() {
+          image.element.className += ' loaded';
+        }, 100);
+      }
+
+      if (image.element.tagName.toLowerCase() === 'img') {
         return setImageTag(image, img);
       } else {
         return setDivTag(image, img);

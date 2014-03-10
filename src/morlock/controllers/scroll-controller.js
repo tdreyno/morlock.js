@@ -1,4 +1,4 @@
-import { partial, equals, compose, constantly } from "morlock/core/util";
+import { partial, equals, compose, constantly, first } from "morlock/core/util";
 module Stream from "morlock/core/stream";
 module ScrollStream from "morlock/streams/scroll-stream";
 module ResizeStream from "morlock/streams/resize-stream";
@@ -18,6 +18,8 @@ function ScrollController(options) {
     return new ScrollController(options);
   }
 
+  this.id = ScrollController.nextID++;
+
   var scrollEndStream = ScrollStream.create(options);
 
   this.on = function(name, cb) {
@@ -28,13 +30,55 @@ function ScrollController(options) {
 
   var resizeStream = ResizeStream.create();
 
+  ScrollController.instances[this.id] = this;
+
+  // TODO: better tear down
+  this.destroy = function destroy() {
+    delete ScrollController.instances[this.id];
+  };
+
   this.observeElement = function observeElement(elem) {
     var trackerStream = ElementTrackerStream.create(elem, scrollEndStream, resizeStream);
 
+    var enterStream = Stream.filter(partial(equals, 'enter'), trackerStream);
+    var exitStream = Stream.filter(partial(equals, 'exit'), trackerStream);
+
+    function onOffStream(args, f) {
+      var name = 'both';
+      var cb;
+
+      if (args.length === 1) {
+        cb = args[0];
+      } else {
+        name = args[0];
+        cb = args[1];
+      }
+
+      var filteredStream;
+      if (name === 'both') {
+        filteredStream = trackerStream;
+      } else if (name === 'enter') {
+        filteredStream = enterStream;
+      } else if (name === 'exit') {
+        filteredStream = exitStream;
+      }
+
+      f(filteredStream, cb);
+      
+      if ((f === Stream.onValue) && (trackerStream.value === name)) {
+        Stream.emit(filteredStream, trackerStream.value);
+      }
+    }
+
     return {
-      on: function on(name, cb) {
-        var matchingStream = Stream.filter(partial(equals, name), trackerStream);
-        Stream.onValue(matchingStream, cb);
+      on: function on(/* name, cb */) {
+        onOffStream(arguments, Stream.onValue);
+
+        return this;
+      },
+
+      off: function(/* name, cb */) {
+        onOffStream(arguments, Stream.offValue);
 
         return this;
       }
@@ -44,9 +88,8 @@ function ScrollController(options) {
   this.observePosition = function observePosition(targetScrollY) {
     var trackerStream = ScrollTrackerStream.create(targetScrollY, scrollEndStream);
 
-    var first = require('morlock/core/util').first;
-    var beforeStream = Stream.filter(compose(partial(equals, 'before'), first), trackerStream);
-    var afterStream = Stream.filter(compose(partial(equals, 'after'), first), trackerStream);
+    var beforeStream = Stream.filterFirst('before', trackerStream);
+    var afterStream = Stream.filterFirst('after', trackerStream);
 
     function onOffStream(args, f) {
       var name = 'both';
@@ -86,5 +129,8 @@ function ScrollController(options) {
     };
   };
 }
+
+ScrollController.instances = {};
+ScrollController.nextID = 1;
 
 export default = ScrollController;

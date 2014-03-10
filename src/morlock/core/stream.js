@@ -3,7 +3,7 @@ import { debounce as debounceCall,
          delay as delayCall,
          map as mapArray,
          apply,
-         first, rest, push, apply, unshift, eventListener, compose, when,
+         first, rest, push, apply, unshift, eventListener, compose, when, equals,
          partial, once, copyArray, flip, call, indexOf, rAF } from "morlock/core/util";
 
 // Internal tracking of how many streams have been created.
@@ -164,6 +164,10 @@ function filter(f, stream) {
   return _duplicateStreamOnEmit(stream, when, [f, ':e:']);
 }
 
+function filterFirst(val, stream) {
+  return filter(compose(partial(equals, val), first), stream);
+}
+
 function sample(sourceStream, sampleStream) {
   return _duplicateStreamOnEmit(sampleStream,
     compose, [':e:', partial(getValue, sourceStream)]);
@@ -171,4 +175,4 @@ function sample(sourceStream, sampleStream) {
 
 export { create, emit, getValue, onValue, offValue, onSubscription, createFromEvents,
          timeout, createFromRAF, merge, delay, throttle, debounce, map,
-         filter, sample, interval };
+         filter, filterFirst, sample, interval };

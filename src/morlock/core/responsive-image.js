@@ -1,4 +1,9 @@
 import { map, mapObject, partial, sortBy, parseInteger, set, flip, testMQ } from "morlock/core/util";
+import ScrollController from "morlock/controllers/scroll-controller";
+
+var sharedSC = new ScrollController({
+  debounceMs: 0
+});
 
 /**
  * Ghetto Record implementation.
@@ -18,6 +23,7 @@ function ResponsiveImage() {
   this.hasRetina = false;
   this.preserveAspectRatio = false;
   this.knownDimensions = null;
+  this.hasLoaded = false;
 }
 
 function create(imageMap) {
@@ -29,6 +35,17 @@ function create(imageMap) {
     applyAspectRatioPadding(image);
   }
 
+  if (imageMap.lazyLoad) {
+    var observer = sharedSC.observeElement(imageMap.element);
+    function onEnter() {
+      observer.off('enter', onEnter);
+
+      image.lazyLoad = false;
+      update(image, true);
+    };
+    observer.on('enter', onEnter);
+  }
+
   return image;
 }
 
@@ -37,6 +54,7 @@ function createFromElement(element) {
   imageMap.element = element;
   imageMap.src = element.getAttribute('data-src');
 
+  imageMap.lazyLoad = element.getAttribute('data-lazyload') === 'true';
   imageMap.hasWebp = element.getAttribute('data-hasWebp') === 'true';
   imageMap.isFlexible = element.getAttribute('data-isFlexible') !== 'false';
   imageMap.hasRetina = (element.getAttribute('data-hasRetina') === 'true') && (window.devicePixelRatio > 1.5);
@@ -92,6 +110,10 @@ function getBreakpointSizes(element) {
  * Detect the current breakpoint and update the element if necessary.
  */
 function update(image) {
+  if (image.lazyLoad) {
+    return;
+  }
+
   var foundBreakpoint;
 
   for (var i = 0; i < image.knownSizes.length; i++) {
@@ -116,6 +138,7 @@ function update(image) {
 
 /**
  * Load the requested image.
+ * @param {ResponsiveImage} image The ResponsiveImage instance.
  * @param {String} s Filename.
  */
 function loadImageForBreakpoint(image, s) {
@@ -139,7 +162,15 @@ function loadImageForBreakpoint(image, s) {
  * @param {Element} img Image element.
  */
 function setImage(image, img) {
-  if (image.type === 'img') {
+  if (!image.hasLoaded) {
+    image.hasLoaded = true;
+
+    setTimeout(function() {
+      image.element.className += ' loaded';
+    }, 100);
+  }
+
+  if (image.element.tagName.toLowerCase() === 'img') {
     return setImageTag(image, img);
   } else {
     return setDivTag(image, img);
