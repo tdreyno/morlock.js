@@ -29,7 +29,9 @@ function create(targetScrollY, scrollPositionStream) {
   });
 
   setTimeout(function() {
-    window.dispatchEvent(new Event('scroll'));
+    var evObj = document.createEvent('HTMLEvents');
+    evObj.initEvent( 'scroll', true, true );
+    window.dispatchEvent(evObj);
   }, 10);
 
   return overTheLineStream;
