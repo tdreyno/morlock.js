@@ -139,11 +139,11 @@ var detectedIE10 = (navigator.userAgent.indexOf('MSIE 10') !== -1);
  * @return {number}
  */
 function documentScrollY() {
-  if (detectedIE10 && (window.pageYOffset != document.body.scrollTop)) {
-    return document.body.scrollTop;
+  if (detectedIE10 && (window.pageYOffset != document.documentElement.scrollTop)) {
+    return document.documentElement.scrollTop;
   }
 
-  return window.pageYOffset || document.body.scrollTop;
+  return window.pageYOffset || document.documentElement.scrollTop;
 }
 
 /**
