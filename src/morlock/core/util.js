@@ -132,6 +132,20 @@ function testMQ(mq) {
       div.currentStyle)['position'] == 'absolute';
 }
 
+var detectedIE10 = (navigator.userAgent.indexOf('MSIE 10') !== -1);
+
+/**
+ * Get the document scroll.
+ * @return {number}
+ */
+function documentScrollY() {
+  if (detectedIE10 && (window.pageYOffset != document.body.scrollTop)) {
+    return document.body.scrollTop;
+  }
+
+  return window.pageYOffset || document.body.scrollTop;
+}
+
 /**
  * Calculate the rectangle of the element with an optional buffer.
  * @param {Element} elem The element.
@@ -152,7 +166,7 @@ function getRect(elem, buffer, currentScrollY) {
   var bounds = elem.getBoundingClientRect();
 
   if ('undefined' === typeof currentScrollY) {
-    currentScrollY = window.scrollY;
+    currentScrollY = documentScrollY();
   }
 
   var topWithCeiling = (currentScrollY < 0) ? bounds.top + currentScrollY : bounds.top;
@@ -509,5 +523,5 @@ export {
   map, apply, objectVals, call, push, pop, unshift, equals, not,
   delay, unshift, nth, first, last, compose, select, isTrue, get, shift, eventListener,
   when, reduce, once, sortBy, parseInteger, set, flip, trampoline, tailCall,
-  copyArray, defer, slice, isEmpty, reject, rest, constantly, rAF
+  copyArray, defer, slice, isEmpty, reject, rest, constantly, rAF, documentScrollY
 };

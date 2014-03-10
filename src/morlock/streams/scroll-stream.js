@@ -1,4 +1,5 @@
 module Stream from "morlock/core/stream";
+import { documentScrollY } from "morlock/core/util";
 
 /**
  * Create a new Stream containing scroll events.
@@ -41,7 +42,7 @@ function createFromEvents() {
     if (!scrollDirty) { return false; }
     scrollDirty = false;
 
-    var newScrollY = window.scrollY;
+    var newScrollY = documentScrollY();
     if (oldScrollY !== newScrollY) {
       oldScrollY = newScrollY;
       return true;

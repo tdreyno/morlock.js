@@ -567,6 +567,20 @@ define("morlock/core/util",
           div.currentStyle)['position'] == 'absolute';
     }
 
+    var detectedIE10 = (navigator.userAgent.indexOf('MSIE 10') !== -1);
+
+    /**
+     * Get the document scroll.
+     * @return {number}
+     */
+    function documentScrollY() {
+      if (detectedIE10 && (window.pageYOffset != document.body.scrollTop)) {
+        return document.body.scrollTop;
+      }
+
+      return window.pageYOffset || document.body.scrollTop;
+    }
+
     /**
      * Calculate the rectangle of the element with an optional buffer.
      * @param {Element} elem The element.
@@ -587,7 +601,7 @@ define("morlock/core/util",
       var bounds = elem.getBoundingClientRect();
 
       if ('undefined' === typeof currentScrollY) {
-        currentScrollY = window.scrollY;
+        currentScrollY = documentScrollY();
       }
 
       var topWithCeiling = (currentScrollY < 0) ? bounds.top + currentScrollY : bounds.top;
@@ -986,6 +1000,7 @@ define("morlock/core/util",
     __exports__.rest = rest;
     __exports__.constantly = constantly;
     __exports__.rAF = rAF;
+    __exports__.documentScrollY = documentScrollY;
   });
 define("morlock/core/stream", 
   ["morlock/core/util","exports"],
@@ -1388,10 +1403,11 @@ define("morlock/controllers/resize-controller",
     __exports__["default"] = ResizeController;
   });
 define("morlock/streams/scroll-stream", 
-  ["morlock/core/stream","exports"],
-  function(__dependency1__, __exports__) {
+  ["morlock/core/stream","morlock/core/util","exports"],
+  function(__dependency1__, __dependency2__, __exports__) {
     
     var Stream = __dependency1__;
+    var documentScrollY = __dependency2__.documentScrollY;
 
     /**
      * Create a new Stream containing scroll events.
@@ -1434,7 +1450,7 @@ define("morlock/streams/scroll-stream",
         if (!scrollDirty) { return false; }
         scrollDirty = false;
 
-        var newScrollY = window.scrollY;
+        var newScrollY = documentScrollY();
         if (oldScrollY !== newScrollY) {
           oldScrollY = newScrollY;
           return true;

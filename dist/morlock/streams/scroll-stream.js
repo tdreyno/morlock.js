@@ -1,8 +1,9 @@
 define("morlock/streams/scroll-stream", 
-  ["morlock/core/stream","exports"],
-  function(__dependency1__, __exports__) {
+  ["morlock/core/stream","morlock/core/util","exports"],
+  function(__dependency1__, __dependency2__, __exports__) {
     "use strict";
     var Stream = __dependency1__;
+    var documentScrollY = __dependency2__.documentScrollY;
 
     /**
      * Create a new Stream containing scroll events.
@@ -45,7 +46,7 @@ define("morlock/streams/scroll-stream",
         if (!scrollDirty) { return false; }
         scrollDirty = false;
 
-        var newScrollY = window.scrollY;
+        var newScrollY = documentScrollY();
         if (oldScrollY !== newScrollY) {
           oldScrollY = newScrollY;
           return true;
