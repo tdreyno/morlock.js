@@ -1400,7 +1400,7 @@ define("morlock/controllers/resize-controller",
       };
     }
 
-    __exports__["default"] = ResizeController;
+    __exports__['default'] = ResizeController;
   });
 define("morlock/streams/scroll-stream", 
   ["morlock/core/stream","morlock/core/util","exports"],
@@ -1706,7 +1706,7 @@ define("morlock/controllers/scroll-controller",
     ScrollController.instances = {};
     ScrollController.nextID = 1;
 
-    __exports__["default"] = ScrollController;
+    __exports__['default'] = ScrollController;
   });
 define("morlock/core/responsive-image", 
   ["morlock/core/util","morlock/controllers/scroll-controller","exports"],
@@ -1720,7 +1720,7 @@ define("morlock/core/responsive-image",
     var set = __dependency1__.set;
     var flip = __dependency1__.flip;
     var testMQ = __dependency1__.testMQ;
-    var ScrollController = __dependency2__["default"];
+    var ScrollController = __dependency2__['default'];
 
     var sharedSC = new ScrollController({
       debounceMs: 0
@@ -1960,9 +1960,9 @@ define("morlock/plugins/jquery.breakpointer",
   ["morlock/controllers/resize-controller"],
   function(__dependency1__) {
     
-    var ResizeController = __dependency1__["default"];
+    var ResizeController = __dependency1__['default'];
 
-    if ('undefined' !== typeof $) {
+    if (('undefined' !== typeof $) && ('undefined' !== typeof $.fn)) {
 
       $.fn.breakpointer = function() {
 
@@ -1974,9 +1974,9 @@ define("morlock/plugins/jquery.scrolltracker",
   ["morlock/controllers/scroll-controller"],
   function(__dependency1__) {
     
-    var ScrollController = __dependency1__["default"];
+    var ScrollController = __dependency1__['default'];
 
-    if ('undefined' !== typeof $) {
+    if (('undefined' !== typeof $) && ('undefined' !== typeof $.fn)) {
 
       $.fn.scrolltracker = function() {
 
@@ -1991,8 +1991,8 @@ define("morlock/plugins/jquery.eventstream",
     var map = __dependency1__.map;
     var Stream = __dependency2__;
 
-    if ('undefined' !== typeof $) {
-
+    if (('undefined' !== typeof $) && ('undefined' !== typeof $.fn)) {
+      
       $.fn.eventstream = function(events) {
         var selectedNodes = this;
 
@@ -2023,7 +2023,7 @@ define("morlock/plugins/jquery.morlockResize",
   ["morlock/controllers/resize-controller"],
   function(__dependency1__) {
     
-    var ResizeController = __dependency1__["default"];
+    var ResizeController = __dependency1__['default'];
 
     if ('undefined' !== typeof jQuery) {
 
@@ -2047,8 +2047,8 @@ define("morlock/base",
   ["morlock/controllers/resize-controller","morlock/controllers/scroll-controller","morlock/core/responsive-image","morlock/plugins/jquery.breakpointer","morlock/plugins/jquery.scrolltracker","morlock/plugins/jquery.eventstream","morlock/plugins/jquery.morlockResize","exports"],
   function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __dependency5__, __dependency6__, __dependency7__, __exports__) {
     
-    var ResizeController = __dependency1__["default"];
-    var ScrollController = __dependency2__["default"];
+    var ResizeController = __dependency1__['default'];
+    var ScrollController = __dependency2__['default'];
     var ResponsiveImage = __dependency3__;
 
     var sharedTrackers = {};

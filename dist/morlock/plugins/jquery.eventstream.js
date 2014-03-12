@@ -5,8 +5,8 @@ define("morlock/plugins/jquery.eventstream",
     var map = __dependency1__.map;
     var Stream = __dependency2__;
 
-    if ('undefined' !== typeof $) {
-
+    if (('undefined' !== typeof $) && ('undefined' !== typeof $.fn)) {
+      
       $.fn.eventstream = function(events) {
         var selectedNodes = this;
 

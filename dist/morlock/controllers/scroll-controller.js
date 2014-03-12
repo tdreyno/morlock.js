@@ -141,5 +141,5 @@ define("morlock/controllers/scroll-controller",
     ScrollController.instances = {};
     ScrollController.nextID = 1;
 
-    __exports__["default"] = ScrollController;
+    __exports__['default'] = ScrollController;
   });

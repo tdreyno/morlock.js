@@ -1,8 +1,8 @@
 import { map } from "morlock/core/util";
 module Stream from "morlock/core/stream";
 
-if ('undefined' !== typeof $) {
-
+if (('undefined' !== typeof $) && ('undefined' !== typeof $.fn)) {
+  
   $.fn.eventstream = function(events) {
     var selectedNodes = this;
 

@@ -10,7 +10,7 @@ define("morlock/core/responsive-image",
     var set = __dependency1__.set;
     var flip = __dependency1__.flip;
     var testMQ = __dependency1__.testMQ;
-    var ScrollController = __dependency2__["default"];
+    var ScrollController = __dependency2__['default'];
 
     var sharedSC = new ScrollController({
       debounceMs: 0

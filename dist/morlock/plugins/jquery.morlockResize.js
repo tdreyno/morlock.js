@@ -2,7 +2,7 @@ define("morlock/plugins/jquery.morlockResize",
   ["morlock/controllers/resize-controller"],
   function(__dependency1__) {
     "use strict";
-    var ResizeController = __dependency1__["default"];
+    var ResizeController = __dependency1__['default'];
 
     if ('undefined' !== typeof jQuery) {
 
