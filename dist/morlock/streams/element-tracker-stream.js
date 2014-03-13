@@ -26,7 +26,7 @@ define("morlock/streams/element-tracker-stream",
       
       function didUpdateViewport(currentScrollY) {
         var r = getRect(element, null, currentScrollY);
-        var inY = !!r && r.bottom >= 0 && r.top <= viewportHeight;
+        var inY = !!r && r.bottom >= 0 && r.top < viewportHeight;
 
         if (isVisible && !inY) {
           isVisible = false;

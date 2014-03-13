@@ -67,5 +67,5 @@ define("morlock/controllers/resize-controller",
       };
     }
 
-    __exports__['default'] = ResizeController;
+    __exports__["default"] = ResizeController;
   });
