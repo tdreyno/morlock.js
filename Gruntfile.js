@@ -69,15 +69,6 @@ module.exports = function (grunt) {
       all: ["test/*.html"]
     },
 
-    casperjs: {
-      options: {
-        async: {
-          parallel: true
-        }
-      },
-      files: ['test/casperjs/**/*.js']
-    },
-
     release: {
       options: {
         file: 'bower.json',
@@ -92,7 +83,7 @@ module.exports = function (grunt) {
   });
 
   this.registerTask('build', ['clean', 'transpile:amd', 'requirejs', 'compress:dist']);
-  grunt.registerTask('test', ['build', 'mocha_phantomjs', 'casperjs']);
+  grunt.registerTask('test', ['build', 'mocha_phantomjs']);
   grunt.registerTask('default', [
     'build'
   ]);
