@@ -37,8 +37,8 @@ function ScrollController(options) {
     delete ScrollController.instances[this.id];
   };
 
-  this.observeElement = function observeElement(elem) {
-    var trackerStream = ElementTrackerStream.create(elem, scrollEndStream, resizeStream);
+  this.observeElement = function observeElement(elem, options) {
+    var trackerStream = ElementTrackerStream.create(elem, scrollEndStream, resizeStream, options);
 
     var enterStream = Stream.filter(partial(equals, 'enter'), trackerStream);
     var exitStream = Stream.filter(partial(equals, 'exit'), trackerStream);

@@ -19,7 +19,7 @@
   <div style="height: 5000px;"></div>
   <div class="js-responsive-image" data-src="test/img/experience.jpg" data-hasRetina="true" data-breakpoints="320,768,1024" data-lazyload="true" data-preserveAspectRatio="true" data-knownDimensions="768x512"></div>
   <script src="vendor/modernizr.js"></script>
-  <script src="dist/morlock.min.js"></script>
+  <script src="dist/morlock.js"></script>
   <script>
     rc = new ResizeController({
       breakpoints: {
@@ -77,7 +77,7 @@
       
     });
 
-    var observer = sc.observeElement(document.getElementById('hi'));
+    var observer = sc.observeElement(document.getElementById('hi'), { buffer: 100 });
     observer.on('enter', function() {
       console.log('enter HI');
     });

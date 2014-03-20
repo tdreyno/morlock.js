@@ -1512,12 +1512,14 @@ define("morlock/streams/element-tracker-stream",
      * @param {Element} element The element we are tracking.
      * @param {Stream} scrollStream A stream emitting scroll events.
      * @param {Stream} resizeStream A stream emitting resize events.
+     * @param {object} options Key/value options
      * @return {Stream} The resulting stream.
      */
-    function create(element, scrollStream, resizeStream) {
+    function create(element, scrollStream, resizeStream, options) {
       var trackerStream = Stream.create();
       var viewportHeight;
       var isVisible = false;
+      var buffer = (options && 'number' === typeof options.buffer) ? options.buffer : 0;
 
       function updateViewport() {
         viewportHeight = getViewportHeight();
@@ -1525,7 +1527,7 @@ define("morlock/streams/element-tracker-stream",
       }
       
       function didUpdateViewport(currentScrollY) {
-        var r = getRect(element, null, currentScrollY);
+        var r = getRect(element, buffer, currentScrollY);
         var inY = !!r && r.bottom >= 0 && r.top < viewportHeight;
 
         if (isVisible && !inY) {
@@ -1639,8 +1641,8 @@ define("morlock/controllers/scroll-controller",
         delete ScrollController.instances[this.id];
       };
 
-      this.observeElement = function observeElement(elem) {
-        var trackerStream = ElementTrackerStream.create(elem, scrollEndStream, resizeStream);
+      this.observeElement = function observeElement(elem, options) {
+        var trackerStream = ElementTrackerStream.create(elem, scrollEndStream, resizeStream, options);
 
         var enterStream = Stream.filter(partial(equals, 'enter'), trackerStream);
         var exitStream = Stream.filter(partial(equals, 'exit'), trackerStream);
