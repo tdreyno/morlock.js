@@ -40,6 +40,7 @@ define("morlock/core/stream",
       this.subscriberSubscribers = null;
       this.streamID = nextID++;
       this.value = null; // TODO: Some kind of buffer
+      this.closed = false;
     }
 
     function create(trackSubscribers) {
@@ -47,6 +48,8 @@ define("morlock/core/stream",
     }
 
     function emit(stream, val) {
+      if (stream.closed) { return; }
+
       mapArray(partial(flip(call), val), stream.subscribers);
 
       stream.value = val;
@@ -57,11 +60,24 @@ define("morlock/core/stream",
     }
 
     function onValue(stream, f) {
+      if (stream.closed) { return; }
+
       stream.subscribers = stream.subscribers || [];
       stream.subscribers.push(f);
 
       if (stream.trackSubscribers) {
         mapArray(partial(flip(call), f), stream.subscriberSubscribers);
+      }
+    }
+
+    function closeStream(stream) {
+      if (stream.closed) { return; }
+
+      stream.closed = true;
+      stream.value = null;
+
+      if (stream.subscribers) {
+        stream.subscribers.length = 0;
       }
     }
 

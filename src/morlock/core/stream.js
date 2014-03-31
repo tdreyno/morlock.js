@@ -22,6 +22,7 @@ function Stream(trackSubscribers) {
   this.subscriberSubscribers = null;
   this.streamID = nextID++;
   this.value = null; // TODO: Some kind of buffer
+  this.closed = false;
 }
 
 function create(trackSubscribers) {
@@ -29,6 +30,8 @@ function create(trackSubscribers) {
 }
 
 function emit(stream, val) {
+  if (stream.closed) { return; }
+
   mapArray(partial(flip(call), val), stream.subscribers);
 
   stream.value = val;
@@ -39,11 +42,24 @@ function getValue(stream) {
 }
 
 function onValue(stream, f) {
+  if (stream.closed) { return; }
+
   stream.subscribers = stream.subscribers || [];
   stream.subscribers.push(f);
 
   if (stream.trackSubscribers) {
     mapArray(partial(flip(call), f), stream.subscriberSubscribers);
+  }
+}
+
+function closeStream(stream) {
+  if (stream.closed) { return; }
+
+  stream.closed = true;
+  stream.value = null;
+
+  if (stream.subscribers) {
+    stream.subscribers.length = 0;
   }
 }
 
@@ -131,6 +147,8 @@ function merge(/* streams */) {
   return outputStream;
 }
 
+var EMIT_KEY = ':e:';
+
 function _duplicateStreamOnEmit(stream, f, args) {
   var outputStream = create();
   var boundEmit = partial(emit, outputStream);
@@ -143,25 +161,25 @@ function _duplicateStreamOnEmit(stream, f, args) {
 
 function delay(ms, stream) {
   if (ms <= 0) { return stream; }
-  return _duplicateStreamOnEmit(stream, delayCall, [':e:', ms]);
+  return _duplicateStreamOnEmit(stream, delayCall, [EMIT_KEY, ms]);
 }
 
 function throttle(ms, stream) {
   if (ms <= 0) { return stream; }
-  return _duplicateStreamOnEmit(stream, throttleCall, [':e:', ms]);
+  return _duplicateStreamOnEmit(stream, throttleCall, [EMIT_KEY, ms]);
 }
 
 function debounce(ms, stream) {
   if (ms <= 0) { return stream; }
-  return _duplicateStreamOnEmit(stream, debounceCall, [':e:', ms]);
+  return _duplicateStreamOnEmit(stream, debounceCall, [EMIT_KEY, ms]);
 }
 
 function map(f, stream) {
-  return _duplicateStreamOnEmit(stream, compose, [':e:', f]);
+  return _duplicateStreamOnEmit(stream, compose, [EMIT_KEY, f]);
 }
 
 function filter(f, stream) {
-  return _duplicateStreamOnEmit(stream, when, [f, ':e:']);
+  return _duplicateStreamOnEmit(stream, when, [f, EMIT_KEY]);
 }
 
 function filterFirst(val, stream) {
@@ -170,7 +188,7 @@ function filterFirst(val, stream) {
 
 function sample(sourceStream, sampleStream) {
   return _duplicateStreamOnEmit(sampleStream,
-    compose, [':e:', partial(getValue, sourceStream)]);
+    compose, [EMIT_KEY, partial(getValue, sourceStream)]);
 }
 
 export { create, emit, getValue, onValue, offValue, onSubscription, createFromEvents,

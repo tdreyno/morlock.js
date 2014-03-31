@@ -1,8 +1,8 @@
 /**
  * Slice an array.
- * @param {Array} arr The original array.
- * @param {Number} pos The position to slice from.
- * @return {Array} New sliced array.
+ * @param {array} arr The original array.
+ * @param {number} pos The position to slice from.
+ * @return {array} New sliced array.
  */
 function slice(arr, pos) {
   return Array.prototype.slice.call(arr, pos);
@@ -10,8 +10,8 @@ function slice(arr, pos) {
 
 /**
  * Shallow copy an array.
- * @param {Array} arr The original array.
- * @return {Array} New copied array.
+ * @param {array} arr The original array.
+ * @return {array} New copied array.
  */
 function copyArray(arr) {
   return slice(arr, 0);
@@ -19,9 +19,9 @@ function copyArray(arr) {
 
 /**
  * Backwards compatible Array.prototype.indexOf
- * @param {Array} list List of items.
- * @param {Object} item Item to search for.
- * @return {Number} Index of match or -1 if not found.
+ * @param {array} list List of items.
+ * @param {object} item Item to search for.
+ * @return {number} Index of match or -1 if not found.
  */
 function indexOf(list, item) {
   if (Array.prototype.indexOf) {
@@ -39,14 +39,15 @@ function indexOf(list, item) {
 
 /**
  * Throttle a function.
- * @param {Function} f The function.
- * @param {Number} delay The delay in ms.
+ * @param {function} f The function.
+ * @param {number} delay The delay in ms.
+ * @return {function} A function which calls the passed-in function throttled.
  */
 function throttle(f, delay) {
   var timeoutId;
   var previous = 0;
 
-  return function() {
+  return function throttleExecute_() {
     var args = arguments;
     var now = +(new Date());
     var remaining = delay - (now - previous);
@@ -70,13 +71,14 @@ function throttle(f, delay) {
 
 /**
  * Debounce a function.
- * @param {Function} f The function.
- * @param {Number} delay The delay in ms.
+ * @param {function} f The function.
+ * @param {number} delay The delay in ms.
+ * @return {function} A function which calls the passed-in function debounced.
  */
 function debounce(f, delay) {
   var timeoutId = null;
 
-  return function() {
+  return function debounceExecute_() {
     clearTimeout(timeoutId);
     var lastArgs = arguments;
 
@@ -88,58 +90,46 @@ function debounce(f, delay) {
 }
 
 /**
+ * Backwards compatible Media Query matcher.
+ * @param {String} mq Media query to match.
+ * @return {Boolean} Whether it matched.
+ */
+export function testMQ() {
+  return Modernizr['mq'].apply(Modernizr, arguments);
+}
+
+/**
  * Return a function which gets the viewport width or height.
+ * @private
  * @param {String} dimension The dimension to look up.
  * @param {String} inner The inner dimension.
  * @param {String} client The client dimension.
- * @return {Function} The getter function.
+ * @return {function} The getter function.
  */
 function makeViewportGetter_(dimension, inner, client) {
-  var docElem = document.documentElement;
-
   if (testMQ('(min-' + dimension + ':' + window[inner] + 'px)')) {
-    return function() {
+    return function getWindowDimension_() {
       return window[inner];
     };
   } else {
-    return function() {
+    var docElem = document.documentElement;
+    return function getDocumentDimension_() {
       return docElem[client];
     };
   }
 }
 
-var getViewportWidth = makeViewportGetter_('width', 'innerWidth', 'clientWidth');
-var getViewportHeight = makeViewportGetter_('height', 'innerHeight', 'clientHeight');
+export var getViewportWidth = makeViewportGetter_('width', 'innerWidth', 'clientWidth');
+export var getViewportHeight = makeViewportGetter_('height', 'innerHeight', 'clientHeight');
 
-/**
- * Backwards compatible Media Query matcher.
- * @param {String} mq Media query to match.
- * @return {Boolean} Whether it matched.
- */
-function testMQ(mq) {
-  var matchMedia = window.matchMedia || window.msMatchMedia;
-  if (matchMedia) {
-  return !!matchMedia(mq).matches;
-  }
-
-  var div = document.createElement('div');
-  div.id = 'testmq';
-  div.innerHTML = '<style id="stestmq">@media ' + mq + ' { #testmq { position: absolute; } }</style>';
-  document.body.appendChild(div);
-
-  return (window.getComputedStyle ?
-      getComputedStyle(div, null) :
-      div.currentStyle)['position'] == 'absolute';
-}
-
-var detectedIE10 = (navigator.userAgent.indexOf('MSIE 10') !== -1);
+var detectedIE10_ = (navigator.userAgent.indexOf('MSIE 10') !== -1);
 
 /**
  * Get the document scroll.
  * @return {number}
  */
 function documentScrollY() {
-  if (detectedIE10 && (window.pageYOffset != document.documentElement.scrollTop)) {
+  if (detectedIE10_ && (window.pageYOffset != document.documentElement.scrollTop)) {
     return document.documentElement.scrollTop;
   }
 
@@ -149,8 +139,8 @@ function documentScrollY() {
 /**
  * Calculate the rectangle of the element with an optional buffer.
  * @param {Element} elem The element.
- * @param {Number} buffer An extra padding.
- * @param {Number} currentScrollY The known scrollY value.
+ * @param {number} buffer An extra padding.
+ * @param {number} currentScrollY The known scrollY value.
  */
 function getRect(elem, buffer, currentScrollY) {
   buffer = typeof buffer == 'number' && buffer || 0;
@@ -165,7 +155,7 @@ function getRect(elem, buffer, currentScrollY) {
   
   var bounds = elem.getBoundingClientRect();
 
-  if ('undefined' === typeof currentScrollY) {
+  if (!isDefined(currentScrollY)) {
     currentScrollY = documentScrollY();
   }
 
@@ -186,9 +176,9 @@ function getRect(elem, buffer, currentScrollY) {
 
 /**
  * Map a function over an object.
- * @param {Object} obj The object.
- * @param {Function} f The function.
- * @return {Object} The resulting object.
+ * @param {object} obj The object.
+ * @param {function} f The function.
+ * @return {object} The resulting object.
  */
 function mapObject(f, obj) {
   return reduce(function(sum, v) {
@@ -199,9 +189,9 @@ function mapObject(f, obj) {
 
 /**
  * Map a function over an object.
- * @param {Object} obj The object.
- * @param {Function} f The function.
- * @return {Object} The resulting object.
+ * @param {object} obj The object.
+ * @param {function} f The function.
+ * @return {object} The resulting object.
  */
 function map(f, arr) {
   return reduce(function(sum, v) {
@@ -211,11 +201,11 @@ function map(f, arr) {
 
 /**
  * Get the keys of an object.
- * @param {Object} obj The object.
- * @return {Array} An array of keys.
+ * @param {object} obj The object.
+ * @return {array} An array of keys.
  */
 function objectKeys(obj) {
-  if (!obj) { return []; }
+  if (!obj) { return null; }
 
   if (Object.keys) {
     return Object.keys(obj);
@@ -234,9 +224,9 @@ function objectKeys(obj) {
 
 /**
  * Get a value on an object.
- * @param {Object} obj The object.
+ * @param {object} obj The object.
  * @param {String} key The key.
- * @return {Object} Some result.
+ * @return {object} Some result.
  */
 function get(obj, key) {
   return obj[key];
@@ -244,7 +234,7 @@ function get(obj, key) {
 
 /**
  * Set a value on an object.
- * @param {Object} obj The object.
+ * @param {object} obj The object.
  * @param {String} key The key.
  * @param {String} v The value.
  */
@@ -259,8 +249,13 @@ function set(obj, key, v) {
 //   };
 // }
 
+/**
+ * Reverse the order of arguments.
+ * @param {function} f The original function.
+ * @return {function} The function with flipped arguments.
+ */
 function flip(f) {
-  return function() {
+  return function flippedFunction_() {
     return apply(f, Array.prototype.reverse.call(arguments));
   };
 }
@@ -269,57 +264,21 @@ function isEmpty(arr) {
   return !(arr && arr.length);
 }
 
+export function isDefined(val) {
+  return 'undefined' !== typeof val;
+}
+
 function objectVals(obj) {
-  return map(partial(get, obj), objectKeys(obj));
-}
-
-function Thunk(fn) {
-  this.fn = fn;
-}
-
-Thunk.prototype.exec = function () {
-  return this.fn();
-};
-    
-function trampoline(fn) {
-  var trampolined = function() {
-    var result = fn.apply(this, arguments);
-    
-    while (result instanceof Thunk) {
-      result = result.exec();
-    }
-    
-    return result;
-  };
-
-  trampolined.original_fn = fn;
-
-  return trampolined;
-}
-
-function tailCall(fn /*, args*/) {
-  var self = this;
-  var args = rest(arguments);
-
-  if (fn.original_fn instanceof Function) {
-    return new Thunk(function() {
-      return fn.original_fn.apply(self, args);
-    });
-  } else {
-    return new Thunk(function() {
-      return fn.apply(self, args);
-    });
-  }
+  var getPropertyByName = partial(get, obj);
+  return map(getPropertyByName, objectKeys(obj));
 }
 
 function reduce(f, arr, val) {
-  var _reduce = trampoline(function myself(sum, list) {
-    return !isEmpty(list) ?
-      tailCall(myself, f(sum, first(list)), rest(list)) :
-      sum;
-  });
+  for (var i = 0; arr && i < arr.length; i++) {
+    val = f(val, arr[i]);
+  }
 
-  return _reduce(val, arr);
+  return val;
 }
 
 function select(f, arr) {
@@ -343,7 +302,7 @@ function equals(a, b) {
 }
 
 function when(truth, f) {
-  return function() {
+  return function whenExecute_() {
     var whatIsTruth = truth; // Do not mutate original var :(
     if ('function' === typeof truth) {
       whatIsTruth = apply(truth, arguments);
@@ -357,9 +316,9 @@ function when(truth, f) {
 
 /**
  * Bind a function's "this" value.
- * @param {Function} f The function.
- * @param {Object} obj The object.
- * @return {Function} The bound function.
+ * @param {function} f The function.
+ * @param {object} obj The object.
+ * @return {function} The bound function.
  */
 function functionBind(f, obj) {
   if (Function.prototype.bind) {
@@ -377,7 +336,7 @@ function functionBind(f, obj) {
 function partial(f /*, args*/) {
   var args = rest(arguments);
 
-  return function() {
+  return function partialExecute_() {
     var args2 = slice(arguments, 0);
     return f.apply(this, args.concat(args2));
   };
@@ -390,7 +349,7 @@ function delay(f, ms) {
 }
 
 function defer(f, ms) {
-  return delay(f, 'undefined' !== typeof ms ? 1 : ms);
+  return delay(f, isDefined(ms) ? ms : 1);
 }
 
 function apply(f, args) {
@@ -398,7 +357,7 @@ function apply(f, args) {
 }
 
 function rest(arr, fromStart) {
-  fromStart = ('undefined' !== typeof fromStart) ? fromStart : 1;
+  fromStart = isDefined(fromStart) ? fromStart : 1;
   return slice(arr, fromStart);
 }
 
@@ -518,10 +477,10 @@ var rAF = (function() {
 }());
 
 export {
-  indexOf, throttle, debounce, getViewportHeight, getViewportWidth, testMQ,
+  indexOf, throttle, debounce,
   getRect, mapObject, objectKeys, functionBind, partial,
   map, apply, objectVals, call, push, pop, unshift, equals, not,
   delay, unshift, nth, first, last, compose, select, isTrue, get, shift, eventListener,
-  when, reduce, once, sortBy, parseInteger, set, flip, trampoline, tailCall,
+  when, reduce, once, sortBy, parseInteger, set, flip,
   copyArray, defer, slice, isEmpty, reject, rest, constantly, rAF, documentScrollY
 };
