@@ -1,9 +1,5 @@
 import { map, mapObject, partial, sortBy, parseInteger, set, flip, testMQ } from "morlock/core/util";
-import ScrollController from "morlock/controllers/scroll-controller";
-
-var sharedSC = new ScrollController({
-  debounceMs: 0
-});
+import ElementVisibleController from "morlock/controllers/element-visible-controller";
 
 /**
  * Ghetto Record implementation.
@@ -36,7 +32,7 @@ function create(imageMap) {
   }
 
   if (imageMap.lazyLoad) {
-    var observer = sharedSC.observeElement(imageMap.element);
+    var observer = new ElementVisibleController(imageMap.element);
     function onEnter() {
       observer.off('enter', onEnter);
 

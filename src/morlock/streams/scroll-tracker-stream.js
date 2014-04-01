@@ -3,15 +3,13 @@ module Stream from "morlock/core/stream";
 module ScrollStream from "morlock/streams/scroll-stream";
 
 /**
- * Create a new Stream containing events which fire when an element has
- * entered or exited the viewport.
- * @param {Element} element The element we are tracking.
- * @param {Stream} scrollStream A stream emitting scroll events.
- * @param {Stream} resizeStream A stream emitting resize events.
+ * Create a new Stream containing events which fire when a position has
+ * been scrolled past.
+ * @param {number} targetScrollY The position we are tracking.
  * @return {Stream} The resulting stream.
  */
-function create(targetScrollY, scrollPositionStream) {
-  scrollPositionStream = scrollPositionStream || ScrollStream.create({ debounceMs: 0 });
+function create(targetScrollY) {
+  var scrollPositionStream = ScrollStream.create();
   var overTheLineStream = Stream.create();
   var pastScrollY = false;
   var firstRun = true;
@@ -27,12 +25,6 @@ function create(targetScrollY, scrollPositionStream) {
 
     firstRun = false;
   });
-
-  setTimeout(function() {
-    var evObj = document.createEvent('HTMLEvents');
-    evObj.initEvent( 'scroll', true, true );
-    window.dispatchEvent(evObj);
-  }, 10);
 
   return overTheLineStream;
 }

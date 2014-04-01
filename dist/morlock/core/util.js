@@ -102,7 +102,28 @@ define("morlock/core/util",
       return Modernizr['mq'].apply(Modernizr, arguments);
     }
 
-    __exports__.testMQ = testMQ;/**
+    __exports__.testMQ = testMQ;function identity(val) {
+      return val;
+    }
+
+    __exports__.identity = identity;function memoize(f, argsToStringFunc) {
+      var cache = {};
+
+      argsToStringFunc = isDefined(argsToStringFunc) ? argsToStringFunc : JSON.stringify;
+
+      return function memoizedExecute_() {
+        var key = argsToStringFunc.apply(this, arguments);
+
+        if (isDefined(cache[key])) {
+        } else {
+          cache[key] = f.apply(this, arguments);
+        }
+
+        return cache[key];
+      };
+    }
+
+    __exports__.memoize = memoize;/**
      * Return a function which gets the viewport width or height.
      * @private
      * @param {String} dimension The dimension to look up.
@@ -272,7 +293,11 @@ define("morlock/core/util",
       return 'undefined' !== typeof val;
     }
 
-    __exports__.isDefined = isDefined;function objectVals(obj) {
+    __exports__.isDefined = isDefined;function getOption(val, defaultValue) {
+      return isDefined(val) ? val : defaultValue;
+    }
+
+    __exports__.getOption = getOption;function objectVals(obj) {
       var getPropertyByName = partial(get, obj);
       return map(getPropertyByName, objectKeys(obj));
     }
@@ -301,8 +326,112 @@ define("morlock/core/util",
       return !v;
     }
 
+    // Recursive comparison function for `isEqual`.
+    function eq(a, b, aStack, bStack) {
+      // Identical objects are equal. `0 === -0`, but they aren't identical.
+      // See the [Harmony `egal` proposal](http://wiki.ecmascript.org/doku.php?id=harmony:egal).
+      if (a === b) {
+        return a !== 0 || 1 / a == 1 / b;
+      }
+
+      // A strict comparison is necessary because `null == undefined`.
+      if (a == null || b == null) {
+        return a === b;
+      }
+
+      // Compare `[[Class]]` names.
+      var className = toString.call(a);
+      if (className != toString.call(b)) return false;
+      switch (className) {
+        // Strings, numbers, dates, and booleans are compared by value.
+        case '[object String]':
+          // Primitives and their corresponding object wrappers are equivalent; thus, `"5"` is
+          // equivalent to `new String("5")`.
+          return a == String(b);
+        case '[object Number]':
+          // `NaN`s are equivalent, but non-reflexive. An `egal` comparison is performed for
+          // other numeric values.
+          return a != +a ? b != +b : (a == 0 ? 1 / a == 1 / b : a == +b);
+        case '[object Date]':
+        case '[object Boolean]':
+          // Coerce dates and booleans to numeric primitive values. Dates are compared by their
+          // millisecond representations. Note that invalid dates with millisecond representations
+          // of `NaN` are not equivalent.
+          return +a == +b;
+        // RegExps are compared by their source patterns and flags.
+        case '[object RegExp]':
+          return a.source == b.source &&
+                 a.global == b.global &&
+                 a.multiline == b.multiline &&
+                 a.ignoreCase == b.ignoreCase;
+      }
+
+      if (typeof a != 'object' || typeof b != 'object') {
+        return false;
+      }
+
+      // Assume equality for cyclic structures. The algorithm for detecting cyclic
+      // structures is adapted from ES 5.1 section 15.12.3, abstract operation `JO`.
+      var length = aStack.length;
+      while (length--) {
+        // Linear search. Performance is inversely proportional to the number of
+        // unique nested structures.
+        if (aStack[length] == a) return bStack[length] == b;
+      }
+
+      // Objects with different constructors are not equivalent, but `Object`s
+      // from different frames are.
+      var aCtor = a.constructor, bCtor = b.constructor;
+      if (aCtor !== bCtor && !(_.isFunction(aCtor) && (aCtor instanceof aCtor) &&
+                               _.isFunction(bCtor) && (bCtor instanceof bCtor))
+                          && ('constructor' in a && 'constructor' in b)) {
+        return false;
+      }
+
+      // Add the first object to the stack of traversed objects.
+      aStack.push(a);
+      bStack.push(b);
+
+      var size = 0, result = true;
+      // Recursively compare objects and arrays.
+      if (className == '[object Array]') {
+        // Compare array lengths to determine if a deep comparison is necessary.
+        size = a.length;
+        result = size == b.length;
+        if (result) {
+          // Deep compare the contents, ignoring non-numeric properties.
+          while (size--) {
+            if (!(result = eq(a[size], b[size], aStack, bStack))) break;
+          }
+        }
+      } else {
+        // Deep compare objects.
+        for (var key in a) {
+          if (_.has(a, key)) {
+            // Count the expected number of properties.
+            size++;
+            // Deep compare each member.
+            if (!(result = _.has(b, key) && eq(a[key], b[key], aStack, bStack))) break;
+          }
+        }
+        // Ensure that both objects contain the same number of properties.
+        if (result) {
+          for (key in b) {
+            if (_.has(b, key) && !(size--)) break;
+          }
+          result = !size;
+        }
+      }
+
+      // Remove the first object from the stack of traversed objects.
+      aStack.pop();
+      bStack.pop();
+
+      return result;
+    }
+
     function equals(a, b) {
-      return a === b;
+      return eq(a, b, [], []);
     }
 
     function when(truth, f) {
@@ -347,13 +476,13 @@ define("morlock/core/util",
     }
 
     function delay(f, ms) {
-      return function() {
+      return function delayedExecute_() {
         setTimeout(partial(f, arguments), ms);
       };
     }
 
     function defer(f, ms) {
-      return delay(f, isDefined(ms) ? ms : 1);
+      return delay(f, isDefined(ms) ? ms : 1)();
     }
 
     function apply(f, args) {
@@ -369,21 +498,48 @@ define("morlock/core/util",
       return apply(f, rest(arguments));
     }
 
-    function eventListener(target, eventName, cb) {
-      if (target.addEventListener) {
-        target.addEventListener(eventName, cb, false);
-        return function() {
-          target.removeEventListener(eventName, cb, false);
-        };
-      } else if (target.attachEvent) {
-        target.attachEvent('on' + eventName, cb);
-        return function() {
-          target.detachEvent('on' + eventName, cb);
-        };
-      }
+    var registry_ = [];
+    var addEventListener_ = window.addEventListener || function fallbackAddRemoveEventListener_(type, listener) {
+      var target = this;
+
+      registry_.unshift([target, type, listener, function (event) {
+        event.currentTarget = target;
+        event.preventDefault = function () { event.returnValue = false };
+        event.stopPropagation = function () { event.cancelBubble = true };
+        event.target = event.srcElement || target;
+
+        listener.call(target, event);
+      }]);
+
+      this.attachEvent("on" + type, registry_[0][3]);
     }
 
-    function nth(idx, arr) {
+    var removeEventListener_ = window.removeEventListener || function fallbackRemoveEventListener_(type, listener) {
+      for (var index = 0, register; register = registry_[index]; ++index) {
+        if (register[0] == this && register[1] == type && register[2] == listener) {
+          return this.detachEvent("on" + type, registry_.splice(index, 1)[0][3]);
+        }
+      }
+    };
+
+    var dispatchEvent_ = window.dispatchEvent || function (eventObject) {
+      return this.fireEvent("on" + eventObject.type, eventObject);
+    };
+
+    function eventListener(target, eventName, cb) {
+      addEventListener_.call(target, eventName, cb, false);
+      return function eventListenerRemove_() {
+        removeEventListener_.call(target, eventName, cb, false);
+      };
+    }
+
+    function dispatchEvent(target, evType) {
+      var evObj = document.createEvent('HTMLEvents');
+      evObj.initEvent(evType, true, true);
+      dispatchEvent_.call(target, evObj);
+    }
+
+    __exports__.dispatchEvent = dispatchEvent;function nth(idx, arr) {
       return arr[idx];
     }
 
@@ -430,7 +586,7 @@ define("morlock/core/util",
     function compose(/*fns*/) {
       var fns = arguments;
 
-      return function(value) {
+      return function composedExecute_(value) {
         for (var i = fns.length - 1; i >= 0; --i) {
           value = fns[i](value);
         }
@@ -441,7 +597,7 @@ define("morlock/core/util",
     function once(f /*, args*/) {
       var args = rest(arguments);
       var hasRun = false;
-      return function() {
+      return function onceExecute_() {
         if (!hasRun) {
           hasRun = true;
           return apply(f, args);
@@ -454,7 +610,7 @@ define("morlock/core/util",
     }
 
     function constantly(val) {
-      return val;
+      return function constantlyExecute_() { return val };
     }
 
     var rAF = (function() {
@@ -467,7 +623,7 @@ define("morlock/core/util",
       }
 
       if (!correctRAF) {
-        correctRAF = function(callback, element) {
+        correctRAF = function rAFFallback_(callback, element) {
           var currTime = new Date().getTime();
           var timeToCall = Math.max(0, 16 - (currTime - lastTime));
           var id = window.setTimeout(function() { callback(currTime + timeToCall); },

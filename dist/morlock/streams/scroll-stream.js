@@ -4,39 +4,22 @@ define("morlock/streams/scroll-stream",
     "use strict";
     var Stream = __dependency1__;
     var documentScrollY = __dependency2__.documentScrollY;
+    var memoize = __dependency2__.memoize;
+    var dispatchEvent = __dependency2__.dispatchEvent;
+    var defer = __dependency2__.defer;
+    var partial = __dependency2__.partial;
 
     /**
-     * Create a new Stream containing scroll events.
-     * These events can be debounced (meaning they will only emit after events have
-     * ceased for X milliseconds).
-     * @param {object=} options Map of optional parameters.
-     * @param {number=200} options.debounceMs What rate to debounce the stream.
-     * @return {Stream} The resulting stream.
+     * Create a stream of window.onscroll events, but only calculate their
+     * position on requestAnimationFrame frames.
+     * @return {Stream}
      */
-    function create(options) {
-      options = options || {};
-      var debounceMs = 'undefined' !== typeof options.debounceMs ? options.debounceMs : 200;
-
-      var scrollEndStream = Stream.debounce(
-        debounceMs,
-        createFromEvents()
-      );
-
-      // It's going to space, will you just give it a second!
-      setTimeout(function() {
-        var evObj = document.createEvent('HTMLEvents');
-        evObj.initEvent( 'scroll', true, true );
-        window.dispatchEvent(evObj);
-      }, 10);
-
-      return scrollEndStream;
-    }
-
-    function createFromEvents() {
+    var create = memoize(function create_() {
       var oldScrollY;
       var scrollDirty = true;
+      var scrollEventsStream = Stream.createFromEvents(window, 'scroll');
 
-      Stream.onValue(Stream.createFromEvents(window, 'scroll'), function() {
+      Stream.onValue(scrollEventsStream, function() {
         scrollDirty = true;
       });
 
@@ -55,13 +38,16 @@ define("morlock/streams/scroll-stream",
         return false;
       }, rAF);
 
+      // It's going to space, will you just give it a second!
+      defer(partial(dispatchEvent, window, 'scroll'), 10);
+
       return Stream.map(
         function getWindowPosition() {
           return oldScrollY;
         },
         didChangeOnRAFStream
       );
-    }
+    });
 
     __exports__.create = create;
   });

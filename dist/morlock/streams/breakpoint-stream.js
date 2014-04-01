@@ -1,6 +1,6 @@
 define("morlock/streams/breakpoint-stream", 
-  ["morlock/core/util","morlock/core/stream","exports"],
-  function(__dependency1__, __dependency2__, __exports__) {
+  ["morlock/core/util","morlock/core/stream","morlock/streams/resize-stream","exports"],
+  function(__dependency1__, __dependency2__, __dependency3__, __exports__) {
     "use strict";
     var objectVals = __dependency1__.objectVals;
     var partial = __dependency1__.partial;
@@ -8,7 +8,9 @@ define("morlock/streams/breakpoint-stream",
     var apply = __dependency1__.apply;
     var push = __dependency1__.push;
     var testMQ = __dependency1__.testMQ;
+    var getOption = __dependency1__.getOption;
     var Stream = __dependency2__;
+    var ResizeStream = __dependency3__;
 
     /**
      * Create a new Stream containing events which fire when the browser
@@ -16,10 +18,26 @@ define("morlock/streams/breakpoint-stream",
      * @param {Object} breakpoints Map containing the name of each breakpoint
      *   as the key. The value can be either a media query string or a map
      *   with min and/or max keys.
-     * @param {Stream} resizeStream A stream emitting resize events.
      * @return {Stream} The resulting stream.
      */
-    function create(breakpoints, resizeStream) {
+    function create(breakpoints, options) {
+      var baseStream = ResizeStream.create();
+      var resizeStream;
+
+      if (options.debounceMs) {
+        resizeStream = Stream.debounce(
+          options.debounceMs,
+          baseStream
+        );
+      } else if (options.throttleMs) {
+        resizeStream = Stream.throttle(
+          options.throttleMs,
+          baseStream
+        );
+      } else {
+        resizeStream = baseStream;
+      }
+
       var breakpointStreams = mapObject(function(val, key) {
         var s = Stream.create();
 
@@ -53,15 +71,15 @@ define("morlock/streams/breakpoint-stream",
       if ('undefined' !== typeof options.mq) {
         mq = options.mq;
       } else {
-        options.max = ('undefined' !== typeof options.max) ? options.max : Infinity;
-        options.min = ('undefined' !== typeof options.min) ? options.min : 0;
+        var max = getOption(options.max, Infinity);
+        var min = getOption(options.min, 0);
 
         mq = 'only screen';
-        if (options.max < Infinity) {
-          mq += ' and (max-width: ' + options.max + 'px)';
+        if (max < Infinity) {
+          mq += ' and (max-width: ' + max + 'px)';
         }
-        if (options.min > 0) {
-          mq += ' and (min-width: ' + options.min + 'px)';
+        if (min > 0) {
+          mq += ' and (min-width: ' + min + 'px)';
         }
       }
 

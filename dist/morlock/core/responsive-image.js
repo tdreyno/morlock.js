@@ -1,5 +1,5 @@
 define("morlock/core/responsive-image", 
-  ["morlock/core/util","morlock/controllers/scroll-controller","exports"],
+  ["morlock/core/util","morlock/controllers/element-visible-controller","exports"],
   function(__dependency1__, __dependency2__, __exports__) {
     "use strict";
     var map = __dependency1__.map;
@@ -10,11 +10,7 @@ define("morlock/core/responsive-image",
     var set = __dependency1__.set;
     var flip = __dependency1__.flip;
     var testMQ = __dependency1__.testMQ;
-    var ScrollController = __dependency2__["default"];
-
-    var sharedSC = new ScrollController({
-      debounceMs: 0
-    });
+    var ElementVisibleController = __dependency2__["default"];
 
     /**
      * Ghetto Record implementation.
@@ -47,7 +43,7 @@ define("morlock/core/responsive-image",
       }
 
       if (imageMap.lazyLoad) {
-        var observer = sharedSC.observeElement(imageMap.element);
+        var observer = new ElementVisibleController(imageMap.element);
         function onEnter() {
           observer.off('enter', onEnter);
 

@@ -1,16 +1,23 @@
 define("morlock/base", 
-  ["morlock/controllers/resize-controller","morlock/controllers/scroll-controller","morlock/core/responsive-image","morlock/plugins/jquery.breakpointer","morlock/plugins/jquery.scrolltracker","morlock/plugins/jquery.eventstream","morlock/plugins/jquery.morlockResize","exports"],
-  function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __dependency5__, __dependency6__, __dependency7__, __exports__) {
+  ["morlock/controllers/resize-controller","morlock/controllers/scroll-controller","morlock/controllers/element-visible-controller","morlock/controllers/scroll-position-controller","morlock/core/responsive-image","morlock/core/util","exports"],
+  function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __dependency5__, __dependency6__, __exports__) {
     "use strict";
     var ResizeController = __dependency1__["default"];
     var ScrollController = __dependency2__["default"];
-    var ResponsiveImage = __dependency3__;
+    var ElementVisibleController = __dependency3__["default"];
+    var ScrollPositionController = __dependency4__["default"];
+    var ResponsiveImage = __dependency5__;
+    // import "morlock/plugins/jquery.breakpointer";
+    // import "morlock/plugins/jquery.scrolltracker";
+    // import "morlock/plugins/jquery.eventstream";
+    // import "morlock/plugins/jquery.morlockResize";
+    var isDefined = __dependency6__.isDefined;
 
     var sharedTrackers = {};
     var sharedPositions = {};
 
     function getScrollTracker(debounceMs) {
-      debounceMs = 'undefined' !== typeof debounceMs ? debounceMs : 0;
+      debounceMs = isDefined(debounceMs) ? debounceMs : 0;
       sharedTrackers[debounceMs] = sharedTrackers[debounceMs] || new ScrollController({ debounceMs: debounceMs });
       return sharedTrackers[debounceMs];
     }
@@ -21,19 +28,22 @@ define("morlock/base",
     }
 
     var morlock = {
+      onScroll: function onScroll(cb) {
+        var st = getScrollTracker();
+        return st.on('scroll', cb);
+      },
+
       onScrollEnd: function onScrollEnd(cb) {
         var st = getScrollTracker();
         return st.on('scrollEnd', cb);
       },
 
-      observeElement: function observeElement() {
-        var st = getScrollTracker();
-        return st.observeElement.apply(st, arguments);
+      observeElement: function observeElement(elem, options) {
+        return new ElementVisibleController(elem, options);
       },
 
-      observePosition: function observePosition() {
-        var st = getScrollTracker();
-        return st.observePosition.apply(st, arguments);
+      observePosition: function observePosition(positionY) {
+        return new ScrollPositionController(positionY);
       },
 
       position: {
@@ -48,9 +58,10 @@ define("morlock/base",
         }
       }
     };
-
+    __exports__.morlock = morlock;
     __exports__.ResizeController = ResizeController;
     __exports__.ResponsiveImage = ResponsiveImage;
     __exports__.ScrollController = ScrollController;
-    __exports__.morlock = morlock;
+    __exports__.ElementVisibleController = ElementVisibleController;
+    __exports__.ScrollPositionController = ScrollPositionController;
   });

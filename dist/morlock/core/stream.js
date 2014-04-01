@@ -7,6 +7,7 @@ define("morlock/core/stream",
     var delayCall = __dependency1__.delay;
     var mapArray = __dependency1__.map;
     var apply = __dependency1__.apply;
+    var memoize = __dependency1__.memoize;
     var first = __dependency1__.first;
     var rest = __dependency1__.rest;
     var push = __dependency1__.push;
@@ -136,9 +137,9 @@ define("morlock/core/stream",
       return outputStream;
     }
 
-    function createFromRAF() {
-      var outputStream = create(true);
-      var boundEmit = partial(emit, outputStream);
+    var createFromRAF = memoize(function createFromRAF_() {
+      var rAFStream = create(true);
+      var boundEmit = partial(emit, rAFStream);
 
       /**
        * Lazily subscribes to a raf event.
@@ -148,10 +149,10 @@ define("morlock/core/stream",
         rAF(sendEvent);
       }
 
-      onSubscription(outputStream, once(sendEvent));
+      onSubscription(rAFStream, once(sendEvent));
 
-      return outputStream;
-    }
+      return rAFStream;
+    });
 
     function merge(/* streams */) {
       var streams = copyArray(arguments);
@@ -165,6 +166,8 @@ define("morlock/core/stream",
       return outputStream;
     }
 
+    var EMIT_KEY = ':e:';
+
     function _duplicateStreamOnEmit(stream, f, args) {
       var outputStream = create();
       var boundEmit = partial(emit, outputStream);
@@ -177,34 +180,46 @@ define("morlock/core/stream",
 
     function delay(ms, stream) {
       if (ms <= 0) { return stream; }
-      return _duplicateStreamOnEmit(stream, delayCall, [':e:', ms]);
+      return _duplicateStreamOnEmit(stream, delayCall, [EMIT_KEY, ms]);
     }
 
     function throttle(ms, stream) {
       if (ms <= 0) { return stream; }
-      return _duplicateStreamOnEmit(stream, throttleCall, [':e:', ms]);
+      return _duplicateStreamOnEmit(stream, throttleCall, [EMIT_KEY, ms]);
     }
 
     function debounce(ms, stream) {
       if (ms <= 0) { return stream; }
-      return _duplicateStreamOnEmit(stream, debounceCall, [':e:', ms]);
+      return _duplicateStreamOnEmit(stream, debounceCall, [EMIT_KEY, ms]);
     }
 
     function map(f, stream) {
-      return _duplicateStreamOnEmit(stream, compose, [':e:', f]);
+      return _duplicateStreamOnEmit(stream, compose, [EMIT_KEY, f]);
     }
 
     function filter(f, stream) {
-      return _duplicateStreamOnEmit(stream, when, [f, ':e:']);
+      return _duplicateStreamOnEmit(stream, when, [f, EMIT_KEY]);
     }
 
     function filterFirst(val, stream) {
       return filter(compose(partial(equals, val), first), stream);
     }
 
-    function sample(sourceStream, sampleStream) {
+    function skipDuplicates(stream) {
+      var lastValue;
+      return filter(function(val) {
+        if (equals(lastValue, val)) {
+          return false;
+        }
+        
+        lastValue = val;
+        return true;
+      }, stream);
+    }
+
+    __exports__.skipDuplicates = skipDuplicates;function sample(sourceStream, sampleStream) {
       return _duplicateStreamOnEmit(sampleStream,
-        compose, [':e:', partial(getValue, sourceStream)]);
+        compose, [EMIT_KEY, partial(getValue, sourceStream)]);
     }
 
     __exports__.create = create;

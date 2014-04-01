@@ -34,7 +34,7 @@ module.exports = function (grunt) {
         insertRequire: ['morlock/base'],
         baseUrl: "dist/",
         wrap: {
-          startFile: 'frags/start.frag',
+          startFile: ['vendor/modernizr.js', 'frags/start.frag'],
           endFile: 'frags/end.frag'
         }
       },

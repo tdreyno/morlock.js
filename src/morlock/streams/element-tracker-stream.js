@@ -1,16 +1,16 @@
 import { getViewportHeight, getRect } from "morlock/core/util";
 module Stream from "morlock/core/stream";
+module ScrollStream from "morlock/streams/scroll-stream";
+module ResizeStream from "morlock/streams/resize-stream";
 
 /**
  * Create a new Stream containing events which fire when an element has
  * entered or exited the viewport.
  * @param {Element} element The element we are tracking.
- * @param {Stream} scrollStream A stream emitting scroll events.
- * @param {Stream} resizeStream A stream emitting resize events.
  * @param {object} options Key/value options
  * @return {Stream} The resulting stream.
  */
-function create(element, scrollStream, resizeStream, options) {
+function create(element, resizeStream, options) {
   var trackerStream = Stream.create();
   var viewportHeight;
   var isVisible = false;
@@ -34,8 +34,8 @@ function create(element, scrollStream, resizeStream, options) {
     }
   }
 
-  Stream.onValue(scrollStream, didUpdateViewport);
-  Stream.onValue(resizeStream, updateViewport);
+  Stream.onValue(ScrollStream.create(), didUpdateViewport);
+  Stream.onValue(ResizeStream.create(), updateViewport);
   updateViewport();
 
   return trackerStream;

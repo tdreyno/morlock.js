@@ -1,5 +1,5 @@
 import { objectKeys, partial, equals, first, compose, isTrue, select, get,
-         shift, nth } from "morlock/core/util";
+         shift, nth, getOption } from "morlock/core/util";
 module Stream from "morlock/core/stream";
 module BreakpointStream from "morlock/streams/breakpoint-stream";
 module ResizeStream from "morlock/streams/resize-stream";
@@ -20,24 +20,34 @@ function ResizeController(options) {
 
   var resizeStream = ResizeStream.create(options);
 
+  var debounceMs = getOption(options.debounceMs, 200);
+  var resizeEndStream = Stream.debounce(
+    debounceMs,
+    resizeStream
+  );
+
   var breakpointStream;
   if ('undefined' !== typeof options.breakpoints) {
-    breakpointStream = BreakpointStream.create(options.breakpoints, resizeStream);
+    breakpointStream = BreakpointStream.create(options.breakpoints, {
+      throttleMs: options.throttleMs,
+      debounceMs: getOption(options.breakpointDebounceMs, debounceMs)
+    });
   }
 
   this.on = function(eventType, cb) {
-    if ('resize' === eventType) {
-      Stream.onValue(Stream.map(function() {
-        return [window.innerWidth, window.innerHeight];
-      }, resizeStream), cb);
+    var subscriptionStream;
+    if ('resizeEnd' === eventType) {
+      subscriptionStream = resizeEndStream;
+    } else if ('resize' === eventType) {
+      subscriptionStream = resizeStream;
     } else if ('breakpoint' === eventType) {
       if (breakpointStream) {
-        Stream.onValue(Stream.map(function(v) {
-          return [first(v), v[1] ? 'enter' : 'exit'];
-        }, breakpointStream), cb);
-      } else {
-        // No breakpoints defined.
+        subscriptionStream = Stream.map(mapToNamedEvents_, breakpointStream);
       }
+    }
+
+    if (subscriptionStream) {
+      Stream.onValue(subscriptionStream, cb);
     }
   };
 
@@ -53,6 +63,13 @@ function ResizeController(options) {
     var isActive = compose(isTrue, partial(get, activeBreakpoints));
     return select(isActive, objectKeys(activeBreakpoints));
   };
+}
+
+var ENTER = 'enter';
+var EXIT = 'exit';
+
+function mapToNamedEvents_(v) {
+  return [first(v), v[1] ? ENTER : EXIT];
 }
 
 export default = ResizeController;

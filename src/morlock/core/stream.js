@@ -2,7 +2,7 @@ import { debounce as debounceCall,
          throttle as throttleCall,
          delay as delayCall,
          map as mapArray,
-         apply,
+         apply, memoize,
          first, rest, push, apply, unshift, eventListener, compose, when, equals,
          partial, once, copyArray, flip, call, indexOf, rAF } from "morlock/core/util";
 
@@ -118,9 +118,9 @@ function timeout(ms) {
   return outputStream;
 }
 
-function createFromRAF() {
-  var outputStream = create(true);
-  var boundEmit = partial(emit, outputStream);
+var createFromRAF = memoize(function createFromRAF_() {
+  var rAFStream = create(true);
+  var boundEmit = partial(emit, rAFStream);
 
   /**
    * Lazily subscribes to a raf event.
@@ -130,10 +130,10 @@ function createFromRAF() {
     rAF(sendEvent);
   }
 
-  onSubscription(outputStream, once(sendEvent));
+  onSubscription(rAFStream, once(sendEvent));
 
-  return outputStream;
-}
+  return rAFStream;
+});
 
 function merge(/* streams */) {
   var streams = copyArray(arguments);
@@ -184,6 +184,18 @@ function filter(f, stream) {
 
 function filterFirst(val, stream) {
   return filter(compose(partial(equals, val), first), stream);
+}
+
+export function skipDuplicates(stream) {
+  var lastValue;
+  return filter(function(val) {
+    if (equals(lastValue, val)) {
+      return false;
+    }
+    
+    lastValue = val;
+    return true;
+  }, stream);
 }
 
 function sample(sourceStream, sampleStream) {

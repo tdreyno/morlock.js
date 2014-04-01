@@ -1,6 +1,7 @@
 import { objectVals, partial, mapObject, apply, push,
-         testMQ } from "morlock/core/util";
+         testMQ, getOption } from "morlock/core/util";
 module Stream from "morlock/core/stream";
+module ResizeStream from "morlock/streams/resize-stream";
 
 /**
  * Create a new Stream containing events which fire when the browser
@@ -8,10 +9,26 @@ module Stream from "morlock/core/stream";
  * @param {Object} breakpoints Map containing the name of each breakpoint
  *   as the key. The value can be either a media query string or a map
  *   with min and/or max keys.
- * @param {Stream} resizeStream A stream emitting resize events.
  * @return {Stream} The resulting stream.
  */
-function create(breakpoints, resizeStream) {
+function create(breakpoints, options) {
+  var baseStream = ResizeStream.create();
+  var resizeStream;
+
+  if (options.debounceMs) {
+    resizeStream = Stream.debounce(
+      options.debounceMs,
+      baseStream
+    );
+  } else if (options.throttleMs) {
+    resizeStream = Stream.throttle(
+      options.throttleMs,
+      baseStream
+    );
+  } else {
+    resizeStream = baseStream;
+  }
+
   var breakpointStreams = mapObject(function(val, key) {
     var s = Stream.create();
 
@@ -45,15 +62,15 @@ function breakpointToString(options) {
   if ('undefined' !== typeof options.mq) {
     mq = options.mq;
   } else {
-    options.max = ('undefined' !== typeof options.max) ? options.max : Infinity;
-    options.min = ('undefined' !== typeof options.min) ? options.min : 0;
+    var max = getOption(options.max, Infinity);
+    var min = getOption(options.min, 0);
 
     mq = 'only screen';
-    if (options.max < Infinity) {
-      mq += ' and (max-width: ' + options.max + 'px)';
+    if (max < Infinity) {
+      mq += ' and (max-width: ' + max + 'px)';
     }
-    if (options.min > 0) {
-      mq += ' and (min-width: ' + options.min + 'px)';
+    if (min > 0) {
+      mq += ' and (min-width: ' + min + 'px)';
     }
   }
 
