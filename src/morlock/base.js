@@ -5,6 +5,7 @@ import ElementVisibleController from "morlock/controllers/element-visible-contro
 import ScrollPositionController from "morlock/controllers/scroll-position-controller";
 module ResponsiveImage from "morlock/core/responsive-image";
 import { isDefined, equals, filter } from 'morlock/core/util';
+module Events from 'morlock/core/events';
 module Stream from "morlock/core/stream";
 
 var sharedTrackers = {};
@@ -104,6 +105,9 @@ export var morlock = {
     }
   }
 };
+
+morlock.Stream = Stream;
+morlock.Events = Events;
 
 export {
   ResizeController,

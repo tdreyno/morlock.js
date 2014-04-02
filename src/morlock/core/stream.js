@@ -3,12 +3,14 @@ import { debounce as debounceCall,
          throttle as throttleCall,
          delay as delayCall,
          map as mapArray,
-         memoize,
+         memoize, objectKeys,
          first, apply, compose, when, equals,
          partial, once, copyArray, flip, call, indexOf, rAF } from "morlock/core/util";
 
 // Internal tracking of how many streams have been created.
 var nextID = 0;
+
+export var openStreams = {};
 
 /**
  * Ghetto Record implementation.
@@ -24,6 +26,10 @@ function Stream(trackSubscribers) {
   this.streamID = nextID++;
   this.value = null; // TODO: Some kind of buffer
   this.closed = false;
+  this.closeSubscribers = null;
+  this.emptySubscribers = null;
+
+  openStreams[this.streamID] = this;
 }
 
 function create(trackSubscribers) {
@@ -51,9 +57,11 @@ function onValue(stream, f) {
   if (stream.trackSubscribers) {
     mapArray(partial(flip(call), f), stream.subscriberSubscribers);
   }
+
+  return partial(offValue, stream, f);
 }
 
-export function closeStream(stream) {
+export function close(stream) {
   if (stream.closed) { return; }
 
   stream.closed = true;
@@ -62,6 +70,13 @@ export function closeStream(stream) {
   if (stream.subscribers) {
     stream.subscribers.length = 0;
   }
+
+  if (stream.closeSubscribers) {
+    mapArray(flip(call), stream.closeSubscribers);
+    stream.closeSubscribers.length = 0;
+  }
+
+  delete openStreams[stream.streamID];
 }
 
 function offValue(stream, f) {
@@ -70,25 +85,68 @@ function offValue(stream, f) {
     if (idx !== -1) {
       stream.subscribers.splice(idx, 1);
     }
+
+    if (stream.subscribers.length < 1) {
+      stream.subscribers = null;
+      mapArray(flip(call), stream.emptySubscribers);
+    }
   }
 }
 
 function onSubscription(stream, f) {
   if (stream.trackSubscribers) {
-    stream.subscriberSubscribers = stream.subscriberSubscribers || [];
+    stream.subscriberSubscribers || (stream.subscriberSubscribers = []);
     stream.subscriberSubscribers.push(f);
   }
+}
+
+export function onClose(stream, f) {
+  stream.closeSubscribers || (stream.closeSubscribers = []);
+  stream.closeSubscribers.push(f);
+}
+
+export function onEmpty(stream, f) {
+  stream.emptySubscribers || (stream.emptySubscribers = []);
+  stream.emptySubscribers.push(f);
 }
 
 function createFromEvents(target, eventName) {
   var outputStream = create(true);
   var boundEmit = partial(emit, outputStream);
 
+  var isListening = false;
+  var unsubFunc;
+
+  function detachListener_() {
+    if (!isListening) { return; }
+
+    if (unsubFunc) {
+      unsubFunc();
+      unsubFunc = null;
+      isListening = false;
+    }
+  }
+
   /**
    * Lazily subscribes to a dom event.
    */
-  var attachListener = partial(eventListener, target, eventName, boundEmit);
-  onSubscription(outputStream, once(attachListener));
+  function attachListener_() {
+    if (isListening) { return; }
+    isListening = true;
+
+    unsubFunc = eventListener(target, eventName, function() {
+      if (outputStream.closed) {
+        detachListener_();
+      } else {
+        apply(boundEmit, arguments);
+      }
+    });
+
+    onClose(outputStream, detachListener_);
+  };
+
+  onSubscription(outputStream, attachListener_);
+  onEmpty(outputStream, detachListener_);
 
   return outputStream;
 }
@@ -100,6 +158,16 @@ function interval(ms) {
   /**
    * Lazily subscribes to a timeout event.
    */
+  var attachListener = function attach_() {
+    var intervalId = setInterval(function() {
+      if (outputStream.closed) {
+        clearInterval(intervalId);
+      } else {
+        apply(boundEmit, arguments);
+      }
+    }, ms);
+  };
+
   var attachListener = partial(setInterval, boundEmit, ms);
   onSubscription(outputStream, once(attachListener));
 
@@ -127,8 +195,10 @@ var createFromRAF = memoize(function createFromRAF_() {
    * Lazily subscribes to a raf event.
    */
   function sendEvent(t) {
-    boundEmit(t);
-    rAF(sendEvent);
+    if (!rAFStream.closed) {
+      boundEmit(t);
+      rAF(sendEvent);
+    }
   }
 
   onSubscription(rAFStream, once(sendEvent));
@@ -141,10 +211,30 @@ function merge(/* streams */) {
   var outputStream = create();
   var boundEmit = partial(emit, outputStream);
   
+  // var childStreams = {};
+
   // Map used for side-effects
   mapArray(function(stream) {
-    onValue(stream, boundEmit);
+    // childStreams[stream.streamID] = true;
+
+    var offValFunc = onValue(stream, boundEmit);
+    onClose(outputStream, offValFunc);
+
+    // function cleanup() {
+    //   delete childStreams[stream.streamID];
+
+    //   if (objectKeys(childStreams).length < 1) {
+    //     close(outputStream);
+    //   }
+    // }
+
+    // onClose(stream, cleanup);
+    // onEmpty(stream, cleanup);
   }, streams);
+
+  // onEmpty(outputStream, function() {
+  //   debugger;
+  // });
 
   return outputStream;
 }
@@ -157,7 +247,11 @@ function _duplicateStreamOnEmit(stream, f, args) {
   var boundArgs = mapArray(function(v) {
     return v === EMIT_KEY ? boundEmit : v;
   }, args);
-  onValue(stream, apply(apply, [f, boundArgs]));
+
+  var offValFunc = onValue(stream, apply(apply, [f, boundArgs]));
+  // onClose(outputStream, offValFunc);
+  // onEmpty(outputStream, partial(close, outputStream));
+
   return outputStream;
 }
 

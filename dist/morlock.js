@@ -1123,10 +1123,15 @@ define("morlock/core/events",
       return this.fireEvent("on" + eventObject.type, eventObject);
     };
 
+    var eventListenerInfo = { count: 0 };
+    __exports__.eventListenerInfo = eventListenerInfo;
     function eventListener(target, eventName, cb) {
       addEventListener_.call(target, eventName, cb, false);
+      eventListenerInfo.count++;
+
       return function eventListenerRemove_() {
         removeEventListener_.call(target, eventName, cb, false);
+        eventListenerInfo.count--;
       };
     }
 
@@ -1147,6 +1152,7 @@ define("morlock/core/stream",
     var delayCall = __dependency2__.delay;
     var mapArray = __dependency2__.map;
     var memoize = __dependency2__.memoize;
+    var objectKeys = __dependency2__.objectKeys;
     var first = __dependency2__.first;
     var apply = __dependency2__.apply;
     var compose = __dependency2__.compose;
@@ -1163,6 +1169,8 @@ define("morlock/core/stream",
     // Internal tracking of how many streams have been created.
     var nextID = 0;
 
+    var openStreams = {};
+    __exports__.openStreams = openStreams;
     /**
      * Ghetto Record implementation.
      */
@@ -1177,6 +1185,10 @@ define("morlock/core/stream",
       this.streamID = nextID++;
       this.value = null; // TODO: Some kind of buffer
       this.closed = false;
+      this.closeSubscribers = null;
+      this.emptySubscribers = null;
+
+      openStreams[this.streamID] = this;
     }
 
     function create(trackSubscribers) {
@@ -1204,9 +1216,11 @@ define("morlock/core/stream",
       if (stream.trackSubscribers) {
         mapArray(partial(flip(call), f), stream.subscriberSubscribers);
       }
+
+      return partial(offValue, stream, f);
     }
 
-    function closeStream(stream) {
+    function close(stream) {
       if (stream.closed) { return; }
 
       stream.closed = true;
@@ -1215,33 +1229,83 @@ define("morlock/core/stream",
       if (stream.subscribers) {
         stream.subscribers.length = 0;
       }
+
+      if (stream.closeSubscribers) {
+        mapArray(flip(call), stream.closeSubscribers);
+        stream.closeSubscribers.length = 0;
+      }
+
+      delete openStreams[stream.streamID];
     }
 
-    __exports__.closeStream = closeStream;function offValue(stream, f) {
+    __exports__.close = close;function offValue(stream, f) {
       if (stream.subscribers) {
         var idx = indexOf(stream.subscribers, f);
         if (idx !== -1) {
           stream.subscribers.splice(idx, 1);
+        }
+
+        if (stream.subscribers.length < 1) {
+          stream.subscribers = null;
+          mapArray(flip(call), stream.emptySubscribers);
         }
       }
     }
 
     function onSubscription(stream, f) {
       if (stream.trackSubscribers) {
-        stream.subscriberSubscribers = stream.subscriberSubscribers || [];
+        stream.subscriberSubscribers || (stream.subscriberSubscribers = []);
         stream.subscriberSubscribers.push(f);
       }
     }
 
-    function createFromEvents(target, eventName) {
+    function onClose(stream, f) {
+      stream.closeSubscribers || (stream.closeSubscribers = []);
+      stream.closeSubscribers.push(f);
+    }
+
+    __exports__.onClose = onClose;function onEmpty(stream, f) {
+      stream.emptySubscribers || (stream.emptySubscribers = []);
+      stream.emptySubscribers.push(f);
+    }
+
+    __exports__.onEmpty = onEmpty;function createFromEvents(target, eventName) {
       var outputStream = create(true);
       var boundEmit = partial(emit, outputStream);
+
+      var isListening = false;
+      var unsubFunc;
+
+      function detachListener_() {
+        if (!isListening) { return; }
+
+        if (unsubFunc) {
+          unsubFunc();
+          unsubFunc = null;
+          isListening = false;
+        }
+      }
 
       /**
        * Lazily subscribes to a dom event.
        */
-      var attachListener = partial(eventListener, target, eventName, boundEmit);
-      onSubscription(outputStream, once(attachListener));
+      function attachListener_() {
+        if (isListening) { return; }
+        isListening = true;
+
+        unsubFunc = eventListener(target, eventName, function() {
+          if (outputStream.closed) {
+            detachListener_();
+          } else {
+            apply(boundEmit, arguments);
+          }
+        });
+
+        onClose(outputStream, detachListener_);
+      };
+
+      onSubscription(outputStream, attachListener_);
+      onEmpty(outputStream, detachListener_);
 
       return outputStream;
     }
@@ -1253,6 +1317,16 @@ define("morlock/core/stream",
       /**
        * Lazily subscribes to a timeout event.
        */
+      var attachListener = function attach_() {
+        var intervalId = setInterval(function() {
+          if (outputStream.closed) {
+            clearInterval(intervalId);
+          } else {
+            apply(boundEmit, arguments);
+          }
+        }, ms);
+      };
+
       var attachListener = partial(setInterval, boundEmit, ms);
       onSubscription(outputStream, once(attachListener));
 
@@ -1280,8 +1354,10 @@ define("morlock/core/stream",
        * Lazily subscribes to a raf event.
        */
       function sendEvent(t) {
-        boundEmit(t);
-        rAF(sendEvent);
+        if (!rAFStream.closed) {
+          boundEmit(t);
+          rAF(sendEvent);
+        }
       }
 
       onSubscription(rAFStream, once(sendEvent));
@@ -1294,10 +1370,30 @@ define("morlock/core/stream",
       var outputStream = create();
       var boundEmit = partial(emit, outputStream);
       
+      // var childStreams = {};
+
       // Map used for side-effects
       mapArray(function(stream) {
-        onValue(stream, boundEmit);
+        // childStreams[stream.streamID] = true;
+
+        var offValFunc = onValue(stream, boundEmit);
+        onClose(outputStream, offValFunc);
+
+        // function cleanup() {
+        //   delete childStreams[stream.streamID];
+
+        //   if (objectKeys(childStreams).length < 1) {
+        //     close(outputStream);
+        //   }
+        // }
+
+        // onClose(stream, cleanup);
+        // onEmpty(stream, cleanup);
       }, streams);
+
+      // onEmpty(outputStream, function() {
+      //   debugger;
+      // });
 
       return outputStream;
     }
@@ -1310,7 +1406,11 @@ define("morlock/core/stream",
       var boundArgs = mapArray(function(v) {
         return v === EMIT_KEY ? boundEmit : v;
       }, args);
-      onValue(stream, apply(apply, [f, boundArgs]));
+
+      var offValFunc = onValue(stream, apply(apply, [f, boundArgs]));
+      // onClose(outputStream, offValFunc);
+      // onEmpty(outputStream, partial(close, outputStream));
+
       return outputStream;
     }
 
@@ -1378,15 +1478,14 @@ define("morlock/core/stream",
     __exports__.interval = interval;
   });
 define("morlock/streams/resize-stream", 
-  ["morlock/core/stream","morlock/core/util","morlock/core/events","exports"],
-  function(__dependency1__, __dependency2__, __dependency3__, __exports__) {
+  ["morlock/core/stream","morlock/core/util","exports"],
+  function(__dependency1__, __dependency2__, __exports__) {
     
     var Stream = __dependency1__;
     var getOption = __dependency2__.getOption;
     var memoize = __dependency2__.memoize;
     var defer = __dependency2__.defer;
     var partial = __dependency2__.partial;
-    var dispatchEvent = __dependency3__.dispatchEvent;
 
     /**
      * Create a new Stream containing resize events.
@@ -1399,16 +1498,17 @@ define("morlock/streams/resize-stream",
       options = options || {};
       var orientationChangeDelayMs = getOption(options.orientationChangeDelayMs, 100);
 
-      var resizedStream = Stream.merge(
+      var resizeEventStream = Stream.createFromEvents(window, 'resize');
+      var orientationChangeStream = Stream.createFromEvents(window, 'orientationchange');
 
-        Stream.createFromEvents(window, 'resize'),
+      var resizedStream = Stream.merge(
+        resizeEventStream,
 
         // X milliseconds after an orientation change, send an event.
-        Stream.delay(orientationChangeDelayMs,
-                     Stream.createFromEvents(window, 'orientationchange'))
+        Stream.delay(orientationChangeDelayMs, orientationChangeStream)
       );
 
-      defer(partial(dispatchEvent, window, 'resize'), 10);
+      defer(partial(Stream.emit, resizedStream), 10);
 
       return Stream.skipDuplicates(Stream.map(windowDimensions_, resizedStream));
     });
@@ -1444,11 +1544,11 @@ define("morlock/controllers/resize-controller",
 
       var resizeStream = ResizeStream.create(options);
 
-      var debounceMs = getOption(options.debounceMs, 200);
-      var resizeEndStream = debounceMs <= 0 ? resizeStream : Stream.debounce(
-        debounceMs,
-        resizeStream
-      );
+      // var debounceMs = getOption(options.debounceMs, 200);
+      // var resizeEndStream = debounceMs <= 0 ? resizeStream : Stream.debounce(
+      //   debounceMs,
+      //   resizeStream
+      // );
 
       function onOffStream(args, f) {
         var name = args[0];
@@ -1477,6 +1577,10 @@ define("morlock/controllers/resize-controller",
           onOffStream(arguments, Stream.offValue);
 
           return this;
+        },
+
+        destroy: function() {
+          Stream.close(resizeStream);
         }
       };
     }
@@ -2248,8 +2352,8 @@ define("morlock/core/responsive-image",
     __exports__.update = update;
   });
 define("morlock/base", 
-  ["morlock/controllers/resize-controller","morlock/controllers/breakpoint-controller","morlock/controllers/scroll-controller","morlock/controllers/element-visible-controller","morlock/controllers/scroll-position-controller","morlock/core/responsive-image","morlock/core/util","morlock/core/stream","exports"],
-  function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __dependency5__, __dependency6__, __dependency7__, __dependency8__, __exports__) {
+  ["morlock/controllers/resize-controller","morlock/controllers/breakpoint-controller","morlock/controllers/scroll-controller","morlock/controllers/element-visible-controller","morlock/controllers/scroll-position-controller","morlock/core/responsive-image","morlock/core/util","morlock/core/events","morlock/core/stream","exports"],
+  function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __dependency5__, __dependency6__, __dependency7__, __dependency8__, __dependency9__, __exports__) {
     
     var ResizeController = __dependency1__["default"];
     var BreakpointController = __dependency2__["default"];
@@ -2260,7 +2364,8 @@ define("morlock/base",
     var isDefined = __dependency7__.isDefined;
     var equals = __dependency7__.equals;
     var filter = __dependency7__.filter;
-    var Stream = __dependency8__;
+    var Events = __dependency8__;
+    var Stream = __dependency9__;
 
     var sharedTrackers = {};
     var sharedPositions = {};
@@ -2360,6 +2465,9 @@ define("morlock/base",
       }
     };
     __exports__.morlock = morlock;
+    morlock.Stream = Stream;
+    morlock.Events = Events;
+
     __exports__.ResizeController = ResizeController;
     __exports__.BreakpointController = BreakpointController;
     __exports__.ResponsiveImage = ResponsiveImage;

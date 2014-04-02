@@ -18,11 +18,11 @@ function ResizeController(options) {
 
   var resizeStream = ResizeStream.create(options);
 
-  var debounceMs = getOption(options.debounceMs, 200);
-  var resizeEndStream = debounceMs <= 0 ? resizeStream : Stream.debounce(
-    debounceMs,
-    resizeStream
-  );
+  // var debounceMs = getOption(options.debounceMs, 200);
+  // var resizeEndStream = debounceMs <= 0 ? resizeStream : Stream.debounce(
+  //   debounceMs,
+  //   resizeStream
+  // );
 
   function onOffStream(args, f) {
     var name = args[0];
@@ -51,6 +51,10 @@ function ResizeController(options) {
       onOffStream(arguments, Stream.offValue);
 
       return this;
+    },
+
+    destroy: function() {
+      Stream.close(resizeStream);
     }
   };
 }

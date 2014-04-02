@@ -1,0 +1,38 @@
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>morlock.js Debugger</title>
+  <style>
+    .js-responsive-image {
+      opacity: 0;
+      transition: 1s opacity;
+    }
+      .js-responsive-image.loaded {
+        opacity: 1;
+      }
+  </style>
+</head>
+<body>
+  <img class="js-responsive-image" data-src="test/img/experience.jpg" data-hasRetina="true" data-breakpoints="320,768,1024" width="100%">
+  <div style="height: 1000px;"></div>
+  <div id="hi" style="height: 500px; background: red;"></div>
+  <div style="height: 5000px;"></div>
+  <div class="js-responsive-image" data-src="test/img/experience.jpg" data-hasRetina="true" data-breakpoints="320,768,1024" data-lazyload="true" data-preserveAspectRatio="true" data-knownDimensions="768x512"></div>
+  <script src="dist/morlock.js"></script>
+  <script>
+    rc = new ResizeController();
+
+    function onResize(e) {
+      console.log('resize', e[0], e[1]);
+    }
+
+    console.log(morlock.Stream.openStreams, morlock.Events.eventListenerInfo.count);
+    rc.on('resize', onResize);
+    console.log(morlock.Stream.openStreams, morlock.Events.eventListenerInfo.count);
+    rc.off('resize', onResize);
+    console.log(morlock.Stream.openStreams, morlock.Events.eventListenerInfo.count);
+    rc.destroy();
+    console.log(morlock.Stream.openStreams, morlock.Events.eventListenerInfo.count);
+  </script>
+</body>
+</html>

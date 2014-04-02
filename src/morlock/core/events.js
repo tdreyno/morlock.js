@@ -26,10 +26,15 @@ var dispatchEvent_ = window.dispatchEvent || function (eventObject) {
   return this.fireEvent("on" + eventObject.type, eventObject);
 };
 
+export var eventListenerInfo = { count: 0 };
+
 export function eventListener(target, eventName, cb) {
   addEventListener_.call(target, eventName, cb, false);
+  eventListenerInfo.count++;
+
   return function eventListenerRemove_() {
     removeEventListener_.call(target, eventName, cb, false);
+    eventListenerInfo.count--;
   };
 }
 
