@@ -1,12 +1,17 @@
 import ResizeController from "morlock/controllers/resize-controller";
+import BreakpointController from "morlock/controllers/breakpoint-controller";
 import ScrollController from "morlock/controllers/scroll-controller";
 import ElementVisibleController from "morlock/controllers/element-visible-controller";
 import ScrollPositionController from "morlock/controllers/scroll-position-controller";
 module ResponsiveImage from "morlock/core/responsive-image";
-import { isDefined } from 'morlock/core/util';
+import { isDefined, equals, filter } from 'morlock/core/util';
+module Stream from "morlock/core/stream";
 
 var sharedTrackers = {};
 var sharedPositions = {};
+
+var sharedBreakpointDefs = [];
+var sharedBreakpointsVals = [];
 
 function getScrollTracker(debounceMs) {
   debounceMs = isDefined(debounceMs) ? debounceMs : 0;
@@ -17,6 +22,25 @@ function getScrollTracker(debounceMs) {
 function getPositionTracker(pos) {
   sharedPositions[pos] = sharedPositions[pos] || morlock.observePosition(pos);
   return sharedPositions[pos];
+}
+
+function getBreakpointTracker(def) {
+  var found = false;
+  for (var i = 0; i < sharedBreakpointDefs.length; i++) {
+    if (equals(sharedBreakpointDefs[i], def)) {
+      found = true;
+      break;
+    }
+  }
+
+  if (found) {
+    return sharedBreakpointsVals[i];
+  } else {
+    var controller = new BreakpointController(def);
+    sharedBreakpointDefs.push(def);
+    sharedBreakpointsVals.push(controller);
+    return controller;
+  }
 }
 
 export var morlock = {
@@ -38,6 +62,36 @@ export var morlock = {
     return new ScrollPositionController(positionY);
   },
 
+  breakpoint: {
+    enter: function(def, cb) {
+      var controller = getBreakpointTracker({
+        breakpoints: {
+          singleton: def
+        }
+      });
+
+      controller.on('breakpoint:singleton', function(data) {
+        if (data[1] === 'enter') {
+          cb(data);
+        }
+      });
+    },
+
+    exit: function(def, cb) {
+      var controller = getBreakpointTracker({
+        breakpoints: {
+          singleton: def
+        }
+      });
+
+      controller.on('breakpoint:singleton', function(data) {
+        if (data[1] === 'exit') {
+          cb(data);
+        }
+      });
+    }
+  },
+
   position: {
     before: function(pos, cb) {
       var observer = getPositionTracker(pos);
@@ -51,4 +105,11 @@ export var morlock = {
   }
 };
 
-export { ResizeController, ResponsiveImage, ScrollController, ElementVisibleController, ScrollPositionController };
+export {
+  ResizeController,
+  BreakpointController,
+  ResponsiveImage,
+  ScrollController,
+  ElementVisibleController,
+  ScrollPositionController
+};

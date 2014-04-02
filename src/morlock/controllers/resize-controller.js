@@ -1,6 +1,5 @@
-import { objectKeys, partial, first, compose, isTrue, select, get, getOption } from "morlock/core/util";
+import { getOption } from "morlock/core/util";
 module Stream from "morlock/core/stream";
-module BreakpointStream from "morlock/streams/breakpoint-stream";
 module ResizeStream from "morlock/streams/resize-stream";
 
 /**
@@ -20,55 +19,40 @@ function ResizeController(options) {
   var resizeStream = ResizeStream.create(options);
 
   var debounceMs = getOption(options.debounceMs, 200);
-  var resizeEndStream = Stream.debounce(
+  var resizeEndStream = debounceMs <= 0 ? resizeStream : Stream.debounce(
     debounceMs,
     resizeStream
   );
 
-  var breakpointStream;
-  if ('undefined' !== typeof options.breakpoints) {
-    breakpointStream = BreakpointStream.create(options.breakpoints, {
-      throttleMs: options.throttleMs,
-      debounceMs: getOption(options.breakpointDebounceMs, debounceMs)
-    });
-  }
+  function onOffStream(args, f) {
+    var name = args[0];
+    var cb = args[1];
 
-  this.on = function(eventType, cb) {
-    var subscriptionStream;
-    if ('resizeEnd' === eventType) {
-      subscriptionStream = resizeEndStream;
-    } else if ('resize' === eventType) {
-      subscriptionStream = resizeStream;
-    } else if ('breakpoint' === eventType) {
-      if (breakpointStream) {
-        subscriptionStream = Stream.map(mapToNamedEvents_, breakpointStream);
-      }
+    var filteredStream;
+    if (name === 'resizeEnd') {
+      filteredStream = resizeEndStream;
+    } else if (name === 'resize') {
+      filteredStream = resizeStream;
     }
 
-    if (subscriptionStream) {
-      Stream.onValue(subscriptionStream, cb);
+    if (filteredStream) {
+      f(filteredStream, cb);
     }
-  };
-
-  var activeBreakpoints = {};
-
-  if (breakpointStream) {
-    Stream.onValue(breakpointStream, function(e) {
-      activeBreakpoints[e[0]] = e[1];
-    });
   }
 
-  this.getActiveBreakpoints = function getActiveBreakpoints() {
-    var isActive = compose(isTrue, partial(get, activeBreakpoints));
-    return select(isActive, objectKeys(activeBreakpoints));
+  return {
+    on: function on(/* name, cb */) {
+      onOffStream(arguments, Stream.onValue);
+
+      return this;
+    },
+
+    off: function(/* name, cb */) {
+      onOffStream(arguments, Stream.offValue);
+
+      return this;
+    }
   };
-}
-
-var ENTER = 'enter';
-var EXIT = 'exit';
-
-function mapToNamedEvents_(v) {
-  return [first(v), v[1] ? ENTER : EXIT];
 }
 
 export default = ResizeController;

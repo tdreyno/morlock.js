@@ -14,6 +14,7 @@
     //result to a property on the global.
     var parts = factory();
     root.ResizeController = parts.ResizeController;
+    root.BreakpointController = parts.BreakpointController;
     root.ResponsiveImage = parts.ResponsiveImage;
     root.ScrollController = parts.ScrollController;
     root.ElementVisibleController = parts.ElementVisibleController;
@@ -1293,8 +1294,9 @@ define("morlock/core/stream",
       var outputStream = create();
       var boundEmit = partial(emit, outputStream);
       
+      // Map used for side-effects
       mapArray(function(stream) {
-        return onValue(stream, boundEmit);
+        onValue(stream, boundEmit);
       }, streams);
 
       return outputStream;
@@ -1306,7 +1308,7 @@ define("morlock/core/stream",
       var outputStream = create();
       var boundEmit = partial(emit, outputStream);
       var boundArgs = mapArray(function(v) {
-        return v === ':e:' ? boundEmit : v;
+        return v === EMIT_KEY ? boundEmit : v;
       }, args);
       onValue(stream, apply(apply, [f, boundArgs]));
       return outputStream;
@@ -1418,6 +1420,69 @@ define("morlock/streams/resize-stream",
       ];
     }
   });
+define("morlock/controllers/resize-controller", 
+  ["morlock/core/util","morlock/core/stream","morlock/streams/resize-stream","exports"],
+  function(__dependency1__, __dependency2__, __dependency3__, __exports__) {
+    
+    var getOption = __dependency1__.getOption;
+    var Stream = __dependency2__;
+    var ResizeStream = __dependency3__;
+
+    /**
+     * Provides a familiar OO-style API for tracking resize events.
+     * @constructor
+     * @param {Object=} options The options passed to the resize tracker.
+     * @return {Object} The API with a `on` function to attach callbacks
+     *   to resize events and breakpoint changes.
+     */
+    function ResizeController(options) {
+      if (!(this instanceof ResizeController)) {
+        return new ResizeController(options);
+      }
+
+      options = options || {};
+
+      var resizeStream = ResizeStream.create(options);
+
+      var debounceMs = getOption(options.debounceMs, 200);
+      var resizeEndStream = debounceMs <= 0 ? resizeStream : Stream.debounce(
+        debounceMs,
+        resizeStream
+      );
+
+      function onOffStream(args, f) {
+        var name = args[0];
+        var cb = args[1];
+
+        var filteredStream;
+        if (name === 'resizeEnd') {
+          filteredStream = resizeEndStream;
+        } else if (name === 'resize') {
+          filteredStream = resizeStream;
+        }
+
+        if (filteredStream) {
+          f(filteredStream, cb);
+        }
+      }
+
+      return {
+        on: function on(/* name, cb */) {
+          onOffStream(arguments, Stream.onValue);
+
+          return this;
+        },
+
+        off: function(/* name, cb */) {
+          onOffStream(arguments, Stream.offValue);
+
+          return this;
+        }
+      };
+    }
+
+    __exports__["default"] = ResizeController;
+  });
 define("morlock/streams/breakpoint-stream", 
   ["morlock/core/util","morlock/core/stream","morlock/streams/resize-stream","exports"],
   function(__dependency1__, __dependency2__, __dependency3__, __exports__) {
@@ -1506,7 +1571,7 @@ define("morlock/streams/breakpoint-stream",
       return mq;
     }
   });
-define("morlock/controllers/resize-controller", 
+define("morlock/controllers/breakpoint-controller", 
   ["morlock/core/util","morlock/core/stream","morlock/streams/breakpoint-stream","morlock/streams/resize-stream","exports"],
   function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __exports__) {
     
@@ -1523,49 +1588,58 @@ define("morlock/controllers/resize-controller",
     var ResizeStream = __dependency4__;
 
     /**
-     * Provides a familiar OO-style API for tracking resize events.
+     * Provides a familiar OO-style API for tracking breakpoint events.
      * @constructor
-     * @param {Object=} options The options passed to the resize tracker.
+     * @param {Object=} options The options passed to the breakpoint tracker.
      * @return {Object} The API with a `on` function to attach callbacks
-     *   to resize events and breakpoint changes.
+     *   to breakpoint changes.
      */
-    function ResizeController(options) {
-      if (!(this instanceof ResizeController)) {
-        return new ResizeController(options);
+    function BreakpointController(options) {
+      if (!(this instanceof BreakpointController)) {
+        return new BreakpointController(options);
       }
-
-      options = options || {};
 
       var resizeStream = ResizeStream.create(options);
 
-      var debounceMs = getOption(options.debounceMs, 200);
-      var resizeEndStream = Stream.debounce(
-        debounceMs,
-        resizeStream
-      );
+      var breakpointStream = BreakpointStream.create(options.breakpoints, {
+        throttleMs: options.throttleMs,
+        debounceMs: options.debounceMs
+      });
 
-      var breakpointStream;
-      if ('undefined' !== typeof options.breakpoints) {
-        breakpointStream = BreakpointStream.create(options.breakpoints, {
-          throttleMs: options.throttleMs,
-          debounceMs: getOption(options.breakpointDebounceMs, debounceMs)
-        });
-      }
+      function onOffStream(args, f) {
+        var eventType = args[0];
+        var cb = args[1];
 
-      this.on = function(eventType, cb) {
-        var subscriptionStream;
-        if ('resizeEnd' === eventType) {
-          subscriptionStream = resizeEndStream;
-        } else if ('resize' === eventType) {
-          subscriptionStream = resizeStream;
-        } else if ('breakpoint' === eventType) {
-          if (breakpointStream) {
-            subscriptionStream = Stream.map(mapToNamedEvents_, breakpointStream);
+        var filteredStream;
+
+        if (eventType.match(/^breakpoint/)) {
+          var parts = eventType.split(':');
+
+          if (parts.length > 1) {
+            filteredStream = Stream.filterFirst(parts[1], breakpointStream);
+          } else {
+            filteredStream = breakpointStream;
           }
+
+          filteredStream = Stream.map(mapToNamedEvents_, filteredStream);
         }
 
-        if (subscriptionStream) {
-          Stream.onValue(subscriptionStream, cb);
+        if (filteredStream) {
+          f(filteredStream, cb);
+        }
+      }
+
+      return {
+        on: function on(/* name, cb */) {
+          onOffStream(arguments, Stream.onValue);
+
+          return this;
+        },
+
+        off: function(/* name, cb */) {
+          onOffStream(arguments, Stream.offValue);
+
+          return this;
         }
       };
 
@@ -1590,7 +1664,7 @@ define("morlock/controllers/resize-controller",
       return [first(v), v[1] ? ENTER : EXIT];
     }
 
-    __exports__["default"] = ResizeController;
+    __exports__["default"] = BreakpointController;
   });
 define("morlock/streams/scroll-stream", 
   ["morlock/core/stream","morlock/core/util","morlock/core/events","exports"],
@@ -1675,11 +1749,33 @@ define("morlock/controllers/scroll-controller",
         scrollStream
       );
 
-      this.on = function on_(name, cb) {
-        if ('scrollEnd' === name) {
-          Stream.onValue(scrollEndStream, cb);
-        } else if ('scroll' === name) {
-          Stream.onValue(scrollStream, cb);
+      function onOffStream(args, f) {
+        var name = args[0];
+        var cb = args[1];
+
+        var filteredStream;
+        if (name === 'scrollEnd') {
+          filteredStream = scrollEndStream;
+        } else if (name === 'scroll') {
+          filteredStream = scrollStream;
+        }
+
+        if (filteredStream) {
+          f(filteredStream, cb);
+        }
+      }
+
+      return {
+        on: function on(/* name, cb */) {
+          onOffStream(arguments, Stream.onValue);
+
+          return this;
+        },
+
+        off: function(/* name, cb */) {
+          onOffStream(arguments, Stream.offValue);
+
+          return this;
         }
       };
     }
@@ -2152,18 +2248,25 @@ define("morlock/core/responsive-image",
     __exports__.update = update;
   });
 define("morlock/base", 
-  ["morlock/controllers/resize-controller","morlock/controllers/scroll-controller","morlock/controllers/element-visible-controller","morlock/controllers/scroll-position-controller","morlock/core/responsive-image","morlock/core/util","exports"],
-  function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __dependency5__, __dependency6__, __exports__) {
+  ["morlock/controllers/resize-controller","morlock/controllers/breakpoint-controller","morlock/controllers/scroll-controller","morlock/controllers/element-visible-controller","morlock/controllers/scroll-position-controller","morlock/core/responsive-image","morlock/core/util","morlock/core/stream","exports"],
+  function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __dependency5__, __dependency6__, __dependency7__, __dependency8__, __exports__) {
     
     var ResizeController = __dependency1__["default"];
-    var ScrollController = __dependency2__["default"];
-    var ElementVisibleController = __dependency3__["default"];
-    var ScrollPositionController = __dependency4__["default"];
-    var ResponsiveImage = __dependency5__;
-    var isDefined = __dependency6__.isDefined;
+    var BreakpointController = __dependency2__["default"];
+    var ScrollController = __dependency3__["default"];
+    var ElementVisibleController = __dependency4__["default"];
+    var ScrollPositionController = __dependency5__["default"];
+    var ResponsiveImage = __dependency6__;
+    var isDefined = __dependency7__.isDefined;
+    var equals = __dependency7__.equals;
+    var filter = __dependency7__.filter;
+    var Stream = __dependency8__;
 
     var sharedTrackers = {};
     var sharedPositions = {};
+
+    var sharedBreakpointDefs = [];
+    var sharedBreakpointsVals = [];
 
     function getScrollTracker(debounceMs) {
       debounceMs = isDefined(debounceMs) ? debounceMs : 0;
@@ -2174,6 +2277,25 @@ define("morlock/base",
     function getPositionTracker(pos) {
       sharedPositions[pos] = sharedPositions[pos] || morlock.observePosition(pos);
       return sharedPositions[pos];
+    }
+
+    function getBreakpointTracker(def) {
+      var found = false;
+      for (var i = 0; i < sharedBreakpointDefs.length; i++) {
+        if (equals(sharedBreakpointDefs[i], def)) {
+          found = true;
+          break;
+        }
+      }
+
+      if (found) {
+        return sharedBreakpointsVals[i];
+      } else {
+        var controller = new BreakpointController(def);
+        sharedBreakpointDefs.push(def);
+        sharedBreakpointsVals.push(controller);
+        return controller;
+      }
     }
 
     var morlock = {
@@ -2195,6 +2317,36 @@ define("morlock/base",
         return new ScrollPositionController(positionY);
       },
 
+      breakpoint: {
+        enter: function(def, cb) {
+          var controller = getBreakpointTracker({
+            breakpoints: {
+              singleton: def
+            }
+          });
+
+          controller.on('breakpoint:singleton', function(data) {
+            if (data[1] === 'enter') {
+              cb(data);
+            }
+          });
+        },
+
+        exit: function(def, cb) {
+          var controller = getBreakpointTracker({
+            breakpoints: {
+              singleton: def
+            }
+          });
+
+          controller.on('breakpoint:singleton', function(data) {
+            if (data[1] === 'exit') {
+              cb(data);
+            }
+          });
+        }
+      },
+
       position: {
         before: function(pos, cb) {
           var observer = getPositionTracker(pos);
@@ -2209,6 +2361,7 @@ define("morlock/base",
     };
     __exports__.morlock = morlock;
     __exports__.ResizeController = ResizeController;
+    __exports__.BreakpointController = BreakpointController;
     __exports__.ResponsiveImage = ResponsiveImage;
     __exports__.ScrollController = ScrollController;
     __exports__.ElementVisibleController = ElementVisibleController;

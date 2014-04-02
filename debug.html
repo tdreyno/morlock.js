@@ -20,7 +20,13 @@
   <div class="js-responsive-image" data-src="test/img/experience.jpg" data-hasRetina="true" data-breakpoints="320,768,1024" data-lazyload="true" data-preserveAspectRatio="true" data-knownDimensions="768x512"></div>
   <script src="dist/morlock.js"></script>
   <script>
-    rc = new ResizeController({
+    rc = new ResizeController();
+
+    rc.on('resize', function(e) {
+      console.log('resize', e[0], e[1]);
+    });
+
+    bc = new BreakpointController({
       breakpoints: {
         'mobile': { max: 767 },
         'tablet': { min: 768, max: 1043 },
@@ -28,9 +34,6 @@
       }
     });
 
-    rc.on('resize', function(e) {
-      console.log('resize', e[0], e[1]);
-    });
 
     // var intervalStream = s.interval(1000);
     // var resizeStream = r.create({ throttleMs: 0 });
@@ -52,12 +55,16 @@
       responsiveImages.push(ResponsiveImage.createFromElement(elems[i]));
     }
 
-    rc.on('breakpoint', function(e) {
+    bc.on('breakpoint', function(e) {
       console.log('breakpoint', e);
 
       for (var i = 0; i < responsiveImages.length; i++) {
         ResponsiveImage.update(responsiveImages[i]);
       }
+    });
+
+    bc.on('breakpoint:mobile', function(e) {
+      console.log('breakpoint:mobile', e[1]);
     });
 
     sc = new ScrollController({
@@ -113,6 +120,14 @@
     });
     morlock.position.after(400, function() {
       console.log('after 400');
+    });
+
+    morlock.breakpoint.enter({ min: 600, max: 700 }, function() {
+      console.log('Shorthand mobile enter');
+    });
+
+    morlock.breakpoint.exit({ min: 600, max: 700 }, function() {
+      console.log('Shorthand mobile exit');
     });
   </script>
 </body>

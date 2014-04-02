@@ -10,6 +10,7 @@
     //result to a property on the global.
     var parts = factory();
     root.ResizeController = parts.ResizeController;
+    root.BreakpointController = parts.BreakpointController;
     root.ResponsiveImage = parts.ResponsiveImage;
     root.ScrollController = parts.ScrollController;
     root.ElementVisibleController = parts.ElementVisibleController;

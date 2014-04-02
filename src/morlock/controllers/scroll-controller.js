@@ -25,11 +25,33 @@ function ScrollController(options) {
     scrollStream
   );
 
-  this.on = function on_(name, cb) {
-    if ('scrollEnd' === name) {
-      Stream.onValue(scrollEndStream, cb);
-    } else if ('scroll' === name) {
-      Stream.onValue(scrollStream, cb);
+  function onOffStream(args, f) {
+    var name = args[0];
+    var cb = args[1];
+
+    var filteredStream;
+    if (name === 'scrollEnd') {
+      filteredStream = scrollEndStream;
+    } else if (name === 'scroll') {
+      filteredStream = scrollStream;
+    }
+
+    if (filteredStream) {
+      f(filteredStream, cb);
+    }
+  }
+
+  return {
+    on: function on(/* name, cb */) {
+      onOffStream(arguments, Stream.onValue);
+
+      return this;
+    },
+
+    off: function(/* name, cb */) {
+      onOffStream(arguments, Stream.offValue);
+
+      return this;
     }
   };
 }

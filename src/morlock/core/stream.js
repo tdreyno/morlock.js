@@ -141,8 +141,9 @@ function merge(/* streams */) {
   var outputStream = create();
   var boundEmit = partial(emit, outputStream);
   
+  // Map used for side-effects
   mapArray(function(stream) {
-    return onValue(stream, boundEmit);
+    onValue(stream, boundEmit);
   }, streams);
 
   return outputStream;
@@ -154,7 +155,7 @@ function _duplicateStreamOnEmit(stream, f, args) {
   var outputStream = create();
   var boundEmit = partial(emit, outputStream);
   var boundArgs = mapArray(function(v) {
-    return v === ':e:' ? boundEmit : v;
+    return v === EMIT_KEY ? boundEmit : v;
   }, args);
   onValue(stream, apply(apply, [f, boundArgs]));
   return outputStream;
