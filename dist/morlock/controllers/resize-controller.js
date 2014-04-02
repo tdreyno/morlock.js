@@ -4,14 +4,11 @@ define("morlock/controllers/resize-controller",
     "use strict";
     var objectKeys = __dependency1__.objectKeys;
     var partial = __dependency1__.partial;
-    var equals = __dependency1__.equals;
     var first = __dependency1__.first;
     var compose = __dependency1__.compose;
     var isTrue = __dependency1__.isTrue;
     var select = __dependency1__.select;
     var get = __dependency1__.get;
-    var shift = __dependency1__.shift;
-    var nth = __dependency1__.nth;
     var getOption = __dependency1__.getOption;
     var Stream = __dependency2__;
     var BreakpointStream = __dependency3__;

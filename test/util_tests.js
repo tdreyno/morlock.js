@@ -82,18 +82,20 @@ define('test/util_tests', ['morlock/core/util'], function(util) {
 
     specify("getViewportWidth", function(){
       var width = util.getViewportWidth();
-      assert.equal(width, 400, 'PhantomJS window width');
+      assert.equal(width, window.innerWidth, 'PhantomJS window width');
     });
 
     specify("getViewportHeight", function(){
       var height = util.getViewportHeight();
-      assert.equal(height, 300, 'PhantomJS window height');
+      assert.equal(height, window.innerHeight, 'PhantomJS window height');
     });
 
     specify("testMQ", function(){
-      assert.ok(util.testMQ('(max-width:500px)'), 'Test max-width');
-      assert.ok(!util.testMQ('(min-width:500px)'), 'Test min-width');
-      assert.ok(util.testMQ('(min-width:300px) and (max-width:500px)'), 'Test combo');
+      var max = window.innerWidth + 100;
+      var min = window.innerWidth - 100;
+      assert.ok(util.testMQ('(max-width:' + max + 'px)'), 'Test max-width');
+      assert.ok(!util.testMQ('(min-width:' + max + 'px)'), 'Test min-width');
+      assert.ok(util.testMQ('(min-width:' + min + 'px) and (max-width:' + max + 'px)'), 'Test combo');
     });
 
     specify("getRect", function() {
@@ -295,8 +297,6 @@ define('test/util_tests', ['morlock/core/util'], function(util) {
       };
 
       var deferedInc = util.defer(inc);
-      deferedInc();
-      assert.equal(num, 0, 'Still 0');
       setTimeout(function() {
         assert.equal(num, 1, 'Now 1');
         done();
@@ -337,13 +337,6 @@ define('test/util_tests', ['morlock/core/util'], function(util) {
     specify("rest", function() {
       var arr = [1,2,3];
       assert.deepEqual(util.rest(arr), [2,3], 'rest');
-    });
-
-    // eventListener
-
-    specify("isTrue", function() {
-      assert.equal(util.isTrue(true), true, 'true is true');
-      assert.equal(util.isTrue(1), false, '1 is false');
     });
 
     specify("unshift", function() {

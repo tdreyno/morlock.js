@@ -1,4 +1,3 @@
-import { getViewportHeight, getRect } from "morlock/core/util";
 module Stream from "morlock/core/stream";
 module ScrollStream from "morlock/streams/scroll-stream";
 

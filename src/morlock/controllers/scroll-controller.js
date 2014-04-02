@@ -1,8 +1,6 @@
-import { partial, equals, compose, first, getOption } from "morlock/core/util";
+import { getOption } from "morlock/core/util";
 module Stream from "morlock/core/stream";
 module ScrollStream from "morlock/streams/scroll-stream";
-module ElementTrackerStream from "morlock/streams/element-tracker-stream";
-module ScrollTrackerStream from "morlock/streams/scroll-tracker-stream";
 
 /**
  * Provides a familiar OO-style API for tracking scroll events.

@@ -7,10 +7,6 @@ define("morlock/base",
     var ElementVisibleController = __dependency3__["default"];
     var ScrollPositionController = __dependency4__["default"];
     var ResponsiveImage = __dependency5__;
-    // import "morlock/plugins/jquery.breakpointer";
-    // import "morlock/plugins/jquery.scrolltracker";
-    // import "morlock/plugins/jquery.eventstream";
-    // import "morlock/plugins/jquery.morlockResize";
     var isDefined = __dependency6__.isDefined;
 
     var sharedTrackers = {};

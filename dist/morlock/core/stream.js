@@ -7,13 +7,9 @@ define("morlock/core/stream",
     var throttleCall = __dependency2__.throttle;
     var delayCall = __dependency2__.delay;
     var mapArray = __dependency2__.map;
-    var apply = __dependency2__.apply;
     var memoize = __dependency2__.memoize;
     var first = __dependency2__.first;
-    var rest = __dependency2__.rest;
-    var push = __dependency2__.push;
     var apply = __dependency2__.apply;
-    var unshift = __dependency2__.unshift;
     var compose = __dependency2__.compose;
     var when = __dependency2__.when;
     var equals = __dependency2__.equals;
@@ -82,7 +78,7 @@ define("morlock/core/stream",
       }
     }
 
-    function offValue(stream, f) {
+    __exports__.closeStream = closeStream;function offValue(stream, f) {
       if (stream.subscribers) {
         var idx = indexOf(stream.subscribers, f);
         if (idx !== -1) {

@@ -535,11 +535,9 @@ define("morlock/core/util",
      * @param {String} mq Media query to match.
      * @return {Boolean} Whether it matched.
      */
-    function testMQ() {
-      return Modernizr['mq'].apply(Modernizr, arguments);
-    }
-
-    __exports__.testMQ = testMQ;function identity(val) {
+    var testMQ = Modernizr.mq;
+    __exports__.testMQ = testMQ;
+    function identity(val) {
       return val;
     }
 
@@ -551,8 +549,7 @@ define("morlock/core/util",
       return function memoizedExecute_() {
         var key = argsToStringFunc.apply(this, arguments);
 
-        if (isDefined(cache[key])) {
-        } else {
+        if (!isDefined(cache[key])) {
           cache[key] = f.apply(this, arguments);
         }
 
@@ -777,8 +774,10 @@ define("morlock/core/util",
       }
 
       // Compare `[[Class]]` names.
-      var className = toString.call(a);
-      if (className != toString.call(b)) return false;
+      var className = a.toString();
+      if (className != b.toString()) {
+        return false;
+      }
       switch (className) {
         // Strings, numbers, dates, and booleans are compared by value.
         case '[object String]':
@@ -813,15 +812,17 @@ define("morlock/core/util",
       while (length--) {
         // Linear search. Performance is inversely proportional to the number of
         // unique nested structures.
-        if (aStack[length] == a) return bStack[length] == b;
+        if (aStack[length] == a) {
+          return bStack[length] == b;
+        }
       }
 
       // Objects with different constructors are not equivalent, but `Object`s
       // from different frames are.
       var aCtor = a.constructor, bCtor = b.constructor;
-      if (aCtor !== bCtor && !(_.isFunction(aCtor) && (aCtor instanceof aCtor) &&
-                               _.isFunction(bCtor) && (bCtor instanceof bCtor))
-                          && ('constructor' in a && 'constructor' in b)) {
+      if (aCtor !== bCtor && !(isFunction(aCtor) && (aCtor instanceof aCtor) &&
+                               isFunction(bCtor) && (bCtor instanceof bCtor)) &&
+          ('constructor' in a && 'constructor' in b)) {
         return false;
       }
 
@@ -838,23 +839,29 @@ define("morlock/core/util",
         if (result) {
           // Deep compare the contents, ignoring non-numeric properties.
           while (size--) {
-            if (!(result = eq(a[size], b[size], aStack, bStack))) break;
+            if (!(result = eq(a[size], b[size], aStack, bStack))) {
+              break;
+            }
           }
         }
       } else {
         // Deep compare objects.
         for (var key in a) {
-          if (_.has(a, key)) {
+          if (has(a, key)) {
             // Count the expected number of properties.
             size++;
             // Deep compare each member.
-            if (!(result = _.has(b, key) && eq(a[key], b[key], aStack, bStack))) break;
+            if (!(result = has(b, key) && eq(a[key], b[key], aStack, bStack))) {
+              break;
+            }
           }
         }
         // Ensure that both objects contain the same number of properties.
         if (result) {
           for (key in b) {
-            if (_.has(b, key) && !(size--)) break;
+            if (has(b, key) && !(size--)) {
+              break;
+            }
           }
           result = !size;
         }
@@ -865,6 +872,14 @@ define("morlock/core/util",
       bStack.pop();
 
       return result;
+    }
+
+    function isFunction(obj) {
+      return typeof obj === 'function';
+    }
+
+    function has(obj, key) {
+      return hasOwnProperty.call(obj, key);
     }
 
     function equals(a, b) {
@@ -1019,7 +1034,7 @@ define("morlock/core/util",
       }
 
       if (!correctRAF) {
-        correctRAF = function rAFFallback_(callback, element) {
+        correctRAF = function rAFFallback_(callback) {
           var currTime = new Date().getTime();
           var timeToCall = Math.max(0, 16 - (currTime - lastTime));
           var id = window.setTimeout(function() { callback(currTime + timeToCall); },
@@ -1085,18 +1100,18 @@ define("morlock/core/events",
 
       registry_.unshift([target, type, listener, function (event) {
         event.currentTarget = target;
-        event.preventDefault = function () { event.returnValue = false };
-        event.stopPropagation = function () { event.cancelBubble = true };
+        event.preventDefault = function () { event.returnValue = false; };
+        event.stopPropagation = function () { event.cancelBubble = true; };
         event.target = event.srcElement || target;
 
         listener.call(target, event);
       }]);
 
       this.attachEvent("on" + type, registry_[0][3]);
-    }
+    };
 
     var removeEventListener_ = window.removeEventListener || function fallbackRemoveEventListener_(type, listener) {
-      for (var index = 0, register; register = registry_[index]; ++index) {
+      for (var index = 0, register; (register = registry_[index]); ++index) {
         if (register[0] == this && register[1] == type && register[2] == listener) {
           return this.detachEvent("on" + type, registry_.splice(index, 1)[0][3]);
         }
@@ -1130,13 +1145,9 @@ define("morlock/core/stream",
     var throttleCall = __dependency2__.throttle;
     var delayCall = __dependency2__.delay;
     var mapArray = __dependency2__.map;
-    var apply = __dependency2__.apply;
     var memoize = __dependency2__.memoize;
     var first = __dependency2__.first;
-    var rest = __dependency2__.rest;
-    var push = __dependency2__.push;
     var apply = __dependency2__.apply;
-    var unshift = __dependency2__.unshift;
     var compose = __dependency2__.compose;
     var when = __dependency2__.when;
     var equals = __dependency2__.equals;
@@ -1205,7 +1216,7 @@ define("morlock/core/stream",
       }
     }
 
-    function offValue(stream, f) {
+    __exports__.closeStream = closeStream;function offValue(stream, f) {
       if (stream.subscribers) {
         var idx = indexOf(stream.subscribers, f);
         if (idx !== -1) {
@@ -1501,14 +1512,11 @@ define("morlock/controllers/resize-controller",
     
     var objectKeys = __dependency1__.objectKeys;
     var partial = __dependency1__.partial;
-    var equals = __dependency1__.equals;
     var first = __dependency1__.first;
     var compose = __dependency1__.compose;
     var isTrue = __dependency1__.isTrue;
     var select = __dependency1__.select;
     var get = __dependency1__.get;
-    var shift = __dependency1__.shift;
-    var nth = __dependency1__.nth;
     var getOption = __dependency1__.getOption;
     var Stream = __dependency2__;
     var BreakpointStream = __dependency3__;
@@ -1636,6 +1644,48 @@ define("morlock/streams/scroll-stream",
     });
     __exports__.create = create;
   });
+define("morlock/controllers/scroll-controller", 
+  ["morlock/core/util","morlock/core/stream","morlock/streams/scroll-stream","exports"],
+  function(__dependency1__, __dependency2__, __dependency3__, __exports__) {
+    
+    var getOption = __dependency1__.getOption;
+    var Stream = __dependency2__;
+    var ScrollStream = __dependency3__;
+
+    /**
+     * Provides a familiar OO-style API for tracking scroll events.
+     * @constructor
+     * @param {Object=} options The options passed to the scroll tracker.
+     * @return {Object} The API with a `on` function to attach scrollEnd
+     *   callbacks and an `observeElement` function to detect when elements
+     *   enter and exist the viewport.
+     */
+    function ScrollController(options) {
+      if (!(this instanceof ScrollController)) {
+        return new ScrollController(options);
+      }
+
+      options = options || {};
+
+      var scrollStream = ScrollStream.create();
+
+      var debounceMs = getOption(options.debounceMs, 200);
+      var scrollEndStream = Stream.debounce(
+        debounceMs,
+        scrollStream
+      );
+
+      this.on = function on_(name, cb) {
+        if ('scrollEnd' === name) {
+          Stream.onValue(scrollEndStream, cb);
+        } else if ('scroll' === name) {
+          Stream.onValue(scrollStream, cb);
+        }
+      };
+    }
+
+    __exports__["default"] = ScrollController;
+  });
 define("morlock/streams/element-tracker-stream", 
   ["morlock/core/util","morlock/core/stream","morlock/streams/scroll-stream","morlock/streams/resize-stream","exports"],
   function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __exports__) {
@@ -1685,92 +1735,6 @@ define("morlock/streams/element-tracker-stream",
     }
 
     __exports__.create = create;
-  });
-define("morlock/streams/scroll-tracker-stream", 
-  ["morlock/core/util","morlock/core/stream","morlock/streams/scroll-stream","exports"],
-  function(__dependency1__, __dependency2__, __dependency3__, __exports__) {
-    
-    var getViewportHeight = __dependency1__.getViewportHeight;
-    var getRect = __dependency1__.getRect;
-    var Stream = __dependency2__;
-    var ScrollStream = __dependency3__;
-
-    /**
-     * Create a new Stream containing events which fire when a position has
-     * been scrolled past.
-     * @param {number} targetScrollY The position we are tracking.
-     * @return {Stream} The resulting stream.
-     */
-    function create(targetScrollY) {
-      var scrollPositionStream = ScrollStream.create();
-      var overTheLineStream = Stream.create();
-      var pastScrollY = false;
-      var firstRun = true;
-
-      Stream.onValue(scrollPositionStream, function(currentScrollY){
-        if ((firstRun || pastScrollY) && (currentScrollY < targetScrollY)) {
-          pastScrollY = false;
-          Stream.emit(overTheLineStream, ['before', targetScrollY]);
-        } else if ((firstRun || !pastScrollY) && (currentScrollY >= targetScrollY)) {
-          pastScrollY = true;
-          Stream.emit(overTheLineStream, ['after', targetScrollY]);
-        }
-
-        firstRun = false;
-      });
-
-      return overTheLineStream;
-    }
-
-    __exports__.create = create;
-  });
-define("morlock/controllers/scroll-controller", 
-  ["morlock/core/util","morlock/core/stream","morlock/streams/scroll-stream","morlock/streams/element-tracker-stream","morlock/streams/scroll-tracker-stream","exports"],
-  function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __dependency5__, __exports__) {
-    
-    var partial = __dependency1__.partial;
-    var equals = __dependency1__.equals;
-    var compose = __dependency1__.compose;
-    var first = __dependency1__.first;
-    var getOption = __dependency1__.getOption;
-    var Stream = __dependency2__;
-    var ScrollStream = __dependency3__;
-    var ElementTrackerStream = __dependency4__;
-    var ScrollTrackerStream = __dependency5__;
-
-    /**
-     * Provides a familiar OO-style API for tracking scroll events.
-     * @constructor
-     * @param {Object=} options The options passed to the scroll tracker.
-     * @return {Object} The API with a `on` function to attach scrollEnd
-     *   callbacks and an `observeElement` function to detect when elements
-     *   enter and exist the viewport.
-     */
-    function ScrollController(options) {
-      if (!(this instanceof ScrollController)) {
-        return new ScrollController(options);
-      }
-
-      options = options || {};
-
-      var scrollStream = ScrollStream.create();
-
-      var debounceMs = getOption(options.debounceMs, 200);
-      var scrollEndStream = Stream.debounce(
-        debounceMs,
-        scrollStream
-      );
-
-      this.on = function on_(name, cb) {
-        if ('scrollEnd' === name) {
-          Stream.onValue(scrollEndStream, cb);
-        } else if ('scroll' === name) {
-          Stream.onValue(scrollStream, cb);
-        }
-      };
-    }
-
-    __exports__["default"] = ScrollController;
   });
 define("morlock/controllers/element-visible-controller", 
   ["morlock/core/util","morlock/core/stream","morlock/streams/element-tracker-stream","exports"],
@@ -1843,6 +1807,42 @@ define("morlock/controllers/element-visible-controller",
     }
 
     __exports__["default"] = ElementVisibleController;
+  });
+define("morlock/streams/scroll-tracker-stream", 
+  ["morlock/core/stream","morlock/streams/scroll-stream","exports"],
+  function(__dependency1__, __dependency2__, __exports__) {
+    
+    var Stream = __dependency1__;
+    var ScrollStream = __dependency2__;
+
+    /**
+     * Create a new Stream containing events which fire when a position has
+     * been scrolled past.
+     * @param {number} targetScrollY The position we are tracking.
+     * @return {Stream} The resulting stream.
+     */
+    function create(targetScrollY) {
+      var scrollPositionStream = ScrollStream.create();
+      var overTheLineStream = Stream.create();
+      var pastScrollY = false;
+      var firstRun = true;
+
+      Stream.onValue(scrollPositionStream, function(currentScrollY){
+        if ((firstRun || pastScrollY) && (currentScrollY < targetScrollY)) {
+          pastScrollY = false;
+          Stream.emit(overTheLineStream, ['before', targetScrollY]);
+        } else if ((firstRun || !pastScrollY) && (currentScrollY >= targetScrollY)) {
+          pastScrollY = true;
+          Stream.emit(overTheLineStream, ['after', targetScrollY]);
+        }
+
+        firstRun = false;
+      });
+
+      return overTheLineStream;
+    }
+
+    __exports__.create = create;
   });
 define("morlock/controllers/scroll-position-controller", 
   ["morlock/core/stream","morlock/streams/scroll-tracker-stream","exports"],
@@ -1954,13 +1954,12 @@ define("morlock/core/responsive-image",
 
       if (imageMap.lazyLoad) {
         var observer = new ElementVisibleController(imageMap.element);
-        function onEnter() {
-          observer.off('enter', onEnter);
+        observer.on('enter', function onEnter_() {
+          observer.off('enter', onEnter_);
 
           image.lazyLoad = false;
           update(image, true);
-        };
-        observer.on('enter', onEnter);
+        });
       }
 
       return image;
@@ -2110,7 +2109,7 @@ define("morlock/core/responsive-image",
       image.element.style.backgroundImage = 'url(' + img.src + ')';
 
       if (image.preserveAspectRatio) {
-        var sizeVar = Modernizr['prefixed']('backgroundSize');
+        var sizeVar = Modernizr.prefixed('backgroundSize');
         image.element.style[sizeVar] = 'cover';
 
         var w, h;
@@ -2143,7 +2142,7 @@ define("morlock/core/responsive-image",
 
       var parts = image.src.split('.');
       var currentExt = parts.pop();
-      var ext = (image.hasWebp && Modernizr['webp']) ? 'webp' : currentExt;
+      var ext = (image.hasWebp && Modernizr.webp) ? 'webp' : currentExt;
 
       return parts.join('.') + '-' + s + (image.hasRetina ? '@2x' : '') + '.' + ext;
     }
@@ -2161,10 +2160,6 @@ define("morlock/base",
     var ElementVisibleController = __dependency3__["default"];
     var ScrollPositionController = __dependency4__["default"];
     var ResponsiveImage = __dependency5__;
-    // import "morlock/plugins/jquery.breakpointer";
-    // import "morlock/plugins/jquery.scrolltracker";
-    // import "morlock/plugins/jquery.eventstream";
-    // import "morlock/plugins/jquery.morlockResize";
     var isDefined = __dependency6__.isDefined;
 
     var sharedTrackers = {};

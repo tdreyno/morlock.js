@@ -3,10 +3,6 @@ import ScrollController from "morlock/controllers/scroll-controller";
 import ElementVisibleController from "morlock/controllers/element-visible-controller";
 import ScrollPositionController from "morlock/controllers/scroll-position-controller";
 module ResponsiveImage from "morlock/core/responsive-image";
-// import "morlock/plugins/jquery.breakpointer";
-// import "morlock/plugins/jquery.scrolltracker";
-// import "morlock/plugins/jquery.eventstream";
-// import "morlock/plugins/jquery.morlockResize";
 import { isDefined } from 'morlock/core/util';
 
 var sharedTrackers = {};

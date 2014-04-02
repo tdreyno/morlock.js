@@ -1,11 +1,9 @@
 define("morlock/streams/scroll-tracker-stream", 
-  ["morlock/core/util","morlock/core/stream","morlock/streams/scroll-stream","exports"],
-  function(__dependency1__, __dependency2__, __dependency3__, __exports__) {
+  ["morlock/core/stream","morlock/streams/scroll-stream","exports"],
+  function(__dependency1__, __dependency2__, __exports__) {
     "use strict";
-    var getViewportHeight = __dependency1__.getViewportHeight;
-    var getRect = __dependency1__.getRect;
-    var Stream = __dependency2__;
-    var ScrollStream = __dependency3__;
+    var Stream = __dependency1__;
+    var ScrollStream = __dependency2__;
 
     /**
      * Create a new Stream containing events which fire when a position has

@@ -4,18 +4,18 @@ var addEventListener_ = window.addEventListener || function fallbackAddRemoveEve
 
   registry_.unshift([target, type, listener, function (event) {
     event.currentTarget = target;
-    event.preventDefault = function () { event.returnValue = false };
-    event.stopPropagation = function () { event.cancelBubble = true };
+    event.preventDefault = function () { event.returnValue = false; };
+    event.stopPropagation = function () { event.cancelBubble = true; };
     event.target = event.srcElement || target;
 
     listener.call(target, event);
   }]);
 
   this.attachEvent("on" + type, registry_[0][3]);
-}
+};
 
 var removeEventListener_ = window.removeEventListener || function fallbackRemoveEventListener_(type, listener) {
-  for (var index = 0, register; register = registry_[index]; ++index) {
+  for (var index = 0, register; (register = registry_[index]); ++index) {
     if (register[0] == this && register[1] == type && register[2] == listener) {
       return this.detachEvent("on" + type, registry_.splice(index, 1)[0][3]);
     }

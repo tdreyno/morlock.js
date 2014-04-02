@@ -1,16 +1,10 @@
 define("morlock/controllers/scroll-controller", 
-  ["morlock/core/util","morlock/core/stream","morlock/streams/scroll-stream","morlock/streams/element-tracker-stream","morlock/streams/scroll-tracker-stream","exports"],
-  function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __dependency5__, __exports__) {
+  ["morlock/core/util","morlock/core/stream","morlock/streams/scroll-stream","exports"],
+  function(__dependency1__, __dependency2__, __dependency3__, __exports__) {
     "use strict";
-    var partial = __dependency1__.partial;
-    var equals = __dependency1__.equals;
-    var compose = __dependency1__.compose;
-    var first = __dependency1__.first;
     var getOption = __dependency1__.getOption;
     var Stream = __dependency2__;
     var ScrollStream = __dependency3__;
-    var ElementTrackerStream = __dependency4__;
-    var ScrollTrackerStream = __dependency5__;
 
     /**
      * Provides a familiar OO-style API for tracking scroll events.

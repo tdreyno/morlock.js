@@ -3,8 +3,8 @@ import { debounce as debounceCall,
          throttle as throttleCall,
          delay as delayCall,
          map as mapArray,
-         apply, memoize,
-         first, rest, push, apply, unshift, compose, when, equals,
+         memoize,
+         first, apply, compose, when, equals,
          partial, once, copyArray, flip, call, indexOf, rAF } from "morlock/core/util";
 
 // Internal tracking of how many streams have been created.
@@ -53,7 +53,7 @@ function onValue(stream, f) {
   }
 }
 
-function closeStream(stream) {
+export function closeStream(stream) {
   if (stream.closed) { return; }
 
   stream.closed = true;

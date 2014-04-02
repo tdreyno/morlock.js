@@ -1,4 +1,6 @@
 module.exports = function (grunt) {
+  "use strict";
+
   // load all grunt tasks
   require('matchdep').filterDev('grunt-*').forEach(grunt.loadNpmTasks);
 
@@ -6,7 +8,31 @@ module.exports = function (grunt) {
     pkg: grunt.file.readJSON('package.json'),
 
     jshint: {
-      all: ['Gruntfile.js', 'src/**/*.js']
+      options: {
+        browser: true,
+        node: true,
+        forin: true,
+        curly: true,
+        camelcase: true,
+        immed: true,
+        indent: 2,
+        latedef: true,
+        newcap: true,
+        noempty: true,
+        nonbsp: true,
+        nonew: true,
+        undef: true,
+        unused: true,
+        strict: true,
+        trailing: true,
+        eqnull: true,
+        "-W041": true, // Comparing == against 0
+        globals: {
+          define: true,
+          Modernizr: true
+        }
+      },
+      all: ['Gruntfile.js', 'dist/morlock/**/*.js']
     },
 
     clean: {
@@ -65,7 +91,7 @@ module.exports = function (grunt) {
       }
     },
 
-    mocha_phantomjs: {
+    'mocha_phantomjs': {
       all: ["test/*.html"]
     },
 
@@ -83,7 +109,8 @@ module.exports = function (grunt) {
   });
 
   this.registerTask('build', ['clean', 'transpile:amd', 'requirejs', 'compress:dist']);
-  grunt.registerTask('test', ['build', 'mocha_phantomjs']);
+  grunt.registerTask('hint', ['build', 'jshint']);
+  grunt.registerTask('test', ['build', 'jshint', 'mocha_phantomjs']);
   grunt.registerTask('default', [
     'build'
   ]);

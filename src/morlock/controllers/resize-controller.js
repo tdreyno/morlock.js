@@ -1,5 +1,4 @@
-import { objectKeys, partial, equals, first, compose, isTrue, select, get,
-         shift, nth, getOption } from "morlock/core/util";
+import { objectKeys, partial, first, compose, isTrue, select, get, getOption } from "morlock/core/util";
 module Stream from "morlock/core/stream";
 module BreakpointStream from "morlock/streams/breakpoint-stream";
 module ResizeStream from "morlock/streams/resize-stream";

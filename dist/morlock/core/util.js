@@ -98,11 +98,9 @@ define("morlock/core/util",
      * @param {String} mq Media query to match.
      * @return {Boolean} Whether it matched.
      */
-    function testMQ() {
-      return Modernizr['mq'].apply(Modernizr, arguments);
-    }
-
-    __exports__.testMQ = testMQ;function identity(val) {
+    var testMQ = Modernizr.mq;
+    __exports__.testMQ = testMQ;
+    function identity(val) {
       return val;
     }
 
@@ -114,8 +112,7 @@ define("morlock/core/util",
       return function memoizedExecute_() {
         var key = argsToStringFunc.apply(this, arguments);
 
-        if (isDefined(cache[key])) {
-        } else {
+        if (!isDefined(cache[key])) {
           cache[key] = f.apply(this, arguments);
         }
 
@@ -340,8 +337,10 @@ define("morlock/core/util",
       }
 
       // Compare `[[Class]]` names.
-      var className = toString.call(a);
-      if (className != toString.call(b)) return false;
+      var className = a.toString();
+      if (className != b.toString()) {
+        return false;
+      }
       switch (className) {
         // Strings, numbers, dates, and booleans are compared by value.
         case '[object String]':
@@ -376,15 +375,17 @@ define("morlock/core/util",
       while (length--) {
         // Linear search. Performance is inversely proportional to the number of
         // unique nested structures.
-        if (aStack[length] == a) return bStack[length] == b;
+        if (aStack[length] == a) {
+          return bStack[length] == b;
+        }
       }
 
       // Objects with different constructors are not equivalent, but `Object`s
       // from different frames are.
       var aCtor = a.constructor, bCtor = b.constructor;
-      if (aCtor !== bCtor && !(_.isFunction(aCtor) && (aCtor instanceof aCtor) &&
-                               _.isFunction(bCtor) && (bCtor instanceof bCtor))
-                          && ('constructor' in a && 'constructor' in b)) {
+      if (aCtor !== bCtor && !(isFunction(aCtor) && (aCtor instanceof aCtor) &&
+                               isFunction(bCtor) && (bCtor instanceof bCtor)) &&
+          ('constructor' in a && 'constructor' in b)) {
         return false;
       }
 
@@ -401,23 +402,29 @@ define("morlock/core/util",
         if (result) {
           // Deep compare the contents, ignoring non-numeric properties.
           while (size--) {
-            if (!(result = eq(a[size], b[size], aStack, bStack))) break;
+            if (!(result = eq(a[size], b[size], aStack, bStack))) {
+              break;
+            }
           }
         }
       } else {
         // Deep compare objects.
         for (var key in a) {
-          if (_.has(a, key)) {
+          if (has(a, key)) {
             // Count the expected number of properties.
             size++;
             // Deep compare each member.
-            if (!(result = _.has(b, key) && eq(a[key], b[key], aStack, bStack))) break;
+            if (!(result = has(b, key) && eq(a[key], b[key], aStack, bStack))) {
+              break;
+            }
           }
         }
         // Ensure that both objects contain the same number of properties.
         if (result) {
           for (key in b) {
-            if (_.has(b, key) && !(size--)) break;
+            if (has(b, key) && !(size--)) {
+              break;
+            }
           }
           result = !size;
         }
@@ -428,6 +435,14 @@ define("morlock/core/util",
       bStack.pop();
 
       return result;
+    }
+
+    function isFunction(obj) {
+      return typeof obj === 'function';
+    }
+
+    function has(obj, key) {
+      return hasOwnProperty.call(obj, key);
     }
 
     function equals(a, b) {
@@ -582,7 +597,7 @@ define("morlock/core/util",
       }
 
       if (!correctRAF) {
-        correctRAF = function rAFFallback_(callback, element) {
+        correctRAF = function rAFFallback_(callback) {
           var currTime = new Date().getTime();
           var timeToCall = Math.max(0, 16 - (currTime - lastTime));
           var id = window.setTimeout(function() { callback(currTime + timeToCall); },

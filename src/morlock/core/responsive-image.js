@@ -33,13 +33,12 @@ function create(imageMap) {
 
   if (imageMap.lazyLoad) {
     var observer = new ElementVisibleController(imageMap.element);
-    function onEnter() {
-      observer.off('enter', onEnter);
+    observer.on('enter', function onEnter_() {
+      observer.off('enter', onEnter_);
 
       image.lazyLoad = false;
       update(image, true);
-    };
-    observer.on('enter', onEnter);
+    });
   }
 
   return image;
@@ -189,7 +188,7 @@ function setDivTag(image, img) {
   image.element.style.backgroundImage = 'url(' + img.src + ')';
 
   if (image.preserveAspectRatio) {
-    var sizeVar = Modernizr['prefixed']('backgroundSize');
+    var sizeVar = Modernizr.prefixed('backgroundSize');
     image.element.style[sizeVar] = 'cover';
 
     var w, h;
@@ -222,7 +221,7 @@ function getPath(image, s) {
 
   var parts = image.src.split('.');
   var currentExt = parts.pop();
-  var ext = (image.hasWebp && Modernizr['webp']) ? 'webp' : currentExt;
+  var ext = (image.hasWebp && Modernizr.webp) ? 'webp' : currentExt;
 
   return parts.join('.') + '-' + s + (image.hasRetina ? '@2x' : '') + '.' + ext;
 }
