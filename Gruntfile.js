@@ -97,9 +97,9 @@ module.exports = function (grunt) {
     }
   });
 
-  this.registerTask('build', ['clean', 'transpile:amd', 'requirejs']);
+  grunt.registerTask('build', ['clean', 'transpile:amd', 'requirejs:dev', 'requirejs:dist']);
   grunt.registerTask('hint', ['build', 'jshint']);
-  grunt.registerTask('test', ['build', 'jshint', 'mocha_phantomjs']);
+  grunt.registerTask('test', ['clean', 'transpile:amd', 'requirejs:dev', 'jshint', 'mocha_phantomjs']);
   grunt.registerTask('default', [
     'build'
   ]);
