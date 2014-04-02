@@ -1,12 +1,13 @@
 module Stream from "morlock/core/stream";
-import { documentScrollY, memoize, dispatchEvent, defer, partial } from "morlock/core/util";
+import { documentScrollY, memoize, defer, partial } from "morlock/core/util";
+import { dispatchEvent } from "morlock/core/events";
 
 /**
  * Create a stream of window.onscroll events, but only calculate their
  * position on requestAnimationFrame frames.
  * @return {Stream}
  */
-var create = memoize(function create_() {
+export var create = memoize(function create_() {
   var oldScrollY;
   var scrollDirty = true;
   var scrollEventsStream = Stream.createFromEvents(window, 'scroll');
@@ -40,5 +41,3 @@ var create = memoize(function create_() {
     didChangeOnRAFStream
   );
 });
-
-export { create };

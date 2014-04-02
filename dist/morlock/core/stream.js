@@ -1,29 +1,29 @@
 define("morlock/core/stream", 
-  ["morlock/core/util","exports"],
-  function(__dependency1__, __exports__) {
+  ["morlock/core/events","morlock/core/util","exports"],
+  function(__dependency1__, __dependency2__, __exports__) {
     "use strict";
-    var debounceCall = __dependency1__.debounce;
-    var throttleCall = __dependency1__.throttle;
-    var delayCall = __dependency1__.delay;
-    var mapArray = __dependency1__.map;
-    var apply = __dependency1__.apply;
-    var memoize = __dependency1__.memoize;
-    var first = __dependency1__.first;
-    var rest = __dependency1__.rest;
-    var push = __dependency1__.push;
-    var apply = __dependency1__.apply;
-    var unshift = __dependency1__.unshift;
     var eventListener = __dependency1__.eventListener;
-    var compose = __dependency1__.compose;
-    var when = __dependency1__.when;
-    var equals = __dependency1__.equals;
-    var partial = __dependency1__.partial;
-    var once = __dependency1__.once;
-    var copyArray = __dependency1__.copyArray;
-    var flip = __dependency1__.flip;
-    var call = __dependency1__.call;
-    var indexOf = __dependency1__.indexOf;
-    var rAF = __dependency1__.rAF;
+    var debounceCall = __dependency2__.debounce;
+    var throttleCall = __dependency2__.throttle;
+    var delayCall = __dependency2__.delay;
+    var mapArray = __dependency2__.map;
+    var apply = __dependency2__.apply;
+    var memoize = __dependency2__.memoize;
+    var first = __dependency2__.first;
+    var rest = __dependency2__.rest;
+    var push = __dependency2__.push;
+    var apply = __dependency2__.apply;
+    var unshift = __dependency2__.unshift;
+    var compose = __dependency2__.compose;
+    var when = __dependency2__.when;
+    var equals = __dependency2__.equals;
+    var partial = __dependency2__.partial;
+    var once = __dependency2__.once;
+    var copyArray = __dependency2__.copyArray;
+    var flip = __dependency2__.flip;
+    var call = __dependency2__.call;
+    var indexOf = __dependency2__.indexOf;
+    var rAF = __dependency2__.rAF;
 
     // Internal tracking of how many streams have been created.
     var nextID = 0;

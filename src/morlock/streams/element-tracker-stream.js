@@ -10,7 +10,7 @@ module ResizeStream from "morlock/streams/resize-stream";
  * @param {object} options Key/value options
  * @return {Stream} The resulting stream.
  */
-function create(element, resizeStream, options) {
+export function create(element, resizeStream, options) {
   var trackerStream = Stream.create();
   var viewportHeight;
   var isVisible = false;
@@ -40,5 +40,3 @@ function create(element, resizeStream, options) {
 
   return trackerStream;
 }
-
-export { create };

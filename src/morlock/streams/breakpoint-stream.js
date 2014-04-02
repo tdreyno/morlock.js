@@ -11,7 +11,7 @@ module ResizeStream from "morlock/streams/resize-stream";
  *   with min and/or max keys.
  * @return {Stream} The resulting stream.
  */
-function create(breakpoints, options) {
+export function create(breakpoints, options) {
   var baseStream = ResizeStream.create();
   var resizeStream;
 
@@ -76,5 +76,3 @@ function breakpointToString(options) {
 
   return mq;
 }
-
-export { create };

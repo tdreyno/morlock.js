@@ -643,7 +643,7 @@ define("morlock/core/util",
      * @return {object} The resulting object.
      */
     function mapObject(f, obj) {
-      return reduce(function(sum, v) {
+      return reduce(function mapObjectExecute_(sum, v) {
         sum[v] = f(obj[v], v);
         return sum;
       }, objectKeys(obj), {});
@@ -656,7 +656,7 @@ define("morlock/core/util",
      * @return {object} The resulting object.
      */
     function map(f, arr) {
-      return reduce(function(sum, v) {
+      return reduce(function mapExecute_(sum, v) {
         return push(sum, f(v));
       }, arr, []);
     }
@@ -748,14 +748,14 @@ define("morlock/core/util",
     }
 
     function select(f, arr) {
-      return reduce(function(sum, v) {
-        return isTrue(f(v)) ? push(sum, v) : sum;
+      return reduce(function selectExecute_(sum, v) {
+        return equals(f(v), true) ? push(sum, v) : sum;
       }, arr, []);
     }
 
     function reject(f, arr) {
-      return reduce(function(sum, v) {
-        return !isTrue(f(v)) ? push(sum, v) : sum;
+      return reduce(function rejectExecute_(sum, v) {
+        return equals(f(v), false) ? push(sum, v) : sum;
       }, arr, []);
     }
 
@@ -895,7 +895,7 @@ define("morlock/core/util",
         return f.bind(obj);
       }
 
-      return function() {
+      return function boundFunction_() {
         return f.apply(obj, arguments);
       };
     }
@@ -935,48 +935,7 @@ define("morlock/core/util",
       return apply(f, rest(arguments));
     }
 
-    var registry_ = [];
-    var addEventListener_ = window.addEventListener || function fallbackAddRemoveEventListener_(type, listener) {
-      var target = this;
-
-      registry_.unshift([target, type, listener, function (event) {
-        event.currentTarget = target;
-        event.preventDefault = function () { event.returnValue = false };
-        event.stopPropagation = function () { event.cancelBubble = true };
-        event.target = event.srcElement || target;
-
-        listener.call(target, event);
-      }]);
-
-      this.attachEvent("on" + type, registry_[0][3]);
-    }
-
-    var removeEventListener_ = window.removeEventListener || function fallbackRemoveEventListener_(type, listener) {
-      for (var index = 0, register; register = registry_[index]; ++index) {
-        if (register[0] == this && register[1] == type && register[2] == listener) {
-          return this.detachEvent("on" + type, registry_.splice(index, 1)[0][3]);
-        }
-      }
-    };
-
-    var dispatchEvent_ = window.dispatchEvent || function (eventObject) {
-      return this.fireEvent("on" + eventObject.type, eventObject);
-    };
-
-    function eventListener(target, eventName, cb) {
-      addEventListener_.call(target, eventName, cb, false);
-      return function eventListenerRemove_() {
-        removeEventListener_.call(target, eventName, cb, false);
-      };
-    }
-
-    function dispatchEvent(target, evType) {
-      var evObj = document.createEvent('HTMLEvents');
-      evObj.initEvent(evType, true, true);
-      dispatchEvent_.call(target, evObj);
-    }
-
-    __exports__.dispatchEvent = dispatchEvent;function nth(idx, arr) {
+    function nth(idx, arr) {
       return arr[idx];
     }
 
@@ -987,8 +946,6 @@ define("morlock/core/util",
     function last(arr) {
       return arr[arr.length - 1];
     }
-
-    var isTrue = partial(equals, true);
 
     function unshift(arr, v) {
       var arr2 = copyArray(arr);
@@ -1047,7 +1004,9 @@ define("morlock/core/util",
     }
 
     function constantly(val) {
-      return function constantlyExecute_() { return val };
+      return function constantlyExecute_() {
+        return val;
+      };
     }
 
     var rAF = (function() {
@@ -1097,10 +1056,8 @@ define("morlock/core/util",
     __exports__.last = last;
     __exports__.compose = compose;
     __exports__.select = select;
-    __exports__.isTrue = isTrue;
     __exports__.get = get;
     __exports__.shift = shift;
-    __exports__.eventListener = eventListener;
     __exports__.when = when;
     __exports__.reduce = reduce;
     __exports__.once = once;
@@ -1118,32 +1075,78 @@ define("morlock/core/util",
     __exports__.rAF = rAF;
     __exports__.documentScrollY = documentScrollY;
   });
-define("morlock/core/stream", 
-  ["morlock/core/util","exports"],
-  function(__dependency1__, __exports__) {
+define("morlock/core/events", 
+  ["exports"],
+  function(__exports__) {
     
-    var debounceCall = __dependency1__.debounce;
-    var throttleCall = __dependency1__.throttle;
-    var delayCall = __dependency1__.delay;
-    var mapArray = __dependency1__.map;
-    var apply = __dependency1__.apply;
-    var memoize = __dependency1__.memoize;
-    var first = __dependency1__.first;
-    var rest = __dependency1__.rest;
-    var push = __dependency1__.push;
-    var apply = __dependency1__.apply;
-    var unshift = __dependency1__.unshift;
+    var registry_ = [];
+    var addEventListener_ = window.addEventListener || function fallbackAddRemoveEventListener_(type, listener) {
+      var target = this;
+
+      registry_.unshift([target, type, listener, function (event) {
+        event.currentTarget = target;
+        event.preventDefault = function () { event.returnValue = false };
+        event.stopPropagation = function () { event.cancelBubble = true };
+        event.target = event.srcElement || target;
+
+        listener.call(target, event);
+      }]);
+
+      this.attachEvent("on" + type, registry_[0][3]);
+    }
+
+    var removeEventListener_ = window.removeEventListener || function fallbackRemoveEventListener_(type, listener) {
+      for (var index = 0, register; register = registry_[index]; ++index) {
+        if (register[0] == this && register[1] == type && register[2] == listener) {
+          return this.detachEvent("on" + type, registry_.splice(index, 1)[0][3]);
+        }
+      }
+    };
+
+    var dispatchEvent_ = window.dispatchEvent || function (eventObject) {
+      return this.fireEvent("on" + eventObject.type, eventObject);
+    };
+
+    function eventListener(target, eventName, cb) {
+      addEventListener_.call(target, eventName, cb, false);
+      return function eventListenerRemove_() {
+        removeEventListener_.call(target, eventName, cb, false);
+      };
+    }
+
+    __exports__.eventListener = eventListener;function dispatchEvent(target, evType) {
+      var evObj = document.createEvent('HTMLEvents');
+      evObj.initEvent(evType, true, true);
+      dispatchEvent_.call(target, evObj);
+    }
+    __exports__.dispatchEvent = dispatchEvent;
+  });
+define("morlock/core/stream", 
+  ["morlock/core/events","morlock/core/util","exports"],
+  function(__dependency1__, __dependency2__, __exports__) {
+    
     var eventListener = __dependency1__.eventListener;
-    var compose = __dependency1__.compose;
-    var when = __dependency1__.when;
-    var equals = __dependency1__.equals;
-    var partial = __dependency1__.partial;
-    var once = __dependency1__.once;
-    var copyArray = __dependency1__.copyArray;
-    var flip = __dependency1__.flip;
-    var call = __dependency1__.call;
-    var indexOf = __dependency1__.indexOf;
-    var rAF = __dependency1__.rAF;
+    var debounceCall = __dependency2__.debounce;
+    var throttleCall = __dependency2__.throttle;
+    var delayCall = __dependency2__.delay;
+    var mapArray = __dependency2__.map;
+    var apply = __dependency2__.apply;
+    var memoize = __dependency2__.memoize;
+    var first = __dependency2__.first;
+    var rest = __dependency2__.rest;
+    var push = __dependency2__.push;
+    var apply = __dependency2__.apply;
+    var unshift = __dependency2__.unshift;
+    var compose = __dependency2__.compose;
+    var when = __dependency2__.when;
+    var equals = __dependency2__.equals;
+    var partial = __dependency2__.partial;
+    var once = __dependency2__.once;
+    var copyArray = __dependency2__.copyArray;
+    var flip = __dependency2__.flip;
+    var call = __dependency2__.call;
+    var indexOf = __dependency2__.indexOf;
+    var rAF = __dependency2__.rAF;
 
     // Internal tracking of how many streams have been created.
     var nextID = 0;
@@ -1362,15 +1365,15 @@ define("morlock/core/stream",
     __exports__.interval = interval;
   });
 define("morlock/streams/resize-stream", 
-  ["morlock/core/stream","morlock/core/util","exports"],
-  function(__dependency1__, __dependency2__, __exports__) {
+  ["morlock/core/stream","morlock/core/util","morlock/core/events","exports"],
+  function(__dependency1__, __dependency2__, __dependency3__, __exports__) {
     
     var Stream = __dependency1__;
     var getOption = __dependency2__.getOption;
     var memoize = __dependency2__.memoize;
-    var dispatchEvent = __dependency2__.dispatchEvent;
     var defer = __dependency2__.defer;
     var partial = __dependency2__.partial;
+    var dispatchEvent = __dependency3__.dispatchEvent;
 
     /**
      * Create a new Stream containing resize events.
@@ -1396,15 +1399,13 @@ define("morlock/streams/resize-stream",
 
       return Stream.skipDuplicates(Stream.map(windowDimensions_, resizedStream));
     });
-
+    __exports__.create = create;
     function windowDimensions_() {
       return [
         window.innerWidth  || document.documentElement.clientWidth  || document.body.clientWidth,
         window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight
       ];
     }
-
-    __exports__.create = create;
   });
 define("morlock/streams/breakpoint-stream", 
   ["morlock/core/util","morlock/core/stream","morlock/streams/resize-stream","exports"],
@@ -1466,7 +1467,7 @@ define("morlock/streams/breakpoint-stream",
       return apply(Stream.merge, objectVals(breakpointStreams));
     }
 
-    /**
+    __exports__.create = create;/**
      * Convert a map with max/min values into a media query string.
      * @param {Object} options The options.
      * @param {number=} options.min The minimum size.
@@ -1493,8 +1494,6 @@ define("morlock/streams/breakpoint-stream",
 
       return mq;
     }
-
-    __exports__.create = create;
   });
 define("morlock/controllers/resize-controller", 
   ["morlock/core/util","morlock/core/stream","morlock/streams/breakpoint-stream","morlock/streams/resize-stream","exports"],
@@ -1586,15 +1585,15 @@ define("morlock/controllers/resize-controller",
     __exports__["default"] = ResizeController;
   });
 define("morlock/streams/scroll-stream", 
-  ["morlock/core/stream","morlock/core/util","exports"],
-  function(__dependency1__, __dependency2__, __exports__) {
+  ["morlock/core/stream","morlock/core/util","morlock/core/events","exports"],
+  function(__dependency1__, __dependency2__, __dependency3__, __exports__) {
     
     var Stream = __dependency1__;
     var documentScrollY = __dependency2__.documentScrollY;
     var memoize = __dependency2__.memoize;
-    var dispatchEvent = __dependency2__.dispatchEvent;
     var defer = __dependency2__.defer;
     var partial = __dependency2__.partial;
+    var dispatchEvent = __dependency3__.dispatchEvent;
 
     /**
      * Create a stream of window.onscroll events, but only calculate their
@@ -1635,7 +1634,6 @@ define("morlock/streams/scroll-stream",
         didChangeOnRAFStream
       );
     });
-
     __exports__.create = create;
   });
 define("morlock/streams/element-tracker-stream", 

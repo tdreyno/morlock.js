@@ -58,7 +58,7 @@ define("morlock/streams/breakpoint-stream",
       return apply(Stream.merge, objectVals(breakpointStreams));
     }
 
-    /**
+    __exports__.create = create;/**
      * Convert a map with max/min values into a media query string.
      * @param {Object} options The options.
      * @param {number=} options.min The minimum size.
@@ -85,6 +85,4 @@ define("morlock/streams/breakpoint-stream",
 
       return mq;
     }
-
-    __exports__.create = create;
   });

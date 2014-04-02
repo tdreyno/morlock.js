@@ -1,5 +1,6 @@
 module Stream from "morlock/core/stream";
-import { getOption, memoize, dispatchEvent, defer, partial } from "morlock/core/util";
+import { getOption, memoize, defer, partial } from "morlock/core/util";
+import { dispatchEvent } from "morlock/core/events";
 
 /**
  * Create a new Stream containing resize events.
@@ -8,7 +9,7 @@ import { getOption, memoize, dispatchEvent, defer, partial } from "morlock/core/
  * @param {number=100} options.orientationChangeDelayMs After rotation, how long do we wait to fire an event.
  * @return {Stream} The resulting stream.
  */
-var create = memoize(function create_(options) {
+export var create = memoize(function create_(options) {
   options = options || {};
   var orientationChangeDelayMs = getOption(options.orientationChangeDelayMs, 100);
 
@@ -32,5 +33,3 @@ function windowDimensions_() {
     window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight
   ];
 }
-
-export { create };

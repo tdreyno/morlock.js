@@ -8,7 +8,7 @@ module ScrollStream from "morlock/streams/scroll-stream";
  * @param {number} targetScrollY The position we are tracking.
  * @return {Stream} The resulting stream.
  */
-function create(targetScrollY) {
+export function create(targetScrollY) {
   var scrollPositionStream = ScrollStream.create();
   var overTheLineStream = Stream.create();
   var pastScrollY = false;
@@ -28,5 +28,3 @@ function create(targetScrollY) {
 
   return overTheLineStream;
 }
-
-export { create };

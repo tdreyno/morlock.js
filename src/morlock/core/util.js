@@ -202,7 +202,7 @@ function getRect(elem, buffer, currentScrollY) {
  * @return {object} The resulting object.
  */
 function mapObject(f, obj) {
-  return reduce(function(sum, v) {
+  return reduce(function mapObjectExecute_(sum, v) {
     sum[v] = f(obj[v], v);
     return sum;
   }, objectKeys(obj), {});
@@ -215,7 +215,7 @@ function mapObject(f, obj) {
  * @return {object} The resulting object.
  */
 function map(f, arr) {
-  return reduce(function(sum, v) {
+  return reduce(function mapExecute_(sum, v) {
     return push(sum, f(v));
   }, arr, []);
 }
@@ -307,14 +307,14 @@ function reduce(f, arr, val) {
 }
 
 function select(f, arr) {
-  return reduce(function(sum, v) {
-    return isTrue(f(v)) ? push(sum, v) : sum;
+  return reduce(function selectExecute_(sum, v) {
+    return equals(f(v), true) ? push(sum, v) : sum;
   }, arr, []);
 }
 
 function reject(f, arr) {
-  return reduce(function(sum, v) {
-    return !isTrue(f(v)) ? push(sum, v) : sum;
+  return reduce(function rejectExecute_(sum, v) {
+    return equals(f(v), false) ? push(sum, v) : sum;
   }, arr, []);
 }
 
@@ -454,7 +454,7 @@ function functionBind(f, obj) {
     return f.bind(obj);
   }
 
-  return function() {
+  return function boundFunction_() {
     return f.apply(obj, arguments);
   };
 }
@@ -494,47 +494,6 @@ function call(f /*, args */) {
   return apply(f, rest(arguments));
 }
 
-var registry_ = [];
-var addEventListener_ = window.addEventListener || function fallbackAddRemoveEventListener_(type, listener) {
-  var target = this;
-
-  registry_.unshift([target, type, listener, function (event) {
-    event.currentTarget = target;
-    event.preventDefault = function () { event.returnValue = false };
-    event.stopPropagation = function () { event.cancelBubble = true };
-    event.target = event.srcElement || target;
-
-    listener.call(target, event);
-  }]);
-
-  this.attachEvent("on" + type, registry_[0][3]);
-}
-
-var removeEventListener_ = window.removeEventListener || function fallbackRemoveEventListener_(type, listener) {
-  for (var index = 0, register; register = registry_[index]; ++index) {
-    if (register[0] == this && register[1] == type && register[2] == listener) {
-      return this.detachEvent("on" + type, registry_.splice(index, 1)[0][3]);
-    }
-  }
-};
-
-var dispatchEvent_ = window.dispatchEvent || function (eventObject) {
-  return this.fireEvent("on" + eventObject.type, eventObject);
-};
-
-function eventListener(target, eventName, cb) {
-  addEventListener_.call(target, eventName, cb, false);
-  return function eventListenerRemove_() {
-    removeEventListener_.call(target, eventName, cb, false);
-  };
-}
-
-export function dispatchEvent(target, evType) {
-  var evObj = document.createEvent('HTMLEvents');
-  evObj.initEvent(evType, true, true);
-  dispatchEvent_.call(target, evObj);
-}
-
 function nth(idx, arr) {
   return arr[idx];
 }
@@ -546,8 +505,6 @@ function first(arr) {
 function last(arr) {
   return arr[arr.length - 1];
 }
-
-var isTrue = partial(equals, true);
 
 function unshift(arr, v) {
   var arr2 = copyArray(arr);
@@ -606,7 +563,9 @@ function parseInteger(str) {
 }
 
 function constantly(val) {
-  return function constantlyExecute_() { return val };
+  return function constantlyExecute_() {
+    return val;
+  };
 }
 
 var rAF = (function() {
@@ -636,7 +595,7 @@ export {
   indexOf, throttle, debounce,
   getRect, mapObject, objectKeys, functionBind, partial,
   map, apply, objectVals, call, push, pop, unshift, equals, not,
-  delay, unshift, nth, first, last, compose, select, isTrue, get, shift, eventListener,
+  delay, unshift, nth, first, last, compose, select, get, shift,
   when, reduce, once, sortBy, parseInteger, set, flip,
   copyArray, defer, slice, isEmpty, reject, rest, constantly, rAF, documentScrollY
 };

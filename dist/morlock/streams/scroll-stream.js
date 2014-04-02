@@ -1,13 +1,13 @@
 define("morlock/streams/scroll-stream", 
-  ["morlock/core/stream","morlock/core/util","exports"],
-  function(__dependency1__, __dependency2__, __exports__) {
+  ["morlock/core/stream","morlock/core/util","morlock/core/events","exports"],
+  function(__dependency1__, __dependency2__, __dependency3__, __exports__) {
     "use strict";
     var Stream = __dependency1__;
     var documentScrollY = __dependency2__.documentScrollY;
     var memoize = __dependency2__.memoize;
-    var dispatchEvent = __dependency2__.dispatchEvent;
     var defer = __dependency2__.defer;
     var partial = __dependency2__.partial;
+    var dispatchEvent = __dependency3__.dispatchEvent;
 
     /**
      * Create a stream of window.onscroll events, but only calculate their
@@ -48,6 +48,5 @@ define("morlock/streams/scroll-stream",
         didChangeOnRAFStream
       );
     });
-
     __exports__.create = create;
   });
