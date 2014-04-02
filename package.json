@@ -11,13 +11,11 @@
     "grunt-contrib-uglify": "~0.2.4",
     "grunt-contrib-concat": "~0.3.0",
     "grunt-contrib-requirejs": "~0.4.1",
-    "grunt-contrib-compress": "~0.5.2",
     "grunt-contrib-jshint": "~0.10.0",
     "grunt-release": "~0.6.0"
   },
   "scripts": {
-    "test": "grunt test",
-    "prepublish": "grunt build"
+    "test": "grunt test"
   },
   "repository": {
     "type": "git",

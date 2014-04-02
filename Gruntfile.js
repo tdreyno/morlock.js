@@ -37,7 +37,7 @@ module.exports = function (grunt) {
 
     clean: {
       build: {
-        src: ["dist"]
+        src: ["dist", "tmp"]
       }
     },
 
@@ -79,18 +79,6 @@ module.exports = function (grunt) {
       }
     },
 
-    compress: {
-      dist: {
-        options: {
-          mode: 'gzip'
-        },
-        expand: true,
-        cwd: 'dist/',
-        src: ['*.js'],
-        dest: 'dist/'
-      }
-    },
-
     'mocha_phantomjs': {
       all: ["test/*.html"]
     },
@@ -108,7 +96,7 @@ module.exports = function (grunt) {
     }
   });
 
-  this.registerTask('build', ['clean', 'transpile:amd', 'requirejs', 'compress:dist']);
+  this.registerTask('build', ['clean', 'transpile:amd', 'requirejs']);
   grunt.registerTask('hint', ['build', 'jshint']);
   grunt.registerTask('test', ['build', 'jshint', 'mocha_phantomjs']);
   grunt.registerTask('default', [
