@@ -433,7 +433,7 @@ var requirejs, require, define;
     };
 }());
 
-define("../vendor/almond", function(){});
+define("../../vendor/almond", function(){});
 
 define("morlock/core/util", 
   ["exports"],

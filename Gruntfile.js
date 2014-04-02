@@ -48,17 +48,18 @@ module.exports = function (grunt) {
           expand: true,
           cwd: 'src/',
           src: ['**/*.js'],
-          dest: 'dist/'
+          dest: 'dist/src/'
         }]
       }
     },
 
     requirejs: {
       options: {
-        name: "../vendor/almond",
+        name: "../../vendor/almond",
         include: ["morlock/base"],
         insertRequire: ['morlock/base'],
-        baseUrl: "dist/",
+        baseUrl: "dist/src/",
+
         wrap: {
           startFile: ['vendor/modernizr.js', 'frags/start.frag'],
           endFile: 'frags/end.frag'
