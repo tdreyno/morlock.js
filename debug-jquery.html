@@ -1,0 +1,83 @@
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>morlock.js Debugger</title>
+  <style>
+    .js-responsive-image {
+      opacity: 0;
+      transition: 1s opacity;
+    }
+      .js-responsive-image.loaded {
+        opacity: 1;
+      }
+  </style>
+</head>
+<body>
+  <img class="js-responsive-image" data-src="test/img/experience.jpg" data-hasRetina="true" data-breakpoints="320,768,1024" width="100%">
+  <div style="height: 1000px;"></div>
+  <div id="hi" style="height: 500px; background: red;"></div>
+  <div style="height: 5000px;"></div>
+  <div class="js-responsive-image" data-src="test/img/experience.jpg" data-hasRetina="true" data-breakpoints="320,768,1024" data-lazyload="true" data-preserveAspectRatio="true" data-knownDimensions="768x512"></div>
+  <script src="http://code.jquery.com/jquery-2.0.2.js"></script>
+  <script src="dist/morlock.js"></script>
+  <script>
+    morlock.enableJQuery();
+
+    $(window).morlockResize();
+    $(window).on('morlockResize', function(e, w, h) {
+      console.log('resize', w, h);
+    });
+    $(window).on('morlockResizeEnd', function(e, w, h) {
+      console.log('resizeEnd', w, h);
+    });
+
+
+    $(window).morlockBreakpoint({
+      breakpoints: {
+        'mobile': { max: 767 },
+        'tablet': { min: 768, max: 1043 },
+        'desktop': { min: 1044 }
+      }
+    });
+
+    // var responsiveImages = [];
+    // var elems = document.getElementsByClassName('js-responsive-image');
+    // for (var i = 0; i < elems.length; i++) {
+    //   responsiveImages.push(ResponsiveImage.createFromElement(elems[i]));
+    // }
+
+    $(window).on('morlockBreakpoint', function(e, b) {
+      console.log('breakpoint', b);
+
+      // for (var i = 0; i < responsiveImages.length; i++) {
+      //   ResponsiveImage.update(responsiveImages[i]);
+      // }
+    });
+
+    $(window).morlockScroll();
+    $(window).on('morlockScroll', function(e) {
+      console.log('morlockScroll');
+    });
+    $(window).on('morlockScrollEnd', function(e) {
+      console.log('morlockScrollEnd');
+    });
+
+    var observer = $('#hi').morlockElementVisible();
+    observer.on('morlockElementVisibleEnter', function() {
+      console.log('enter HI');
+    });
+    observer.on('morlockElementVisibleExit', function() {
+      console.log('exit HI');
+    });
+
+    $(window).morlockElementPosition(400);
+
+    $(window).on('morlockElementPositionBefore', function(e, pos) {
+      console.log('before ' + pos);
+    });
+    $(window).on('morlockElementPositionAfter', function(e, pos) {
+      console.log('after ' + pos);
+    });
+  </script>
+</body>
+</html>
