@@ -1,7 +1,6 @@
-import { objectKeys, partial, first, compose, isTrue, select, get, getOption } from "morlock/core/util";
+import { objectKeys, partial, first, compose, isTrue, select, get } from "morlock/core/util";
 module Stream from "morlock/core/stream";
 module BreakpointStream from "morlock/streams/breakpoint-stream";
-module ResizeStream from "morlock/streams/resize-stream";
 
 /**
  * Provides a familiar OO-style API for tracking breakpoint events.
@@ -15,12 +14,23 @@ function BreakpointController(options) {
     return new BreakpointController(options);
   }
 
-  var resizeStream = ResizeStream.create(options);
-
   var breakpointStream = BreakpointStream.create(options.breakpoints, {
     throttleMs: options.throttleMs,
     debounceMs: options.debounceMs
   });
+
+  var activeBreakpoints = {};
+
+  if (breakpointStream) {
+    Stream.onValue(breakpointStream, function(e) {
+      activeBreakpoints[e[0]] = e[1];
+    });
+  }
+
+  this.getActiveBreakpoints = function getActiveBreakpoints() {
+    var isActive = compose(isTrue, partial(get, activeBreakpoints));
+    return select(isActive, objectKeys(activeBreakpoints));
+  };
 
   function onOffStream(args, f) {
     var eventType = args[0];
@@ -57,19 +67,6 @@ function BreakpointController(options) {
 
       return this;
     }
-  };
-
-  var activeBreakpoints = {};
-
-  if (breakpointStream) {
-    Stream.onValue(breakpointStream, function(e) {
-      activeBreakpoints[e[0]] = e[1];
-    });
-  }
-
-  this.getActiveBreakpoints = function getActiveBreakpoints() {
-    var isActive = compose(isTrue, partial(get, activeBreakpoints));
-    return select(isActive, objectKeys(activeBreakpoints));
   };
 }
 

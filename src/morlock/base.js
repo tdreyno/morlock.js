@@ -10,7 +10,6 @@ module Buffer from "morlock/core/buffer";
 module Stream from "morlock/core/stream";
 
 var sharedPositions = {};
-
 var sharedBreakpointDefs = [];
 var sharedBreakpointsVals = [];
 

@@ -7,9 +7,8 @@ import { debounce as debounceCall,
          throttle as throttleCall,
          delay as delayCall,
          map as mapArray,
-         memoize, objectKeys,
-         first, apply, compose, when, equals, unary, flippedCall, isDefined,
-         partial, once, copyArray, flip, call, indexOf, rAF } from "morlock/core/util";
+         memoize, first, apply, compose, when, equals, unary, flippedCall, isDefined,
+         partial, once, copyArray, indexOf, rAF } from "morlock/core/util";
 
 // Internal tracking of how many streams have been created.
 var nextID = 0;
@@ -147,7 +146,7 @@ function createFromEvents(target, eventName) {
     });
 
     onClose(outputStream, detachListener_);
-  };
+  }
 
   onSubscription(outputStream, attachListener_);
   onEmpty(outputStream, detachListener_);
@@ -172,7 +171,6 @@ function interval(ms) {
     }, ms);
   };
 
-  var attachListener = partial(setInterval, boundEmit, ms);
   onSubscription(outputStream, once(attachListener));
 
   return outputStream;
@@ -252,7 +250,8 @@ function _duplicateStreamOnEmit(stream, f, args) {
     return v === EMIT_KEY ? boundEmit : v;
   }, args);
 
-  var offValFunc = onValue(stream, apply(apply, [f, boundArgs]));
+  // var offValFunc = 
+  onValue(stream, apply(apply, [f, boundArgs]));
   // onClose(outputStream, offValFunc);
   // onEmpty(outputStream, partial(close, outputStream));
 

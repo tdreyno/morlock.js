@@ -26,13 +26,15 @@ module.exports = function (grunt) {
         strict: true,
         trailing: true,
         eqnull: true,
+        expr: true,
         "-W041": true, // Comparing == against 0
         globals: {
           define: true,
-          Modernizr: true
+          Modernizr: true,
+          jQuery: true
         }
       },
-      all: ['Gruntfile.js', 'dist/morlock/**/*.js']
+      all: ['Gruntfile.js', 'dist/src/morlock/**/*.js']
     },
 
     clean: {

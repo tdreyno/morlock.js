@@ -1353,7 +1353,6 @@ define("morlock/core/stream",
     var delayCall = __dependency3__.delay;
     var mapArray = __dependency3__.map;
     var memoize = __dependency3__.memoize;
-    var objectKeys = __dependency3__.objectKeys;
     var first = __dependency3__.first;
     var apply = __dependency3__.apply;
     var compose = __dependency3__.compose;
@@ -1365,8 +1364,6 @@ define("morlock/core/stream",
     var partial = __dependency3__.partial;
     var once = __dependency3__.once;
     var copyArray = __dependency3__.copyArray;
-    var flip = __dependency3__.flip;
-    var call = __dependency3__.call;
     var indexOf = __dependency3__.indexOf;
     var rAF = __dependency3__.rAF;
 
@@ -1506,7 +1503,7 @@ define("morlock/core/stream",
         });
 
         onClose(outputStream, detachListener_);
-      };
+      }
 
       onSubscription(outputStream, attachListener_);
       onEmpty(outputStream, detachListener_);
@@ -1531,7 +1528,6 @@ define("morlock/core/stream",
         }, ms);
       };
 
-      var attachListener = partial(setInterval, boundEmit, ms);
       onSubscription(outputStream, once(attachListener));
 
       return outputStream;
@@ -1611,7 +1607,8 @@ define("morlock/core/stream",
         return v === EMIT_KEY ? boundEmit : v;
       }, args);
 
-      var offValFunc = onValue(stream, apply(apply, [f, boundArgs]));
+      // var offValFunc = 
+      onValue(stream, apply(apply, [f, boundArgs]));
       // onClose(outputStream, offValFunc);
       // onEmpty(outputStream, partial(close, outputStream));
 
@@ -1880,8 +1877,8 @@ define("morlock/streams/breakpoint-stream",
     }
   });
 define("morlock/controllers/breakpoint-controller", 
-  ["morlock/core/util","morlock/core/stream","morlock/streams/breakpoint-stream","morlock/streams/resize-stream","exports"],
-  function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __exports__) {
+  ["morlock/core/util","morlock/core/stream","morlock/streams/breakpoint-stream","exports"],
+  function(__dependency1__, __dependency2__, __dependency3__, __exports__) {
     
     var objectKeys = __dependency1__.objectKeys;
     var partial = __dependency1__.partial;
@@ -1890,10 +1887,8 @@ define("morlock/controllers/breakpoint-controller",
     var isTrue = __dependency1__.isTrue;
     var select = __dependency1__.select;
     var get = __dependency1__.get;
-    var getOption = __dependency1__.getOption;
     var Stream = __dependency2__;
     var BreakpointStream = __dependency3__;
-    var ResizeStream = __dependency4__;
 
     /**
      * Provides a familiar OO-style API for tracking breakpoint events.
@@ -1907,12 +1902,23 @@ define("morlock/controllers/breakpoint-controller",
         return new BreakpointController(options);
       }
 
-      var resizeStream = ResizeStream.create(options);
-
       var breakpointStream = BreakpointStream.create(options.breakpoints, {
         throttleMs: options.throttleMs,
         debounceMs: options.debounceMs
       });
+
+      var activeBreakpoints = {};
+
+      if (breakpointStream) {
+        Stream.onValue(breakpointStream, function(e) {
+          activeBreakpoints[e[0]] = e[1];
+        });
+      }
+
+      this.getActiveBreakpoints = function getActiveBreakpoints() {
+        var isActive = compose(isTrue, partial(get, activeBreakpoints));
+        return select(isActive, objectKeys(activeBreakpoints));
+      };
 
       function onOffStream(args, f) {
         var eventType = args[0];
@@ -1949,19 +1955,6 @@ define("morlock/controllers/breakpoint-controller",
 
           return this;
         }
-      };
-
-      var activeBreakpoints = {};
-
-      if (breakpointStream) {
-        Stream.onValue(breakpointStream, function(e) {
-          activeBreakpoints[e[0]] = e[1];
-        });
-      }
-
-      this.getActiveBreakpoints = function getActiveBreakpoints() {
-        var isActive = compose(isTrue, partial(get, activeBreakpoints));
-        return select(isActive, objectKeys(activeBreakpoints));
       };
     }
 
@@ -2572,7 +2565,6 @@ define("morlock/base",
     var Stream = __dependency10__;
 
     var sharedPositions = {};
-
     var sharedBreakpointDefs = [];
     var sharedBreakpointsVals = [];
 
