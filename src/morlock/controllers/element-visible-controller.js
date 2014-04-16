@@ -43,8 +43,9 @@ function ElementVisibleController(elem, options) {
 
     f(filteredStream, cb);
     
-    if ((f === Stream.onValue) && (trackerStream.value === name)) {
-      Stream.emit(filteredStream, trackerStream.value);
+    var val = Stream.getValue(trackerStream);
+    if ((f === Stream.onValue) && (val === name)) {
+      Stream.emit(filteredStream, val);
     }
   }
 

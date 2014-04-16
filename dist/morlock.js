@@ -440,6 +440,8 @@ define("morlock/core/util",
   ["exports"],
   function(__exports__) {
     
+    var NATIVE_ARRAY_SLICE = Array.prototype.slice;
+
     /**
      * Slice an array.
      * @param {array} arr The original array.
@@ -447,7 +449,7 @@ define("morlock/core/util",
      * @return {array} New sliced array.
      */
     function slice(arr, pos) {
-      return Array.prototype.slice.call(arr, pos);
+      return NATIVE_ARRAY_SLICE.call(arr, pos);
     }
 
     /**
@@ -752,6 +754,8 @@ define("morlock/core/util",
     //   };
     // }
 
+    var NATIVE_ARRAY_REVERSE = Array.prototype.reverse;
+
     /**
      * Reverse the order of arguments.
      * @param {function} f The original function.
@@ -759,7 +763,7 @@ define("morlock/core/util",
      */
     function flip(f) {
       return function flippedFunction_() {
-        return apply(f, Array.prototype.reverse.call(arguments));
+        return apply(f, NATIVE_ARRAY_REVERSE.call(arguments));
       };
     }
 
@@ -1032,33 +1036,39 @@ define("morlock/core/util",
       return arr[arr.length - 1];
     }
 
+    var NATIVE_ARRAY_UNSHIFT = Array.prototype.unshift;
+    var NATIVE_ARRAY_SHIFT = Array.prototype.shift;
+    var NATIVE_ARRAY_PUSH = Array.prototype.push;
+    var NATIVE_ARRAY_POP = Array.prototype.pop;
+    var NATIVE_ARRAY_SORT = Array.prototype.sort;
+
     function unshift(arr, v) {
       var arr2 = copyArray(arr);
-      Array.prototype.unshift.call(arr2, v);
+      NATIVE_ARRAY_UNSHIFT.call(arr2, v);
       return arr2;
     }
 
     function shift(arr, v) {
       var arr2 = copyArray(arr);
-      Array.prototype.shift.call(arr2, v);
+      NATIVE_ARRAY_SHIFT.call(arr2, v);
       return arr2;
     }
 
     function push(arr, v) {
       var arr2 = copyArray(arr);
-      Array.prototype.push.call(arr2, v);
+      NATIVE_ARRAY_PUSH.call(arr2, v);
       return arr2;
     }
 
     function pop(arr, v) {
       var arr2 = copyArray(arr);
-      Array.prototype.pop.call(arr2, v);
+      NATIVE_ARRAY_POP.call(arr2, v);
       return arr2;
     }
 
     function sortBy(arr, f) {
       var arr2 = copyArray(arr);
-      Array.prototype.sort.call(arr2, f);
+      NATIVE_ARRAY_SORT.call(arr2, f);
       return arr2;
     }
 
@@ -1073,6 +1083,8 @@ define("morlock/core/util",
       };
     }
 
+    var pipeline = flip(compose);
+    __exports__.pipeline = pipeline;
     function once(f /*, args*/) {
       var args = rest(arguments);
       var hasRun = false;
@@ -1165,6 +1177,7 @@ define("morlock/core/events",
   function(__exports__) {
     
     var registry_ = [];
+
     var addEventListener_ = window.addEventListener || function fallbackAddRemoveEventListener_(type, listener) {
       var target = this;
 
@@ -1177,19 +1190,19 @@ define("morlock/core/events",
         listener.call(target, event);
       }]);
 
-      this.attachEvent("on" + type, registry_[0][3]);
+      this.attachEvent('on' + type, registry_[0][3]);
     };
 
     var removeEventListener_ = window.removeEventListener || function fallbackRemoveEventListener_(type, listener) {
       for (var index = 0, register; (register = registry_[index]); ++index) {
         if (register[0] == this && register[1] == type && register[2] == listener) {
-          return this.detachEvent("on" + type, registry_.splice(index, 1)[0][3]);
+          return this.detachEvent('on' + type, registry_.splice(index, 1)[0][3]);
         }
       }
     };
 
     var dispatchEvent_ = window.dispatchEvent || function (eventObject) {
-      return this.fireEvent("on" + eventObject.type, eventObject);
+      return this.fireEvent('on' + eventObject.type, eventObject);
     };
 
     var eventListenerInfo = { count: 0 };
@@ -1209,33 +1222,153 @@ define("morlock/core/events",
       evObj.initEvent(evType, true, true);
       dispatchEvent_.call(target, evObj);
     }
+
     __exports__.dispatchEvent = dispatchEvent;
   });
+define("morlock/core/buffer", 
+  ["exports"],
+  function(__exports__) {
+    
+    /**
+     * Ghetto Record implementation.
+     */
+    function Buffer(max, mode) {
+      if (!(this instanceof Buffer)) {
+        return new Buffer(max);
+      }
+
+      this.max = max;
+      this.singleValueMode = this.max === 1;
+
+      this.mode = mode;
+
+      this.values = null;
+
+      // Single item optimization
+      this.singleValue = null; 
+    }
+
+    function create(max, mode) {
+      return new Buffer(max, mode);
+    }
+
+    __exports__.create = create;function len(buffer) {
+      if (buffer.singleValueMode) {
+        return buffer.singleValue ? 1 : 0;
+      } else {
+        return buffer.values ? buffer.values.length : 0;
+      }
+    }
+
+    __exports__.len = len;function push(buffer, value) {
+      if (len(buffer) === buffer.max) {
+        if (!buffer.singleValueMode && ('sliding' === buffer.mode)) {
+          buffer.values.shift();
+        } else if ('dropping' === buffer.mode) {
+          return;
+        }
+      }
+
+      if (buffer.singleValueMode) {
+        buffer.singleValue = value;
+      } else {
+        if (!len(buffer)) {
+          buffer.values = [];
+        }
+
+        buffer.values.push(value);
+      }
+    }
+
+    __exports__.push = push;function lastValue(buffer) {
+      if (buffer.singleValueMode) {
+        return buffer.singleValue;
+      } else {
+        return buffer.values && buffer.values[buffer.values.length - 1];
+      }
+    }
+
+    __exports__.lastValue = lastValue;function fill(buffer, value) {
+      if (buffer.singleValueMode) {
+        buffer.singleValue = buffer.singleValue || value;
+      } else {
+        while (!buffer.values || (buffer.values.length < buffer.max)) {
+          push(buffer, value);
+        }
+      }
+    }
+
+    __exports__.fill = fill;function sum(buffer) {
+      if (buffer.singleValueMode) {
+        return buffer.singleValue;
+      }
+
+      var total = 0;
+
+      for (var i = 0; buffer.values, i < buffer.values.length; i++) {
+        total += buffer.values[i];
+      }
+
+      return total;
+    }
+
+    __exports__.sum = sum;function average(buffer) {
+      if (buffer.singleValueMode) {
+        return buffer.singleValue;
+      }
+
+      var total = sum(buffer);
+      
+      if (buffer.values) {
+        return buffer.values.length ? (total / buffer.values.length) : 0;
+      } else {
+        return null;
+      }
+    }
+
+    __exports__.average = average;function clear(buffer) {
+      if (buffer.singleValueMode) {
+        buffer.singleValue = null;
+      } else {
+        if (buffer.values) {
+          buffer.values.length = 0;
+          buffer.values = null;
+        }
+      }
+    }
+
+    __exports__.clear = clear;
+  });
 define("morlock/core/stream", 
-  ["morlock/core/events","morlock/core/util","exports"],
-  function(__dependency1__, __dependency2__, __exports__) {
+  ["morlock/core/events","morlock/core/buffer","morlock/core/util","exports"],
+  function(__dependency1__, __dependency2__, __dependency3__, __exports__) {
     
     var eventListener = __dependency1__.eventListener;
-    var debounceCall = __dependency2__.debounce;
-    var throttleCall = __dependency2__.throttle;
-    var delayCall = __dependency2__.delay;
-    var mapArray = __dependency2__.map;
-    var memoize = __dependency2__.memoize;
-    var objectKeys = __dependency2__.objectKeys;
-    var first = __dependency2__.first;
-    var apply = __dependency2__.apply;
-    var compose = __dependency2__.compose;
-    var when = __dependency2__.when;
-    var equals = __dependency2__.equals;
-    var unary = __dependency2__.unary;
-    var flippedCall = __dependency2__.flippedCall;
-    var partial = __dependency2__.partial;
-    var once = __dependency2__.once;
-    var copyArray = __dependency2__.copyArray;
-    var flip = __dependency2__.flip;
-    var call = __dependency2__.call;
-    var indexOf = __dependency2__.indexOf;
-    var rAF = __dependency2__.rAF;
+    var createBuffer = __dependency2__.create;
+    var pushBuffer = __dependency2__.push;
+    var clearBuffer = __dependency2__.clear;
+    var lastBufferValue = __dependency2__.lastValue;
+    var debounceCall = __dependency3__.debounce;
+    var throttleCall = __dependency3__.throttle;
+    var delayCall = __dependency3__.delay;
+    var mapArray = __dependency3__.map;
+    var memoize = __dependency3__.memoize;
+    var objectKeys = __dependency3__.objectKeys;
+    var first = __dependency3__.first;
+    var apply = __dependency3__.apply;
+    var compose = __dependency3__.compose;
+    var when = __dependency3__.when;
+    var equals = __dependency3__.equals;
+    var unary = __dependency3__.unary;
+    var flippedCall = __dependency3__.flippedCall;
+    var isDefined = __dependency3__.isDefined;
+    var partial = __dependency3__.partial;
+    var once = __dependency3__.once;
+    var copyArray = __dependency3__.copyArray;
+    var flip = __dependency3__.flip;
+    var call = __dependency3__.call;
+    var indexOf = __dependency3__.indexOf;
+    var rAF = __dependency3__.rAF;
 
     // Internal tracking of how many streams have been created.
     var nextID = 0;
@@ -1245,16 +1378,16 @@ define("morlock/core/stream",
     /**
      * Ghetto Record implementation.
      */
-    function Stream(trackSubscribers) {
+    function Stream(trackSubscribers, buffer) {
       if (!(this instanceof Stream)) {
-        return new Stream(trackSubscribers);
+        return new Stream(trackSubscribers, buffer);
       }
 
       this.trackSubscribers = !!trackSubscribers;
       this.subscribers = null;
       this.subscriberSubscribers = null;
       this.streamID = nextID++;
-      this.value = null; // TODO: Some kind of buffer
+      this.values = isDefined(buffer) ? buffer : createBuffer(1, 'sliding');
       this.closed = false;
       this.closeSubscribers = null;
       this.emptySubscribers = null;
@@ -1262,8 +1395,8 @@ define("morlock/core/stream",
       openStreams[this.streamID] = this;
     }
 
-    function create(trackSubscribers) {
-      return new Stream(trackSubscribers);
+    function create(trackSubscribers, buffer) {
+      return new Stream(trackSubscribers, buffer);
     }
 
     function emit(stream, val) {
@@ -1271,11 +1404,11 @@ define("morlock/core/stream",
 
       mapArray(unary(partial(flippedCall, val)), stream.subscribers);
 
-      stream.value = val;
+      pushBuffer(stream.values, val);
     }
 
     function getValue(stream) {
-      return stream.value;
+      return lastBufferValue(stream.values);
     }
 
     function onValue(stream, f) {
@@ -1295,7 +1428,7 @@ define("morlock/core/stream",
       if (stream.closed) { return; }
 
       stream.closed = true;
-      stream.value = null;
+      clearBuffer(stream.values);
 
       if (stream.subscribers) {
         stream.subscribers.length = 0;
@@ -1862,13 +1995,13 @@ define("morlock/streams/scroll-stream",
       var scrollDirty = true;
       var scrollEventsStream = Stream.createFromEvents(window, 'scroll');
 
-      Stream.onValue(scrollEventsStream, function() {
+      Stream.onValue(scrollEventsStream, function onScrollSetDirtyBit_() {
         scrollDirty = true;
       });
 
       var rAF = Stream.createFromRAF();
 
-      var didChangeOnRAFStream = Stream.filter(function() {
+      var didChangeOnRAFStream = Stream.filter(function filterDirtyFramesFromRAF_() {
         if (!scrollDirty) { return false; }
         scrollDirty = false;
 
@@ -1884,12 +2017,9 @@ define("morlock/streams/scroll-stream",
       // It's going to space, will you just give it a second!
       defer(partial(dispatchEvent, window, 'scroll'), 10);
 
-      return Stream.map(
-        function getWindowPosition() {
-          return oldScrollY;
-        },
-        didChangeOnRAFStream
-      );
+      return Stream.map(function getWindowPosition_() {
+        return oldScrollY;
+      }, didChangeOnRAFStream);
     });
     __exports__.create = create;
   });
@@ -1963,6 +2093,7 @@ define("morlock/streams/element-tracker-stream",
     
     var getViewportHeight = __dependency1__.getViewportHeight;
     var getRect = __dependency1__.getRect;
+    var getOption = __dependency1__.getOption;
     var Stream = __dependency2__;
     var ScrollStream = __dependency3__;
     var ResizeStream = __dependency4__;
@@ -1978,7 +2109,9 @@ define("morlock/streams/element-tracker-stream",
       var trackerStream = Stream.create();
       var viewportHeight;
       var isVisible = false;
-      var buffer = (options && 'number' === typeof options.buffer) ? options.buffer : 0;
+
+      options = options || {};
+      var buffer = getOption(options.buffer, 0);
 
       function updateViewport() {
         viewportHeight = getViewportHeight();
@@ -2057,8 +2190,9 @@ define("morlock/controllers/element-visible-controller",
 
         f(filteredStream, cb);
         
-        if ((f === Stream.onValue) && (trackerStream.value === name)) {
-          Stream.emit(filteredStream, trackerStream.value);
+        var val = Stream.getValue(trackerStream);
+        if ((f === Stream.onValue) && (val === name)) {
+          Stream.emit(filteredStream, val);
         }
       }
 
@@ -2098,7 +2232,7 @@ define("morlock/streams/scroll-tracker-stream",
       var pastScrollY = false;
       var firstRun = true;
 
-      Stream.onValue(scrollPositionStream, function(currentScrollY){
+      Stream.onValue(scrollPositionStream, function onScrollTrackPosition_(currentScrollY) {
         if ((firstRun || pastScrollY) && (currentScrollY < targetScrollY)) {
           pastScrollY = false;
           Stream.emit(overTheLineStream, ['before', targetScrollY]);
@@ -2423,8 +2557,8 @@ define("morlock/core/responsive-image",
     __exports__.update = update;
   });
 define("morlock/base", 
-  ["morlock/controllers/resize-controller","morlock/controllers/breakpoint-controller","morlock/controllers/scroll-controller","morlock/controllers/element-visible-controller","morlock/controllers/scroll-position-controller","morlock/core/responsive-image","morlock/core/util","morlock/core/events","morlock/core/stream","exports"],
-  function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __dependency5__, __dependency6__, __dependency7__, __dependency8__, __dependency9__, __exports__) {
+  ["morlock/controllers/resize-controller","morlock/controllers/breakpoint-controller","morlock/controllers/scroll-controller","morlock/controllers/element-visible-controller","morlock/controllers/scroll-position-controller","morlock/core/responsive-image","morlock/core/util","morlock/core/events","morlock/core/buffer","morlock/core/stream","exports"],
+  function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __dependency5__, __dependency6__, __dependency7__, __dependency8__, __dependency9__, __dependency10__, __exports__) {
     
     var ResizeController = __dependency1__["default"];
     var BreakpointController = __dependency2__["default"];
@@ -2432,23 +2566,21 @@ define("morlock/base",
     var ElementVisibleController = __dependency4__["default"];
     var ScrollPositionController = __dependency5__["default"];
     var ResponsiveImage = __dependency6__;
-    var isDefined = __dependency7__.isDefined;
-    var equals = __dependency7__.equals;
-    var filter = __dependency7__.filter;
-    var memoize = __dependency7__.memoize;
+    var Util = __dependency7__;
     var Events = __dependency8__;
-    var Stream = __dependency9__;
+    var Buffer = __dependency9__;
+    var Stream = __dependency10__;
 
     var sharedPositions = {};
 
     var sharedBreakpointDefs = [];
     var sharedBreakpointsVals = [];
 
-    var getResizeTracker = memoize(function() {
+    var getResizeTracker = Util.memoize(function() {
       return new ResizeController();
     });
 
-    var getScrollTracker = memoize(function() {
+    var getScrollTracker = Util.memoize(function() {
       return new ScrollController();
     });
 
@@ -2460,7 +2592,7 @@ define("morlock/base",
     function getBreakpointTracker(def) {
       var found = false;
       for (var i = 0; i < sharedBreakpointDefs.length; i++) {
-        if (equals(sharedBreakpointDefs[i], def)) {
+        if (Util.equals(sharedBreakpointDefs[i], def)) {
           found = true;
           break;
         }
@@ -2641,6 +2773,8 @@ define("morlock/base",
     __exports__.morlock = morlock;
     morlock.Stream = Stream;
     morlock.Events = Events;
+    morlock.Buffer = Buffer;
+    morlock.Util = Util;
 
     __exports__.ResizeController = ResizeController;
     __exports__.BreakpointController = BreakpointController;

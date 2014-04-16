@@ -12,13 +12,13 @@ export var create = memoize(function create_() {
   var scrollDirty = true;
   var scrollEventsStream = Stream.createFromEvents(window, 'scroll');
 
-  Stream.onValue(scrollEventsStream, function() {
+  Stream.onValue(scrollEventsStream, function onScrollSetDirtyBit_() {
     scrollDirty = true;
   });
 
   var rAF = Stream.createFromRAF();
 
-  var didChangeOnRAFStream = Stream.filter(function() {
+  var didChangeOnRAFStream = Stream.filter(function filterDirtyFramesFromRAF_() {
     if (!scrollDirty) { return false; }
     scrollDirty = false;
 
@@ -34,10 +34,7 @@ export var create = memoize(function create_() {
   // It's going to space, will you just give it a second!
   defer(partial(dispatchEvent, window, 'scroll'), 10);
 
-  return Stream.map(
-    function getWindowPosition() {
-      return oldScrollY;
-    },
-    didChangeOnRAFStream
-  );
+  return Stream.map(function getWindowPosition_() {
+    return oldScrollY;
+  }, didChangeOnRAFStream);
 });

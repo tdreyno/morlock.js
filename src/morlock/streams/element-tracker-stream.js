@@ -1,4 +1,4 @@
-import { getViewportHeight, getRect } from "morlock/core/util";
+import { getViewportHeight, getRect, getOption } from "morlock/core/util";
 module Stream from "morlock/core/stream";
 module ScrollStream from "morlock/streams/scroll-stream";
 module ResizeStream from "morlock/streams/resize-stream";
@@ -14,7 +14,9 @@ export function create(element, resizeStream, options) {
   var trackerStream = Stream.create();
   var viewportHeight;
   var isVisible = false;
-  var buffer = (options && 'number' === typeof options.buffer) ? options.buffer : 0;
+
+  options = options || {};
+  var buffer = getOption(options.buffer, 0);
 
   function updateViewport() {
     viewportHeight = getViewportHeight();

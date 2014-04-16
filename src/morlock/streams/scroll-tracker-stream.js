@@ -13,7 +13,7 @@ export function create(targetScrollY) {
   var pastScrollY = false;
   var firstRun = true;
 
-  Stream.onValue(scrollPositionStream, function(currentScrollY){
+  Stream.onValue(scrollPositionStream, function onScrollTrackPosition_(currentScrollY) {
     if ((firstRun || pastScrollY) && (currentScrollY < targetScrollY)) {
       pastScrollY = false;
       Stream.emit(overTheLineStream, ['before', targetScrollY]);

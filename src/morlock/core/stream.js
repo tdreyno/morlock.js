@@ -1,10 +1,14 @@
 import { eventListener } from "morlock/core/events";
+import { create as createBuffer,
+         push as pushBuffer,
+         clear as clearBuffer,
+         lastValue as lastBufferValue } from "morlock/core/buffer";
 import { debounce as debounceCall,
          throttle as throttleCall,
          delay as delayCall,
          map as mapArray,
          memoize, objectKeys,
-         first, apply, compose, when, equals, unary, flippedCall,
+         first, apply, compose, when, equals, unary, flippedCall, isDefined,
          partial, once, copyArray, flip, call, indexOf, rAF } from "morlock/core/util";
 
 // Internal tracking of how many streams have been created.
@@ -15,16 +19,16 @@ export var openStreams = {};
 /**
  * Ghetto Record implementation.
  */
-function Stream(trackSubscribers) {
+function Stream(trackSubscribers, buffer) {
   if (!(this instanceof Stream)) {
-    return new Stream(trackSubscribers);
+    return new Stream(trackSubscribers, buffer);
   }
 
   this.trackSubscribers = !!trackSubscribers;
   this.subscribers = null;
   this.subscriberSubscribers = null;
   this.streamID = nextID++;
-  this.value = null; // TODO: Some kind of buffer
+  this.values = isDefined(buffer) ? buffer : createBuffer(1, 'sliding');
   this.closed = false;
   this.closeSubscribers = null;
   this.emptySubscribers = null;
@@ -32,8 +36,8 @@ function Stream(trackSubscribers) {
   openStreams[this.streamID] = this;
 }
 
-function create(trackSubscribers) {
-  return new Stream(trackSubscribers);
+function create(trackSubscribers, buffer) {
+  return new Stream(trackSubscribers, buffer);
 }
 
 function emit(stream, val) {
@@ -41,11 +45,11 @@ function emit(stream, val) {
 
   mapArray(unary(partial(flippedCall, val)), stream.subscribers);
 
-  stream.value = val;
+  pushBuffer(stream.values, val);
 }
 
 function getValue(stream) {
-  return stream.value;
+  return lastBufferValue(stream.values);
 }
 
 function onValue(stream, f) {
@@ -65,7 +69,7 @@ export function close(stream) {
   if (stream.closed) { return; }
 
   stream.closed = true;
-  stream.value = null;
+  clearBuffer(stream.values);
 
   if (stream.subscribers) {
     stream.subscribers.length = 0;

@@ -1,3 +1,5 @@
+var NATIVE_ARRAY_SLICE = Array.prototype.slice;
+
 /**
  * Slice an array.
  * @param {array} arr The original array.
@@ -5,7 +7,7 @@
  * @return {array} New sliced array.
  */
 function slice(arr, pos) {
-  return Array.prototype.slice.call(arr, pos);
+  return NATIVE_ARRAY_SLICE.call(arr, pos);
 }
 
 /**
@@ -310,6 +312,8 @@ function set(obj, key, v) {
 //   };
 // }
 
+var NATIVE_ARRAY_REVERSE = Array.prototype.reverse;
+
 /**
  * Reverse the order of arguments.
  * @param {function} f The original function.
@@ -317,7 +321,7 @@ function set(obj, key, v) {
  */
 function flip(f) {
   return function flippedFunction_() {
-    return apply(f, Array.prototype.reverse.call(arguments));
+    return apply(f, NATIVE_ARRAY_REVERSE.call(arguments));
   };
 }
 
@@ -590,33 +594,39 @@ function last(arr) {
   return arr[arr.length - 1];
 }
 
+var NATIVE_ARRAY_UNSHIFT = Array.prototype.unshift;
+var NATIVE_ARRAY_SHIFT = Array.prototype.shift;
+var NATIVE_ARRAY_PUSH = Array.prototype.push;
+var NATIVE_ARRAY_POP = Array.prototype.pop;
+var NATIVE_ARRAY_SORT = Array.prototype.sort;
+
 function unshift(arr, v) {
   var arr2 = copyArray(arr);
-  Array.prototype.unshift.call(arr2, v);
+  NATIVE_ARRAY_UNSHIFT.call(arr2, v);
   return arr2;
 }
 
 function shift(arr, v) {
   var arr2 = copyArray(arr);
-  Array.prototype.shift.call(arr2, v);
+  NATIVE_ARRAY_SHIFT.call(arr2, v);
   return arr2;
 }
 
 function push(arr, v) {
   var arr2 = copyArray(arr);
-  Array.prototype.push.call(arr2, v);
+  NATIVE_ARRAY_PUSH.call(arr2, v);
   return arr2;
 }
 
 function pop(arr, v) {
   var arr2 = copyArray(arr);
-  Array.prototype.pop.call(arr2, v);
+  NATIVE_ARRAY_POP.call(arr2, v);
   return arr2;
 }
 
 function sortBy(arr, f) {
   var arr2 = copyArray(arr);
-  Array.prototype.sort.call(arr2, f);
+  NATIVE_ARRAY_SORT.call(arr2, f);
   return arr2;
 }
 
@@ -630,6 +640,8 @@ function compose(/*fns*/) {
     return value;
   };
 }
+
+export var pipeline = flip(compose);
 
 function once(f /*, args*/) {
   var args = rest(arguments);

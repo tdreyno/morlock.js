@@ -4,8 +4,9 @@ import ScrollController from "morlock/controllers/scroll-controller";
 import ElementVisibleController from "morlock/controllers/element-visible-controller";
 import ScrollPositionController from "morlock/controllers/scroll-position-controller";
 module ResponsiveImage from "morlock/core/responsive-image";
-import { isDefined, equals, filter, memoize } from 'morlock/core/util';
+module Util from 'morlock/core/util';
 module Events from 'morlock/core/events';
+module Buffer from "morlock/core/buffer";
 module Stream from "morlock/core/stream";
 
 var sharedPositions = {};
@@ -13,11 +14,11 @@ var sharedPositions = {};
 var sharedBreakpointDefs = [];
 var sharedBreakpointsVals = [];
 
-var getResizeTracker = memoize(function() {
+var getResizeTracker = Util.memoize(function() {
   return new ResizeController();
 });
 
-var getScrollTracker = memoize(function() {
+var getScrollTracker = Util.memoize(function() {
   return new ScrollController();
 });
 
@@ -29,7 +30,7 @@ function getPositionTracker(pos) {
 function getBreakpointTracker(def) {
   var found = false;
   for (var i = 0; i < sharedBreakpointDefs.length; i++) {
-    if (equals(sharedBreakpointDefs[i], def)) {
+    if (Util.equals(sharedBreakpointDefs[i], def)) {
       found = true;
       break;
     }
@@ -210,6 +211,8 @@ export var morlock = {
 
 morlock.Stream = Stream;
 morlock.Events = Events;
+morlock.Buffer = Buffer;
+morlock.Util = Util;
 
 export {
   ResizeController,

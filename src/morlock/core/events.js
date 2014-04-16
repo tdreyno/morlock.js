@@ -1,4 +1,5 @@
 var registry_ = [];
+
 var addEventListener_ = window.addEventListener || function fallbackAddRemoveEventListener_(type, listener) {
   var target = this;
 
@@ -11,19 +12,19 @@ var addEventListener_ = window.addEventListener || function fallbackAddRemoveEve
     listener.call(target, event);
   }]);
 
-  this.attachEvent("on" + type, registry_[0][3]);
+  this.attachEvent('on' + type, registry_[0][3]);
 };
 
 var removeEventListener_ = window.removeEventListener || function fallbackRemoveEventListener_(type, listener) {
   for (var index = 0, register; (register = registry_[index]); ++index) {
     if (register[0] == this && register[1] == type && register[2] == listener) {
-      return this.detachEvent("on" + type, registry_.splice(index, 1)[0][3]);
+      return this.detachEvent('on' + type, registry_.splice(index, 1)[0][3]);
     }
   }
 };
 
 var dispatchEvent_ = window.dispatchEvent || function (eventObject) {
-  return this.fireEvent("on" + eventObject.type, eventObject);
+  return this.fireEvent('on' + eventObject.type, eventObject);
 };
 
 export var eventListenerInfo = { count: 0 };
