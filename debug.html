@@ -20,115 +20,119 @@
   <div class="js-responsive-image" data-src="test/img/experience.jpg" data-hasRetina="true" data-breakpoints="320,768,1024" data-lazyload="true" data-preserveAspectRatio="true" data-knownDimensions="768x512"></div>
   <script src="dist/morlock.js"></script>
   <script>
-    rc = new ResizeController();
+    function start() {
+      rc = new ResizeController();
 
-    rc.on('resize', function(e) {
-      console.log('resize', e[0], e[1]);
-    });
+      rc.on('resize', function(e) {
+        console.log('resize', e[0], e[1]);
+      });
 
-    bc = new BreakpointController({
-      breakpoints: {
-        'mobile': { max: 767 },
-        'tablet': { min: 768, max: 1043 },
-        'desktop': { min: 1044 }
+      bc = new BreakpointController({
+        breakpoints: {
+          'mobile': { max: 767 },
+          'tablet': { min: 768, max: 1043 },
+          'desktop': { min: 1044 }
+        }
+      });
+
+
+      // var intervalStream = s.interval(1000);
+      // var resizeStream = r.create({ throttleMs: 0 });
+      // var dimensionsStream = s.map(function() {
+      //   return [window.innerWidth, window.innerHeight];
+      // }, resizeStream);
+
+      // s.onValue(s.sample(dimensionsStream, intervalStream), function(v) {
+      //   console.log('Every 1000ms', v);
+      // });
+
+      // s.onValue(s.createFromRAF(), function(t) {
+      //   console.log(t)
+      // })
+
+      var responsiveImages = [];
+      var elems = document.getElementsByClassName('js-responsive-image');
+      for (var i = 0; i < elems.length; i++) {
+        responsiveImages.push(ResponsiveImage.createFromElement(elems[i]));
       }
-    });
 
+      bc.on('breakpoint', function(e) {
+        console.log('breakpoint', e);
 
-    // var intervalStream = s.interval(1000);
-    // var resizeStream = r.create({ throttleMs: 0 });
-    // var dimensionsStream = s.map(function() {
-    //   return [window.innerWidth, window.innerHeight];
-    // }, resizeStream);
+        for (var i = 0; i < responsiveImages.length; i++) {
+          ResponsiveImage.update(responsiveImages[i]);
+        }
+      });
 
-    // s.onValue(s.sample(dimensionsStream, intervalStream), function(v) {
-    //   console.log('Every 1000ms', v);
-    // });
+      bc.on('breakpoint:mobile', function(e) {
+        console.log('breakpoint:mobile', e[1]);
+      });
 
-    // s.onValue(s.createFromRAF(), function(t) {
-    //   console.log(t)
-    // })
+      sc = new ScrollController({
+        debounceMs: 400
+      });
 
-    var responsiveImages = [];
-    var elems = document.getElementsByClassName('js-responsive-image');
-    for (var i = 0; i < elems.length; i++) {
-      responsiveImages.push(ResponsiveImage.createFromElement(elems[i]));
+      sc.on('scrollEnd', function(e) {
+        console.log('scrollEnd');
+      });
+
+      sc2 = new ScrollController({
+        debounceMs: 0
+      });
+
+      sc2.on('scrollEnd', function(e) {
+        
+      });
+
+      var observer = new ElementVisibleController(document.getElementById('hi'), { buffer: 100 });
+      observer.on('enter', function() {
+        console.log('enter HI');
+      });
+      observer.on('exit', function() {
+        console.log('exit HI');
+      });
+
+      setTimeout(function() {
+        console.log('GO!')
+        var onBefore = function() {
+          console.log('ONOFF: before 200');
+        };
+        var onAfter = function() {
+          console.log('ONOFF: after 200');
+        };
+        var observer = (new ScrollPositionController(200)).on('before', onBefore).on('after', onAfter);
+
+        rc.on('resize', function() {
+          observer.off('before', onBefore).off('after', onAfter);
+
+          onBefore = function() {
+            console.log('ONOFF: before 400');
+          };
+          onAfter = function() {
+            console.log('ONOFF: after 400');
+          };
+
+          observer = (new ScrollPositionController(400)).on('before', onBefore).on('after', onAfter);
+        })
+      }, 2000);
+
+      morlock.position.before(400, function() {
+        console.log('before 400');
+      });
+      morlock.position.after(400, function() {
+        console.log('after 400');
+      });
+
+      morlock.breakpoint.enter({ min: 600, max: 700 }, function() {
+        console.log('Shorthand mobile enter');
+      });
+
+      morlock.breakpoint.exit({ min: 600, max: 700 }, function() {
+        console.log('Shorthand mobile exit');
+      });
     }
 
-    bc.on('breakpoint', function(e) {
-      console.log('breakpoint', e);
-
-      for (var i = 0; i < responsiveImages.length; i++) {
-        ResponsiveImage.update(responsiveImages[i]);
-      }
-    });
-
-    bc.on('breakpoint:mobile', function(e) {
-      console.log('breakpoint:mobile', e[1]);
-    });
-
-    sc = new ScrollController({
-      debounceMs: 400
-    });
-
-    sc.on('scrollEnd', function(e) {
-      console.log('scrollEnd');
-    });
-
-    sc2 = new ScrollController({
-      debounceMs: 0
-    });
-
-    sc2.on('scrollEnd', function(e) {
-      
-    });
-
-    var observer = new ElementVisibleController(document.getElementById('hi'), { buffer: 100 });
-    observer.on('enter', function() {
-      console.log('enter HI');
-    });
-    observer.on('exit', function() {
-      console.log('exit HI');
-    });
-
-    setTimeout(function() {
-      console.log('GO!')
-      var onBefore = function() {
-        console.log('ONOFF: before 200');
-      };
-      var onAfter = function() {
-        console.log('ONOFF: after 200');
-      };
-      var observer = (new ScrollPositionController(200)).on('before', onBefore).on('after', onAfter);
-
-      rc.on('resize', function() {
-        observer.off('before', onBefore).off('after', onAfter);
-
-        onBefore = function() {
-          console.log('ONOFF: before 400');
-        };
-        onAfter = function() {
-          console.log('ONOFF: after 400');
-        };
-
-        observer = (new ScrollPositionController(400)).on('before', onBefore).on('after', onAfter);
-      })
-    }, 2000);
-
-    morlock.position.before(400, function() {
-      console.log('before 400');
-    });
-    morlock.position.after(400, function() {
-      console.log('after 400');
-    });
-
-    morlock.breakpoint.enter({ min: 600, max: 700 }, function() {
-      console.log('Shorthand mobile enter');
-    });
-
-    morlock.breakpoint.exit({ min: 600, max: 700 }, function() {
-      console.log('Shorthand mobile exit');
-    });
+    start();
   </script>
 </body>
 </html>

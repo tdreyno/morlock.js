@@ -4,7 +4,7 @@ import { debounce as debounceCall,
          delay as delayCall,
          map as mapArray,
          memoize, objectKeys,
-         first, apply, compose, when, equals,
+         first, apply, compose, when, equals, unary, flippedCall,
          partial, once, copyArray, flip, call, indexOf, rAF } from "morlock/core/util";
 
 // Internal tracking of how many streams have been created.
@@ -39,7 +39,7 @@ function create(trackSubscribers) {
 function emit(stream, val) {
   if (stream.closed) { return; }
 
-  mapArray(partial(flip(call), val), stream.subscribers);
+  mapArray(unary(partial(flippedCall, val)), stream.subscribers);
 
   stream.value = val;
 }
@@ -55,7 +55,7 @@ function onValue(stream, f) {
   stream.subscribers.push(f);
 
   if (stream.trackSubscribers) {
-    mapArray(partial(flip(call), f), stream.subscriberSubscribers);
+    mapArray(unary(partial(flippedCall, f)), stream.subscriberSubscribers);
   }
 
   return partial(offValue, stream, f);
@@ -72,7 +72,7 @@ export function close(stream) {
   }
 
   if (stream.closeSubscribers) {
-    mapArray(flip(call), stream.closeSubscribers);
+    mapArray(flippedCall, stream.closeSubscribers);
     stream.closeSubscribers.length = 0;
   }
 
@@ -88,7 +88,7 @@ function offValue(stream, f) {
 
     if (stream.subscribers.length < 1) {
       stream.subscribers = null;
-      mapArray(flip(call), stream.emptySubscribers);
+      mapArray(flippedCall, stream.emptySubscribers);
     }
   }
 }

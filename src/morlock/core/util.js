@@ -17,6 +17,8 @@ function copyArray(arr) {
   return slice(arr, 0);
 }
 
+var NATIVE_ARRAY_INDEXOF = Array.prototype.indexOf;
+
 /**
  * Backwards compatible Array.prototype.indexOf
  * @param {array} list List of items.
@@ -24,8 +26,8 @@ function copyArray(arr) {
  * @return {number} Index of match or -1 if not found.
  */
 function indexOf(list, item) {
-  if (Array.prototype.indexOf) {
-    return list.indexOf(item);
+  if (NATIVE_ARRAY_INDEXOF) {
+    return NATIVE_ARRAY_INDEXOF.call(list, item);
   }
 
   for (var i = 0; i < list.length; i++) {
@@ -89,6 +91,10 @@ function debounce(f, delay) {
   };
 }
 
+export function identity(val) {
+  return val;
+}
+
 /**
  * Backwards compatible Media Query matcher.
  * @param {String} mq Media query to match.
@@ -96,12 +102,8 @@ function debounce(f, delay) {
  */
 export var testMQ = Modernizr.mq;
 
-export function identity(val) {
-  return val;
-}
-
 export function memoize(f, argsToStringFunc) {
-  var cache = {};
+  var cache = Object.create(null);
 
   argsToStringFunc = isDefined(argsToStringFunc) ? argsToStringFunc : JSON.stringify;
 
@@ -205,6 +207,18 @@ function mapObject(f, obj) {
   }, objectKeys(obj), {});
 }
 
+export function unary(fn) {
+  if (fn.length === 1) {
+    return fn;
+  } else {
+    return function unaryExecute_(firstParam) {
+      return fn.call(this, firstParam);
+    };
+  }
+}
+
+var NATIVE_ARRAY_MAP = Array.prototype.map;
+
 /**
  * Map a function over an object.
  * @param {object} obj The object.
@@ -212,9 +226,38 @@ function mapObject(f, obj) {
  * @return {object} The resulting object.
  */
 function map(f, arr) {
-  return reduce(function mapExecute_(sum, v) {
-    return push(sum, f(v));
-  }, arr, []);
+  if (NATIVE_ARRAY_MAP) {
+    return arr ? NATIVE_ARRAY_MAP.call(arr, f) : arr;
+  }
+
+  var output = [];
+
+  for (var i = 0; arr && i < arr.length; i++) {
+    output.push(f(arr[i], i, arr));
+  }
+
+  return output;
+}
+
+var NATIVE_ARRAY_FOREACH = Array.prototype.forEach;
+
+/**
+ * Loop a function over an object, for side-effects.
+ * @param {object} obj The object.
+ * @param {function} f The function.
+ */
+export function forEach(f, arr) {
+  if (NATIVE_ARRAY_FOREACH) {
+    if (arr) {
+      NATIVE_ARRAY_FOREACH.call(arr, f);
+    }
+
+    return;
+  }
+
+  for (var i = 0; i < arr.length; i++) {
+    f(arr[i], i, arr);
+  }
 }
 
 /**
@@ -295,24 +338,40 @@ function objectVals(obj) {
   return map(getPropertyByName, objectKeys(obj));
 }
 
+var NATIVE_ARRAY_REDUCE = Array.prototype.reduce;
+
 function reduce(f, arr, val) {
+  if (NATIVE_ARRAY_REDUCE) {
+    return arr ? NATIVE_ARRAY_REDUCE.call(arr, f, val) : val;
+  }
+
   for (var i = 0; arr && i < arr.length; i++) {
-    val = f(val, arr[i]);
+    val = f(val, arr[i], i, arr);
   }
 
   return val;
 }
 
+var NATIVE_ARRAY_FILTER = Array.prototype.filter;
+
 function select(f, arr) {
-  return reduce(function selectExecute_(sum, v) {
-    return equals(f(v), true) ? push(sum, v) : sum;
-  }, arr, []);
+  if (NATIVE_ARRAY_FILTER) {
+    return arr ? NATIVE_ARRAY_FILTER.call(arr, f) : null;
+  }
+
+  var output = [];
+
+  for (var i = 0; arr && i < arr.length; i++) {
+    if (f(arr[i], i, arr) === true) {
+      output.push(arr[i]);
+    }
+  }
+
+  return output;
 }
 
 function reject(f, arr) {
-  return reduce(function rejectExecute_(sum, v) {
-    return equals(f(v), false) ? push(sum, v) : sum;
-  }, arr, []);
+  return select(compose(not, f), arr);
 }
 
 function not(v) {
@@ -448,6 +507,7 @@ function equals(a, b) {
 function when(truth, f) {
   return function whenExecute_() {
     var whatIsTruth = truth; // Do not mutate original var :(
+
     if ('function' === typeof truth) {
       whatIsTruth = apply(truth, arguments);
     }
@@ -458,6 +518,8 @@ function when(truth, f) {
   };
 }
 
+var NATIVE_FUNCTION_BIND = Function.prototype.bind;
+
 /**
  * Bind a function's "this" value.
  * @param {function} f The function.
@@ -465,8 +527,8 @@ function when(truth, f) {
  * @return {function} The bound function.
  */
 function functionBind(f, obj) {
-  if (Function.prototype.bind) {
-    return f.bind(obj);
+  if (NATIVE_FUNCTION_BIND) {
+    return NATIVE_FUNCTION_BIND.call(f, obj);
   }
 
   return function boundFunction_() {
@@ -479,6 +541,11 @@ function functionBind(f, obj) {
  */
 function partial(f /*, args*/) {
   var args = rest(arguments);
+
+  if (NATIVE_FUNCTION_BIND) {
+    args.unshift(undefined);
+    return NATIVE_FUNCTION_BIND.apply(f, args);
+  }
 
   return function partialExecute_() {
     var args2 = slice(arguments, 0);
@@ -508,6 +575,8 @@ function rest(arr, fromStart) {
 function call(f /*, args */) {
   return apply(f, rest(arguments));
 }
+
+export var flippedCall = flip(call);
 
 function nth(idx, arr) {
   return arr[idx];

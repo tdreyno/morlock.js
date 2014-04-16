@@ -459,6 +459,8 @@ define("morlock/core/util",
       return slice(arr, 0);
     }
 
+    var NATIVE_ARRAY_INDEXOF = Array.prototype.indexOf;
+
     /**
      * Backwards compatible Array.prototype.indexOf
      * @param {array} list List of items.
@@ -466,8 +468,8 @@ define("morlock/core/util",
      * @return {number} Index of match or -1 if not found.
      */
     function indexOf(list, item) {
-      if (Array.prototype.indexOf) {
-        return list.indexOf(item);
+      if (NATIVE_ARRAY_INDEXOF) {
+        return NATIVE_ARRAY_INDEXOF.call(list, item);
       }
 
       for (var i = 0; i < list.length; i++) {
@@ -531,19 +533,19 @@ define("morlock/core/util",
       };
     }
 
-    /**
+    function identity(val) {
+      return val;
+    }
+
+    __exports__.identity = identity;/**
      * Backwards compatible Media Query matcher.
      * @param {String} mq Media query to match.
      * @return {Boolean} Whether it matched.
      */
     var testMQ = Modernizr.mq;
     __exports__.testMQ = testMQ;
-    function identity(val) {
-      return val;
-    }
-
-    __exports__.identity = identity;function memoize(f, argsToStringFunc) {
-      var cache = {};
+    function memoize(f, argsToStringFunc) {
+      var cache = Object.create(null);
 
       argsToStringFunc = isDefined(argsToStringFunc) ? argsToStringFunc : JSON.stringify;
 
@@ -647,6 +649,18 @@ define("morlock/core/util",
       }, objectKeys(obj), {});
     }
 
+    function unary(fn) {
+      if (fn.length === 1) {
+        return fn;
+      } else {
+        return function unaryExecute_(firstParam) {
+          return fn.call(this, firstParam);
+        };
+      }
+    }
+
+    __exports__.unary = unary;var NATIVE_ARRAY_MAP = Array.prototype.map;
+
     /**
      * Map a function over an object.
      * @param {object} obj The object.
@@ -654,12 +668,41 @@ define("morlock/core/util",
      * @return {object} The resulting object.
      */
     function map(f, arr) {
-      return reduce(function mapExecute_(sum, v) {
-        return push(sum, f(v));
-      }, arr, []);
+      if (NATIVE_ARRAY_MAP) {
+        return arr ? NATIVE_ARRAY_MAP.call(arr, f) : arr;
+      }
+
+      var output = [];
+
+      for (var i = 0; arr && i < arr.length; i++) {
+        output.push(f(arr[i], i, arr));
+      }
+
+      return output;
     }
 
+    var NATIVE_ARRAY_FOREACH = Array.prototype.forEach;
+
     /**
+     * Loop a function over an object, for side-effects.
+     * @param {object} obj The object.
+     * @param {function} f The function.
+     */
+    function forEach(f, arr) {
+      if (NATIVE_ARRAY_FOREACH) {
+        if (arr) {
+          NATIVE_ARRAY_FOREACH.call(arr, f);
+        }
+
+        return;
+      }
+
+      for (var i = 0; i < arr.length; i++) {
+        f(arr[i], i, arr);
+      }
+    }
+
+    __exports__.forEach = forEach;/**
      * Get the keys of an object.
      * @param {object} obj The object.
      * @return {array} An array of keys.
@@ -737,24 +780,40 @@ define("morlock/core/util",
       return map(getPropertyByName, objectKeys(obj));
     }
 
+    var NATIVE_ARRAY_REDUCE = Array.prototype.reduce;
+
     function reduce(f, arr, val) {
+      if (NATIVE_ARRAY_REDUCE) {
+        return arr ? NATIVE_ARRAY_REDUCE.call(arr, f, val) : val;
+      }
+
       for (var i = 0; arr && i < arr.length; i++) {
-        val = f(val, arr[i]);
+        val = f(val, arr[i], i, arr);
       }
 
       return val;
     }
 
+    var NATIVE_ARRAY_FILTER = Array.prototype.filter;
+
     function select(f, arr) {
-      return reduce(function selectExecute_(sum, v) {
-        return equals(f(v), true) ? push(sum, v) : sum;
-      }, arr, []);
+      if (NATIVE_ARRAY_FILTER) {
+        return arr ? NATIVE_ARRAY_FILTER.call(arr, f) : null;
+      }
+
+      var output = [];
+
+      for (var i = 0; arr && i < arr.length; i++) {
+        if (f(arr[i], i, arr) === true) {
+          output.push(arr[i]);
+        }
+      }
+
+      return output;
     }
 
     function reject(f, arr) {
-      return reduce(function rejectExecute_(sum, v) {
-        return equals(f(v), false) ? push(sum, v) : sum;
-      }, arr, []);
+      return select(compose(not, f), arr);
     }
 
     function not(v) {
@@ -890,6 +949,7 @@ define("morlock/core/util",
     function when(truth, f) {
       return function whenExecute_() {
         var whatIsTruth = truth; // Do not mutate original var :(
+
         if ('function' === typeof truth) {
           whatIsTruth = apply(truth, arguments);
         }
@@ -900,6 +960,8 @@ define("morlock/core/util",
       };
     }
 
+    var NATIVE_FUNCTION_BIND = Function.prototype.bind;
+
     /**
      * Bind a function's "this" value.
      * @param {function} f The function.
@@ -907,8 +969,8 @@ define("morlock/core/util",
      * @return {function} The bound function.
      */
     function functionBind(f, obj) {
-      if (Function.prototype.bind) {
-        return f.bind(obj);
+      if (NATIVE_FUNCTION_BIND) {
+        return NATIVE_FUNCTION_BIND.call(f, obj);
       }
 
       return function boundFunction_() {
@@ -921,6 +983,11 @@ define("morlock/core/util",
      */
     function partial(f /*, args*/) {
       var args = rest(arguments);
+
+      if (NATIVE_FUNCTION_BIND) {
+        args.unshift(undefined);
+        return NATIVE_FUNCTION_BIND.apply(f, args);
+      }
 
       return function partialExecute_() {
         var args2 = slice(arguments, 0);
@@ -951,6 +1018,8 @@ define("morlock/core/util",
       return apply(f, rest(arguments));
     }
 
+    var flippedCall = flip(call);
+    __exports__.flippedCall = flippedCall;
     function nth(idx, arr) {
       return arr[idx];
     }
@@ -1158,6 +1227,8 @@ define("morlock/core/stream",
     var compose = __dependency2__.compose;
     var when = __dependency2__.when;
     var equals = __dependency2__.equals;
+    var unary = __dependency2__.unary;
+    var flippedCall = __dependency2__.flippedCall;
     var partial = __dependency2__.partial;
     var once = __dependency2__.once;
     var copyArray = __dependency2__.copyArray;
@@ -1198,7 +1269,7 @@ define("morlock/core/stream",
     function emit(stream, val) {
       if (stream.closed) { return; }
 
-      mapArray(partial(flip(call), val), stream.subscribers);
+      mapArray(unary(partial(flippedCall, val)), stream.subscribers);
 
       stream.value = val;
     }
@@ -1214,7 +1285,7 @@ define("morlock/core/stream",
       stream.subscribers.push(f);
 
       if (stream.trackSubscribers) {
-        mapArray(partial(flip(call), f), stream.subscriberSubscribers);
+        mapArray(unary(partial(flippedCall, f)), stream.subscriberSubscribers);
       }
 
       return partial(offValue, stream, f);
@@ -1231,7 +1302,7 @@ define("morlock/core/stream",
       }
 
       if (stream.closeSubscribers) {
-        mapArray(flip(call), stream.closeSubscribers);
+        mapArray(flippedCall, stream.closeSubscribers);
         stream.closeSubscribers.length = 0;
       }
 
@@ -1247,7 +1318,7 @@ define("morlock/core/stream",
 
         if (stream.subscribers.length < 1) {
           stream.subscribers = null;
-          mapArray(flip(call), stream.emptySubscribers);
+          mapArray(flippedCall, stream.emptySubscribers);
         }
       }
     }
