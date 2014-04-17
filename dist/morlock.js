@@ -2554,7 +2554,6 @@ define("morlock/core/sticky-element",
   ["morlock/core/util","morlock/core/stream","morlock/streams/scroll-stream","morlock/controllers/scroll-position-controller","exports"],
   function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __exports__) {
     
-    var partial = __dependency1__.partial;
     var getOption = __dependency1__.getOption;
     var Stream = __dependency2__;
     var ScrollStream = __dependency3__;

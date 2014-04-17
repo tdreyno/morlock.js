@@ -1,4 +1,4 @@
-import { partial, getOption } from "morlock/core/util";
+import { getOption } from "morlock/core/util";
 module Stream from "morlock/core/stream";
 module ScrollStream from "morlock/streams/scroll-stream";
 import ScrollPositionController from "morlock/controllers/scroll-position-controller";
