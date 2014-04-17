@@ -3,12 +3,12 @@ import BreakpointController from "morlock/controllers/breakpoint-controller";
 import ScrollController from "morlock/controllers/scroll-controller";
 import ElementVisibleController from "morlock/controllers/element-visible-controller";
 import ScrollPositionController from "morlock/controllers/scroll-position-controller";
+import StickyElementController from "morlock/controllers/sticky-element-controller";
 module ResponsiveImage from "morlock/core/responsive-image";
 module Util from 'morlock/core/util';
 module Events from 'morlock/core/events';
 module Buffer from "morlock/core/buffer";
 module Stream from "morlock/core/stream";
-module StickyElement from "morlock/core/sticky-element";
 
 var sharedPositions = {};
 var sharedBreakpointDefs = [];
@@ -127,6 +127,18 @@ function defineJQueryPlugins($) {
       });
     });
   };
+
+  $.fn.morlockStickyElement = function(elementsSelector, options) {
+    return $(this).each(function() {
+      var container = this;
+      $(container).find(elementsSelector).each(function() {
+        $(this).data(
+          'morlockStickyElementController',
+          new StickyElementController(this, container, options)
+        );
+      });
+    });
+  };
 }
 
 export var morlock = {
@@ -156,6 +168,10 @@ export var morlock = {
 
   observePosition: function observePosition(positionY) {
     return new ScrollPositionController(positionY);
+  },
+
+  stickyElement: function stickyElement(elem, container, options) {
+    return new StickyElementController(elem, container, options);
   },
 
   breakpoint: {
@@ -221,5 +237,5 @@ export {
   ScrollController,
   ElementVisibleController,
   ScrollPositionController,
-  StickyElement
+  StickyElementController
 };

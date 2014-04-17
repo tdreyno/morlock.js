@@ -15,7 +15,7 @@
     root.ScrollController = parts.ScrollController;
     root.ElementVisibleController = parts.ElementVisibleController;
     root.ScrollPositionController = parts.ScrollPositionController;
-    root.StickyElement = parts.StickyElement;
+    root.StickyElementController = parts.StickyElementController;
     root.morlock = parts.morlock;
   }
 }(this, function () {

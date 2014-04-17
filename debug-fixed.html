@@ -86,6 +86,7 @@
     </div>
   </script>
 
+  <script src="http://code.jquery.com/jquery-2.0.2.js"></script>
   <script src="dist/morlock.js"></script>
   <script>
     function start() {
@@ -104,19 +105,16 @@
       container2.innerHTML = html.join('');
 
       var headerHeight = header.getBoundingClientRect().height;
-      StickyElement.create(header, document.body, { zIndex: 20000 });
+      new StickyElementController(header, document.body, { zIndex: 20000 });
 
       morlock.Util.forEach(function(container) {
         morlock.Util.forEach(function(elem) {
-          StickyElement.create(elem, container, { marginTop: headerHeight, useTransform: false });
+          morlock.stickyElement(elem, container, { marginTop: headerHeight, useTransform: false });
         }, container.querySelectorAll('.headline'));
       }, document.querySelectorAll('#tableview1 .row'));
 
-      morlock.Util.forEach(function(container) {
-        morlock.Util.forEach(function(elem) {
-          StickyElement.create(elem, container, { marginTop: headerHeight });
-        }, container.querySelectorAll('.label'));
-      }, document.querySelectorAll('#tableview2 .row'));
+      morlock.enableJQuery();
+      $('#tableview2 .row').morlockStickyElement('.label', { marginTop: headerHeight });
     }
 
     start();

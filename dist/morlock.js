@@ -19,7 +19,7 @@
     root.ScrollController = parts.ScrollController;
     root.ElementVisibleController = parts.ElementVisibleController;
     root.ScrollPositionController = parts.ScrollPositionController;
-    root.StickyElement = parts.StickyElement;
+    root.StickyElementController = parts.StickyElementController;
     root.morlock = parts.morlock;
   }
 }(this, function () {
@@ -2382,6 +2382,144 @@ define("morlock/controllers/scroll-position-controller",
 
     __exports__["default"] = ScrollPositionController;
   });
+define("morlock/controllers/sticky-element-controller", 
+  ["morlock/core/util","morlock/core/dom","morlock/core/stream","morlock/streams/scroll-stream","morlock/controllers/scroll-position-controller","exports"],
+  function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __dependency5__, __exports__) {
+    
+    var getOption = __dependency1__.getOption;
+    var partial = __dependency1__.partial;
+    var getStyle = __dependency2__.getStyle;
+    var setStyle = __dependency2__.setStyle;
+    var setStyles = __dependency2__.setStyles;
+    var addClass = __dependency2__.addClass;
+    var removeClass = __dependency2__.removeClass;
+    var insertBefore = __dependency2__.insertBefore;
+    var Stream = __dependency3__;
+    var ScrollStream = __dependency4__;
+    var ScrollPositionController = __dependency5__["default"];
+
+    function StickyElementController(elem, container, options) {
+      if (!(this instanceof StickyElementController)) {
+        return new StickyElementController(elem, container, options);
+      }
+
+      this.elem = elem;
+      this.container = container;
+      this.fixed = false;
+      this.useTransform = true;
+      this.originalZIndex = 0;
+      this.zIndex = 0;
+      this.elemWidth = 0;
+      this.elemHeight = 0;
+      this.containerTop = 0;
+      this.containerHeight = 0;
+      this.originalTop = 0;
+      this.marginTop = 0;
+      this.spacer = document.createElement('div');
+
+      options || (options = {});
+
+      var containerPosition = getStyle(this.container, 'position');
+      if (containerPosition.length === 0) {
+        setStyle(this.container, 'position', 'relative');
+      }
+
+      this.useTransform = Modernizr.csstransforms && getOption(options.useTransform, true);
+
+      this.originalZIndex = getStyle(elem, 'zIndex');
+      this.zIndex = getOption(options.zIndex, 1000);
+
+      // Slow, avoid
+      var dimensions = elem.getBoundingClientRect();
+      this.elemWidth = dimensions.width;
+      this.elemHeight = dimensions.height;
+
+      var containerDimensions = container.getBoundingClientRect();
+      this.containerTop = containerDimensions.top;
+      this.containerHeight = containerDimensions.height;
+
+      this.originalTop = elem.offsetTop;
+
+      setStyles(elem, {
+        'position': 'absolute',
+        'top': this.originalTop + 'px',
+        'left': elem.offsetLeft + 'px',
+        'width': this.elemWidth + 'px'
+      });
+
+      addClass(this.spacer, 'stick-element-spacer');
+
+      setStyles(this.spacer, {
+        'width': this.elemWidth + 'px',
+        'height': this.elemHeight + 'px',
+        'display': getStyle(elem, 'display'),
+        'float': getStyle(elem, 'float'),
+        'pointerEvents': 'none'
+      });
+
+      // Insert spacer into DOM
+      insertBefore(this.spacer, elem);
+
+      this.marginTop = getOption(options.marginTop, 0);
+      var whenToStick = this.containerTop - this.marginTop;
+      var topOfContainer = new ScrollPositionController(whenToStick);
+
+      topOfContainer.on('before', partial(unfix, this));
+      topOfContainer.on('after', partial(fix, this));
+
+      Stream.onValue(ScrollStream.create(), partial(onScroll, this));
+    }
+
+    function onScroll(controller, scrollY) {
+      if (!controller.fixed) { return; }
+
+      var newTop = scrollY + controller.marginTop - controller.containerTop;
+      var maxTop = controller.containerHeight - controller.elemHeight;
+
+      if (controller.useTransform) {
+        maxTop -= controller.originalTop;
+      } else {
+        newTop += controller.originalTop;
+      }
+
+      newTop = Math.min(newTop, maxTop);
+
+      if (controller.currentTop !== newTop) {
+        if (controller.useTransform) {
+          setStyle(controller.elem, 'transform', 'translateY(' + newTop + 'px)');
+        } else {
+          setStyle(controller.elem, 'top', newTop + 'px');
+        }
+
+        controller.currentTop = newTop;
+      }
+    }
+
+    function fix(stickyElement) {
+      if (stickyElement.fixed) { return; }
+
+      addClass(stickyElement.elem, 'fixed');
+      setStyles(stickyElement.elem, {
+        'zIndex': stickyElement.zIndex
+      });
+
+      stickyElement.fixed = true;
+    }
+
+    function unfix(stickyElement) {
+      if (!stickyElement.fixed) { return; }
+
+      removeClass(stickyElement.elem, 'fixed');
+      setStyles(stickyElement.elem, {
+        'zIndex': stickyElement.originalZIndex,
+        'top': stickyElement.originalTop
+      });
+
+      stickyElement.fixed = false;
+    }
+
+    __exports__["default"] = StickyElementController;
+  });
 define("morlock/core/responsive-image", 
   ["morlock/core/util","morlock/core/dom","morlock/controllers/element-visible-controller","exports"],
   function(__dependency1__, __dependency2__, __dependency3__, __exports__) {
@@ -2625,151 +2763,8 @@ define("morlock/core/responsive-image",
     __exports__.createFromElement = createFromElement;
     __exports__.update = update;
   });
-define("morlock/core/sticky-element", 
-  ["morlock/core/util","morlock/core/dom","morlock/core/stream","morlock/streams/scroll-stream","morlock/controllers/scroll-position-controller","exports"],
-  function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __dependency5__, __exports__) {
-    
-    var getOption = __dependency1__.getOption;
-    var partial = __dependency1__.partial;
-    var getStyle = __dependency2__.getStyle;
-    var setStyle = __dependency2__.setStyle;
-    var setStyles = __dependency2__.setStyles;
-    var addClass = __dependency2__.addClass;
-    var removeClass = __dependency2__.removeClass;
-    var insertBefore = __dependency2__.insertBefore;
-    var Stream = __dependency3__;
-    var ScrollStream = __dependency4__;
-    var ScrollPositionController = __dependency5__["default"];
-
-    /**
-     * Ghetto Record implementation.
-     */
-    function StickyElement(elem, container) {
-      if (!(this instanceof StickyElement)) {
-        return new StickyElement(elem, container);
-      }
-
-      this.elem = elem;
-      this.container = container;
-      this.fixed = false;
-      this.useTransform = true;
-      this.originalZIndex = 0;
-      this.zIndex = 0;
-      this.elemWidth = 0;
-      this.elemHeight = 0;
-      this.containerTop = 0;
-      this.containerHeight = 0;
-      this.originalTop = 0;
-      this.marginTop = 0;
-      this.spacer = document.createElement('div');
-    }
-
-    function create(elem, container, options) {
-      var stickyElement = new StickyElement(elem, container);
-
-      options || (options = {});
-
-      var containerPosition = getStyle(stickyElement.container, 'position');
-      if (containerPosition.length === 0) {
-        setStyle(stickyElement.container, 'position', 'relative');
-      }
-
-      stickyElement.useTransform = Modernizr.csstransforms && getOption(options.useTransform, true);
-
-      stickyElement.originalZIndex = getStyle(elem, 'zIndex');
-      stickyElement.zIndex = getOption(options.zIndex, 1000);
-
-      // Slow, avoid
-      var dimensions = elem.getBoundingClientRect();
-      stickyElement.elemWidth = dimensions.width;
-      stickyElement.elemHeight = dimensions.height;
-
-      var containerDimensions = container.getBoundingClientRect();
-      stickyElement.containerTop = containerDimensions.top;
-      stickyElement.containerHeight = containerDimensions.height;
-
-      stickyElement.originalTop = elem.offsetTop;
-
-      setStyles(elem, {
-        'position': 'absolute',
-        'top': stickyElement.originalTop + 'px',
-        'left': elem.offsetLeft + 'px',
-        'width': stickyElement.elemWidth + 'px'
-      });
-
-      addClass(stickyElement.spacer, 'stick-element-spacer');
-
-      setStyles(stickyElement.spacer, {
-        'width': stickyElement.elemWidth + 'px',
-        'height': stickyElement.elemHeight + 'px',
-        'display': getStyle(elem, 'display'),
-        'float': getStyle(elem, 'float'),
-        'pointerEvents': 'none'
-      });
-
-      // Insert spacer into DOM
-      insertBefore(stickyElement.spacer, elem);
-
-      stickyElement.marginTop = getOption(options.marginTop, 0);
-      var whenToStick = stickyElement.containerTop - stickyElement.marginTop;
-      var topOfContainer = new ScrollPositionController(whenToStick);
-
-      topOfContainer.on('before', partial(unfix, stickyElement));
-      topOfContainer.on('after', partial(fix, stickyElement));
-
-      Stream.onValue(ScrollStream.create(), function(scrollY) {
-        if (!stickyElement.fixed) { return; }
-
-        var newTop = scrollY + stickyElement.marginTop - stickyElement.containerTop;
-        var maxTop = stickyElement.containerHeight - stickyElement.elemHeight;
-
-        if (stickyElement.useTransform) {
-          maxTop -= stickyElement.originalTop;
-        } else {
-          newTop += stickyElement.originalTop;
-        }
-
-        newTop = Math.min(newTop, maxTop);
-
-        if (stickyElement.currentTop !== newTop) {
-          if (stickyElement.useTransform) {
-            setStyle(stickyElement.elem, 'transform', 'translateY(' + newTop + 'px)');
-          } else {
-            setStyle(stickyElement.elem, 'top', newTop + 'px');
-          }
-
-          stickyElement.currentTop = newTop;
-        }
-      });
-
-      return stickyElement;
-    }
-
-    __exports__.create = create;function fix(stickyElement) {
-      if (stickyElement.fixed) { return; }
-
-      addClass(stickyElement.elem, 'fixed');
-      setStyles(stickyElement.elem, {
-        'zIndex': stickyElement.zIndex
-      });
-
-      stickyElement.fixed = true;
-    }
-
-    function unfix(stickyElement) {
-      if (!stickyElement.fixed) { return; }
-
-      removeClass(stickyElement.elem, 'fixed');
-      setStyles(stickyElement.elem, {
-        'zIndex': stickyElement.originalZIndex,
-        'top': stickyElement.originalTop
-      });
-
-      stickyElement.fixed = false;
-    }
-  });
 define("morlock/base", 
-  ["morlock/controllers/resize-controller","morlock/controllers/breakpoint-controller","morlock/controllers/scroll-controller","morlock/controllers/element-visible-controller","morlock/controllers/scroll-position-controller","morlock/core/responsive-image","morlock/core/util","morlock/core/events","morlock/core/buffer","morlock/core/stream","morlock/core/sticky-element","exports"],
+  ["morlock/controllers/resize-controller","morlock/controllers/breakpoint-controller","morlock/controllers/scroll-controller","morlock/controllers/element-visible-controller","morlock/controllers/scroll-position-controller","morlock/controllers/sticky-element-controller","morlock/core/responsive-image","morlock/core/util","morlock/core/events","morlock/core/buffer","morlock/core/stream","exports"],
   function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __dependency5__, __dependency6__, __dependency7__, __dependency8__, __dependency9__, __dependency10__, __dependency11__, __exports__) {
     
     var ResizeController = __dependency1__["default"];
@@ -2777,12 +2772,12 @@ define("morlock/base",
     var ScrollController = __dependency3__["default"];
     var ElementVisibleController = __dependency4__["default"];
     var ScrollPositionController = __dependency5__["default"];
-    var ResponsiveImage = __dependency6__;
-    var Util = __dependency7__;
-    var Events = __dependency8__;
-    var Buffer = __dependency9__;
-    var Stream = __dependency10__;
-    var StickyElement = __dependency11__;
+    var StickyElementController = __dependency6__["default"];
+    var ResponsiveImage = __dependency7__;
+    var Util = __dependency8__;
+    var Events = __dependency9__;
+    var Buffer = __dependency10__;
+    var Stream = __dependency11__;
 
     var sharedPositions = {};
     var sharedBreakpointDefs = [];
@@ -2901,6 +2896,18 @@ define("morlock/base",
           });
         });
       };
+
+      $.fn.morlockStickyElement = function(elementsSelector, options) {
+        return $(this).each(function() {
+          var container = this;
+          $(container).find(elementsSelector).each(function() {
+            $(this).data(
+              'morlockStickyElementController',
+              new StickyElementController(this, container, options)
+            );
+          });
+        });
+      };
     }
 
     var morlock = {
@@ -2930,6 +2937,10 @@ define("morlock/base",
 
       observePosition: function observePosition(positionY) {
         return new ScrollPositionController(positionY);
+      },
+
+      stickyElement: function stickyElement(elem, container, options) {
+        return new StickyElementController(elem, container, options);
       },
 
       breakpoint: {
@@ -2994,7 +3005,7 @@ define("morlock/base",
     __exports__.ScrollController = ScrollController;
     __exports__.ElementVisibleController = ElementVisibleController;
     __exports__.ScrollPositionController = ScrollPositionController;
-    __exports__.StickyElement = StickyElement;
+    __exports__.StickyElementController = StickyElementController;
   });
 require(["morlock/base"]);
   //The modules for your project will be inlined above
