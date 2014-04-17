@@ -97,13 +97,6 @@ export function identity(val) {
   return val;
 }
 
-/**
- * Backwards compatible Media Query matcher.
- * @param {String} mq Media query to match.
- * @return {Boolean} Whether it matched.
- */
-export var testMQ = Modernizr.mq;
-
 export function memoize(f, argsToStringFunc) {
   var cache = Object.create(null);
 
@@ -118,82 +111,6 @@ export function memoize(f, argsToStringFunc) {
 
     return cache[key];
   };
-}
-
-/**
- * Return a function which gets the viewport width or height.
- * @private
- * @param {String} dimension The dimension to look up.
- * @param {String} inner The inner dimension.
- * @param {String} client The client dimension.
- * @return {function} The getter function.
- */
-function makeViewportGetter_(dimension, inner, client) {
-  if (testMQ('(min-' + dimension + ':' + window[inner] + 'px)')) {
-    return function getWindowDimension_() {
-      return window[inner];
-    };
-  } else {
-    var docElem = document.documentElement;
-    return function getDocumentDimension_() {
-      return docElem[client];
-    };
-  }
-}
-
-export var getViewportWidth = makeViewportGetter_('width', 'innerWidth', 'clientWidth');
-export var getViewportHeight = makeViewportGetter_('height', 'innerHeight', 'clientHeight');
-
-var detectedIE10_ = (navigator.userAgent.indexOf('MSIE 10') !== -1);
-
-/**
- * Get the document scroll.
- * @return {number}
- */
-function documentScrollY() {
-  if (detectedIE10_ && (window.pageYOffset != document.documentElement.scrollTop)) {
-    return document.documentElement.scrollTop;
-  }
-
-  return window.pageYOffset || document.documentElement.scrollTop;
-}
-
-/**
- * Calculate the rectangle of the element with an optional buffer.
- * @param {Element} elem The element.
- * @param {number} buffer An extra padding.
- * @param {number} currentScrollY The known scrollY value.
- */
-function getRect(elem, buffer, currentScrollY) {
-  buffer = typeof buffer == 'number' && buffer || 0;
-
-  if (elem && !elem.nodeType) {
-    elem = elem[0];
-  }
-
-  if (!elem || 1 !== elem.nodeType) {
-    return false;
-  }
-  
-  var bounds = elem.getBoundingClientRect();
-
-  if (!isDefined(currentScrollY)) {
-    currentScrollY = documentScrollY();
-  }
-
-  var topWithCeiling = (currentScrollY < 0) ? bounds.top + currentScrollY : bounds.top;
-  
-  var rect = {
-    right: bounds.right + buffer,
-    left: bounds.left - buffer,
-    bottom: bounds.bottom + buffer,
-    top: topWithCeiling - buffer
-  };
-
-  rect.width = rect.right - rect.left;
-  rect.height = rect.bottom - rect.top;
-
-  return rect;
 }
 
 /**
@@ -689,9 +606,9 @@ var rAF = (function() {
 
 export {
   indexOf, throttle, debounce,
-  getRect, mapObject, objectKeys, functionBind, partial,
+  mapObject, objectKeys, functionBind, partial,
   map, apply, objectVals, call, push, pop, unshift, equals, not,
   delay, unshift, nth, first, last, compose, select, get, shift,
   when, reduce, once, sortBy, parseInteger, set, flip,
-  copyArray, defer, slice, isEmpty, reject, rest, constantly, rAF, documentScrollY
+  copyArray, defer, slice, isEmpty, reject, rest, constantly, rAF
 };

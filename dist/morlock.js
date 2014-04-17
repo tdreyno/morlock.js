@@ -540,14 +540,7 @@ define("morlock/core/util",
       return val;
     }
 
-    __exports__.identity = identity;/**
-     * Backwards compatible Media Query matcher.
-     * @param {String} mq Media query to match.
-     * @return {Boolean} Whether it matched.
-     */
-    var testMQ = Modernizr.mq;
-    __exports__.testMQ = testMQ;
-    function memoize(f, argsToStringFunc) {
+    __exports__.identity = identity;function memoize(f, argsToStringFunc) {
       var cache = Object.create(null);
 
       argsToStringFunc = isDefined(argsToStringFunc) ? argsToStringFunc : JSON.stringify;
@@ -564,82 +557,6 @@ define("morlock/core/util",
     }
 
     __exports__.memoize = memoize;/**
-     * Return a function which gets the viewport width or height.
-     * @private
-     * @param {String} dimension The dimension to look up.
-     * @param {String} inner The inner dimension.
-     * @param {String} client The client dimension.
-     * @return {function} The getter function.
-     */
-    function makeViewportGetter_(dimension, inner, client) {
-      if (testMQ('(min-' + dimension + ':' + window[inner] + 'px)')) {
-        return function getWindowDimension_() {
-          return window[inner];
-        };
-      } else {
-        var docElem = document.documentElement;
-        return function getDocumentDimension_() {
-          return docElem[client];
-        };
-      }
-    }
-
-    var getViewportWidth = makeViewportGetter_('width', 'innerWidth', 'clientWidth');
-    __exports__.getViewportWidth = getViewportWidth;var getViewportHeight = makeViewportGetter_('height', 'innerHeight', 'clientHeight');
-    __exports__.getViewportHeight = getViewportHeight;
-    var detectedIE10_ = (navigator.userAgent.indexOf('MSIE 10') !== -1);
-
-    /**
-     * Get the document scroll.
-     * @return {number}
-     */
-    function documentScrollY() {
-      if (detectedIE10_ && (window.pageYOffset != document.documentElement.scrollTop)) {
-        return document.documentElement.scrollTop;
-      }
-
-      return window.pageYOffset || document.documentElement.scrollTop;
-    }
-
-    /**
-     * Calculate the rectangle of the element with an optional buffer.
-     * @param {Element} elem The element.
-     * @param {number} buffer An extra padding.
-     * @param {number} currentScrollY The known scrollY value.
-     */
-    function getRect(elem, buffer, currentScrollY) {
-      buffer = typeof buffer == 'number' && buffer || 0;
-
-      if (elem && !elem.nodeType) {
-        elem = elem[0];
-      }
-
-      if (!elem || 1 !== elem.nodeType) {
-        return false;
-      }
-      
-      var bounds = elem.getBoundingClientRect();
-
-      if (!isDefined(currentScrollY)) {
-        currentScrollY = documentScrollY();
-      }
-
-      var topWithCeiling = (currentScrollY < 0) ? bounds.top + currentScrollY : bounds.top;
-      
-      var rect = {
-        right: bounds.right + buffer,
-        left: bounds.left - buffer,
-        bottom: bounds.bottom + buffer,
-        top: topWithCeiling - buffer
-      };
-
-      rect.width = rect.right - rect.left;
-      rect.height = rect.bottom - rect.top;
-
-      return rect;
-    }
-
-    /**
      * Map a function over an object.
      * @param {object} obj The object.
      * @param {function} f The function.
@@ -1133,7 +1050,6 @@ define("morlock/core/util",
     __exports__.indexOf = indexOf;
     __exports__.throttle = throttle;
     __exports__.debounce = debounce;
-    __exports__.getRect = getRect;
     __exports__.mapObject = mapObject;
     __exports__.objectKeys = objectKeys;
     __exports__.functionBind = functionBind;
@@ -1171,7 +1087,6 @@ define("morlock/core/util",
     __exports__.rest = rest;
     __exports__.constantly = constantly;
     __exports__.rAF = rAF;
-    __exports__.documentScrollY = documentScrollY;
   });
 define("morlock/core/events", 
   ["exports"],
@@ -1789,19 +1704,179 @@ define("morlock/controllers/resize-controller",
 
     __exports__["default"] = ResizeController;
   });
+define("morlock/core/dom", 
+  ["morlock/core/util","exports"],
+  function(__dependency1__, __exports__) {
+    
+    var memoize = __dependency1__.memoize;
+    var isDefined = __dependency1__.isDefined;
+    var mapObject = __dependency1__.mapObject;
+    var partial = __dependency1__.partial;
+    var flip = __dependency1__.flip;
+    var indexOf = __dependency1__.indexOf;
+
+    /**
+     * Backwards compatible Media Query matcher.
+     * @param {String} mq Media query to match.
+     * @return {Boolean} Whether it matched.
+     */
+    var testMQ = Modernizr.mq;
+    __exports__.testMQ = testMQ;
+    /**
+     * Return a function which gets the viewport width or height.
+     * @private
+     * @param {String} dimension The dimension to look up.
+     * @param {String} inner The inner dimension.
+     * @param {String} client The client dimension.
+     * @return {function} The getter function.
+     */
+    function makeViewportGetter_(dimension, inner, client) {
+      if (testMQ('(min-' + dimension + ':' + window[inner] + 'px)')) {
+        return function getWindowDimension_() {
+          return window[inner];
+        };
+      } else {
+        var docElem = document.documentElement;
+        return function getDocumentDimension_() {
+          return docElem[client];
+        };
+      }
+    }
+
+    var getViewportWidth = makeViewportGetter_('width', 'innerWidth', 'clientWidth');
+    __exports__.getViewportWidth = getViewportWidth;var getViewportHeight = makeViewportGetter_('height', 'innerHeight', 'clientHeight');
+    __exports__.getViewportHeight = getViewportHeight;
+    var detectedIE10_ = (navigator.userAgent.indexOf('MSIE 10') !== -1);
+
+    /**
+     * Get the document scroll.
+     * @return {number}
+     */
+    function documentScrollY() {
+      if (detectedIE10_ && (window.pageYOffset != document.documentElement.scrollTop)) {
+        return document.documentElement.scrollTop;
+      }
+
+      return window.pageYOffset || document.documentElement.scrollTop;
+    }
+
+    __exports__.documentScrollY = documentScrollY;/**
+     * Calculate the rectangle of the element with an optional buffer.
+     * @param {Element} elem The element.
+     * @param {number} buffer An extra padding.
+     * @param {number} currentScrollY The known scrollY value.
+     */
+    function getRect(elem, buffer, currentScrollY) {
+      buffer = typeof buffer == 'number' && buffer || 0;
+
+      if (elem && !elem.nodeType) {
+        elem = elem[0];
+      }
+
+      if (!elem || 1 !== elem.nodeType) {
+        return false;
+      }
+      
+      var bounds = elem.getBoundingClientRect();
+
+      if (!isDefined(currentScrollY)) {
+        currentScrollY = documentScrollY();
+      }
+
+      var topWithCeiling = (currentScrollY < 0) ? bounds.top + currentScrollY : bounds.top;
+      
+      var rect = {
+        right: bounds.right + buffer,
+        left: bounds.left - buffer,
+        bottom: bounds.bottom + buffer,
+        top: topWithCeiling - buffer
+      };
+
+      rect.width = rect.right - rect.left;
+      rect.height = rect.bottom - rect.top;
+
+      return rect;
+    }
+
+    __exports__.getRect = getRect;var cssPrefix = memoize(Modernizr.prefixed);
+    __exports__.cssPrefix = cssPrefix;
+    function setStyle(elem, key, value) {
+      elem.style[cssPrefix(key)] = value;
+    }
+
+    __exports__.setStyle = setStyle;function setStyles(elem, styles) {
+      mapObject(flip(partial(setStyle, elem)), styles);
+    }
+
+    __exports__.setStyles = setStyles;function getStyle(elem, key) {
+      return elem.style[cssPrefix(key)];
+    }
+
+    __exports__.getStyle = getStyle;function insertBefore(before, elem) {
+      elem.parentNode.insertBefore(before, elem);
+    }
+
+    __exports__.insertBefore = insertBefore;var hasClass, addClass, removeClass;
+
+    function getClassesPoly_(elem) {
+      return elem.className.split(' ');
+    }
+
+    if (!isDefined(window.Element) || ('classList' in document.documentElement)) {
+      hasClass = function hasClassNative_(elem, className) {
+        return elem.classList.contains(className);
+      };
+
+      addClass = function addClassNative_(elem, className) {
+        elem.classList.add(className);
+      };
+
+      removeClass = function removeClassNative_(elem, className) {
+        elem.classList.remove(className);
+      };
+    } else {
+      hasClass = function hasClassPoly_(elem, className) {
+        return indexOf(getClassesPoly_(elem), className) !== -1;
+      };
+
+      addClass = function addClassPoly_(elem, className) {
+        if (hasClass(elem)) { return; }
+
+        var currentClasses = getClassesPoly_(elem);
+        currentClasses.push(className);
+
+        elem.className = currentClasses.join(' ');
+      };
+
+      removeClass = function removeClassPoly_(elem, className) {
+        if (!hasClass(elem)) { return; }
+
+        var currentClasses = getClassesPoly_(elem);
+
+        var idx = indexOf(currentClasses, className);
+        currentClasses.splice(idx, 1);
+
+        elem.className = currentClasses.join(' ');
+      };
+    }
+
+    __exports__.hasClass = hasClass;
+    __exports__.addClass = addClass;
+    __exports__.removeClass = removeClass;
+  });
 define("morlock/streams/breakpoint-stream", 
-  ["morlock/core/util","morlock/core/stream","morlock/streams/resize-stream","exports"],
-  function(__dependency1__, __dependency2__, __dependency3__, __exports__) {
+  ["morlock/core/util","morlock/core/dom","morlock/core/stream","morlock/streams/resize-stream","exports"],
+  function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __exports__) {
     
     var objectVals = __dependency1__.objectVals;
     var partial = __dependency1__.partial;
     var mapObject = __dependency1__.mapObject;
     var apply = __dependency1__.apply;
     var push = __dependency1__.push;
-    var testMQ = __dependency1__.testMQ;
     var getOption = __dependency1__.getOption;
-    var Stream = __dependency2__;
-    var ResizeStream = __dependency3__;
+    var testMQ = __dependency2__.testMQ;
+    var Stream = __dependency3__;
+    var ResizeStream = __dependency4__;
 
     /**
      * Create a new Stream containing events which fire when the browser
@@ -1969,15 +2044,15 @@ define("morlock/controllers/breakpoint-controller",
     __exports__["default"] = BreakpointController;
   });
 define("morlock/streams/scroll-stream", 
-  ["morlock/core/stream","morlock/core/util","morlock/core/events","exports"],
-  function(__dependency1__, __dependency2__, __dependency3__, __exports__) {
+  ["morlock/core/stream","morlock/core/util","morlock/core/dom","morlock/core/events","exports"],
+  function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __exports__) {
     
     var Stream = __dependency1__;
-    var documentScrollY = __dependency2__.documentScrollY;
     var memoize = __dependency2__.memoize;
     var defer = __dependency2__.defer;
     var partial = __dependency2__.partial;
-    var dispatchEvent = __dependency3__.dispatchEvent;
+    var documentScrollY = __dependency3__.documentScrollY;
+    var dispatchEvent = __dependency4__.dispatchEvent;
 
     /**
      * Create a stream of window.onscroll events, but only calculate their
@@ -2082,15 +2157,15 @@ define("morlock/controllers/scroll-controller",
     __exports__["default"] = ScrollController;
   });
 define("morlock/streams/element-tracker-stream", 
-  ["morlock/core/util","morlock/core/stream","morlock/streams/scroll-stream","morlock/streams/resize-stream","exports"],
-  function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __exports__) {
+  ["morlock/core/util","morlock/core/dom","morlock/core/stream","morlock/streams/scroll-stream","morlock/streams/resize-stream","exports"],
+  function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __dependency5__, __exports__) {
     
-    var getViewportHeight = __dependency1__.getViewportHeight;
-    var getRect = __dependency1__.getRect;
     var getOption = __dependency1__.getOption;
-    var Stream = __dependency2__;
-    var ScrollStream = __dependency3__;
-    var ResizeStream = __dependency4__;
+    var getRect = __dependency2__.getRect;
+    var getViewportHeight = __dependency2__.getViewportHeight;
+    var Stream = __dependency3__;
+    var ScrollStream = __dependency4__;
+    var ResizeStream = __dependency5__;
 
     /**
      * Create a new Stream containing events which fire when an element has
@@ -2308,8 +2383,8 @@ define("morlock/controllers/scroll-position-controller",
     __exports__["default"] = ScrollPositionController;
   });
 define("morlock/core/responsive-image", 
-  ["morlock/core/util","morlock/controllers/element-visible-controller","exports"],
-  function(__dependency1__, __dependency2__, __exports__) {
+  ["morlock/core/util","morlock/core/dom","morlock/controllers/element-visible-controller","exports"],
+  function(__dependency1__, __dependency2__, __dependency3__, __exports__) {
     
     var map = __dependency1__.map;
     var mapObject = __dependency1__.mapObject;
@@ -2318,8 +2393,8 @@ define("morlock/core/responsive-image",
     var parseInteger = __dependency1__.parseInteger;
     var set = __dependency1__.set;
     var flip = __dependency1__.flip;
-    var testMQ = __dependency1__.testMQ;
-    var ElementVisibleController = __dependency2__["default"];
+    var testMQ = __dependency2__.testMQ;
+    var ElementVisibleController = __dependency3__["default"];
 
     /**
      * Ghetto Record implementation.
@@ -2551,107 +2626,121 @@ define("morlock/core/responsive-image",
     __exports__.update = update;
   });
 define("morlock/core/sticky-element", 
-  ["morlock/core/util","morlock/core/stream","morlock/streams/scroll-stream","morlock/controllers/scroll-position-controller","exports"],
-  function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __exports__) {
+  ["morlock/core/util","morlock/core/dom","morlock/core/stream","morlock/streams/scroll-stream","morlock/controllers/scroll-position-controller","exports"],
+  function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __dependency5__, __exports__) {
     
     var getOption = __dependency1__.getOption;
-    var Stream = __dependency2__;
-    var ScrollStream = __dependency3__;
-    var ScrollPositionController = __dependency4__["default"];
-
-    var prefixedTransform = Modernizr.prefixed('transform');
+    var partial = __dependency1__.partial;
+    var getStyle = __dependency2__.getStyle;
+    var setStyle = __dependency2__.setStyle;
+    var setStyles = __dependency2__.setStyles;
+    var addClass = __dependency2__.addClass;
+    var removeClass = __dependency2__.removeClass;
+    var insertBefore = __dependency2__.insertBefore;
+    var Stream = __dependency3__;
+    var ScrollStream = __dependency4__;
+    var ScrollPositionController = __dependency5__["default"];
 
     /**
      * Ghetto Record implementation.
      */
-    function StickyElement(elem, container, options) {
+    function StickyElement(elem, container) {
       if (!(this instanceof StickyElement)) {
-        return new StickyElement(elem, options);
+        return new StickyElement(elem, container);
       }
-
-      options || (options = {});
 
       this.elem = elem;
       this.container = container;
-
-      if (this.container.style.position.length === 0) {
-        this.container.style.position = 'relative';
-      }
-
       this.fixed = false;
-
-      this.useTransform = Modernizr.csstransforms && getOption(options.useTransform, true);
-
-      this.originalPosition = elem.style.position;
-      this.originalZIndex = elem.style.zIndex;
-      this.zIndex = getOption(options.zIndex, 1000);
-
-      // Slow, avoid
-      this.dimensions = this.elem.getBoundingClientRect();
-
-      this.containerDimensions = this.container.getBoundingClientRect();
-
-      this.originalTop = this.elem.offsetTop;
-
-      this.elem.style.position = 'absolute';
-      this.elem.style.top = this.originalTop + 'px';
-      this.elem.style.left = this.elem.offsetLeft + 'px';
-      this.elem.style.width = this.dimensions.width + 'px';
-
+      this.useTransform = true;
+      this.originalZIndex = 0;
+      this.zIndex = 0;
+      this.elemWidth = 0;
+      this.elemHeight = 0;
+      this.containerTop = 0;
+      this.containerHeight = 0;
+      this.originalTop = 0;
+      this.marginTop = 0;
       this.spacer = document.createElement('div');
-      this.spacer.className = 'stick-element-spacer';
-      this.spacer.style.width = this.dimensions.width + 'px';
-      this.spacer.style.height = this.dimensions.height + 'px';
-      this.spacer.style.display = this.elem.style.display;
-      this.spacer.style.float = this.elem.style.float;
-      this.spacer.style.pointerEvents = 'none';
-
-      this.elem.parentNode.insertBefore(this.spacer, this.elem);
-
-      this.marginTop = getOption(options.marginTop, 0);
-      var whenToStick = this.containerDimensions.top - this.marginTop;
-      var topOfContainer = new ScrollPositionController(whenToStick);
-
-      var stickyElement = this;
-
-      topOfContainer.on('before', function() {
-        unfix(stickyElement);
-      });
-
-      topOfContainer.on('after', function() {
-        fix(stickyElement);
-      });
-
-      var scrollStream = ScrollStream.create();
-      Stream.onValue(scrollStream, function(scrollY) {
-        if (stickyElement.fixed) {
-          var delta = scrollY + stickyElement.marginTop - stickyElement.containerDimensions.top;
-          var newTop = delta;
-
-          var maxTop = stickyElement.containerDimensions.height - stickyElement.dimensions.height;
-
-          if (stickyElement.useTransform) {
-            maxTop -= stickyElement.originalTop;
-          } else {
-            newTop += stickyElement.originalTop;
-          }
-
-          newTop = Math.min(newTop, maxTop);
-
-          if (stickyElement.currentTop !== newTop) {
-            if (stickyElement.useTransform) {
-              stickyElement.elem.style[prefixedTransform] = 'translateY(' + newTop + 'px)';
-            } else {
-              stickyElement.elem.style.top = newTop + 'px';
-            }
-            stickyElement.currentTop = newTop;
-          }
-        }
-      });
     }
 
     function create(elem, container, options) {
-      var stickyElement = new StickyElement(elem, container, options);
+      var stickyElement = new StickyElement(elem, container);
+
+      options || (options = {});
+
+      var containerPosition = getStyle(stickyElement.container, 'position');
+      if (containerPosition.length === 0) {
+        setStyle(stickyElement.container, 'position', 'relative');
+      }
+
+      stickyElement.useTransform = Modernizr.csstransforms && getOption(options.useTransform, true);
+
+      stickyElement.originalZIndex = getStyle(elem, 'zIndex');
+      stickyElement.zIndex = getOption(options.zIndex, 1000);
+
+      // Slow, avoid
+      var dimensions = elem.getBoundingClientRect();
+      stickyElement.elemWidth = dimensions.width;
+      stickyElement.elemHeight = dimensions.height;
+
+      var containerDimensions = container.getBoundingClientRect();
+      stickyElement.containerTop = containerDimensions.top;
+      stickyElement.containerHeight = containerDimensions.height;
+
+      stickyElement.originalTop = elem.offsetTop;
+
+      setStyles(elem, {
+        'position': 'absolute',
+        'top': stickyElement.originalTop + 'px',
+        'left': elem.offsetLeft + 'px',
+        'width': stickyElement.elemWidth + 'px'
+      });
+
+      addClass(stickyElement.spacer, 'stick-element-spacer');
+
+      setStyles(stickyElement.spacer, {
+        'width': stickyElement.elemWidth + 'px',
+        'height': stickyElement.elemHeight + 'px',
+        'display': getStyle(elem, 'display'),
+        'float': getStyle(elem, 'float'),
+        'pointerEvents': 'none'
+      });
+
+      // Insert spacer into DOM
+      insertBefore(stickyElement.spacer, elem);
+
+      stickyElement.marginTop = getOption(options.marginTop, 0);
+      var whenToStick = stickyElement.containerTop - stickyElement.marginTop;
+      var topOfContainer = new ScrollPositionController(whenToStick);
+
+      topOfContainer.on('before', partial(unfix, stickyElement));
+      topOfContainer.on('after', partial(fix, stickyElement));
+
+      Stream.onValue(ScrollStream.create(), function(scrollY) {
+        if (!stickyElement.fixed) { return; }
+
+        var newTop = scrollY + stickyElement.marginTop - stickyElement.containerTop;
+        var maxTop = stickyElement.containerHeight - stickyElement.elemHeight;
+
+        if (stickyElement.useTransform) {
+          maxTop -= stickyElement.originalTop;
+        } else {
+          newTop += stickyElement.originalTop;
+        }
+
+        newTop = Math.min(newTop, maxTop);
+
+        if (stickyElement.currentTop !== newTop) {
+          if (stickyElement.useTransform) {
+            setStyle(stickyElement.elem, 'transform', 'translateY(' + newTop + 'px)');
+          } else {
+            setStyle(stickyElement.elem, 'top', newTop + 'px');
+          }
+
+          stickyElement.currentTop = newTop;
+        }
+      });
 
       return stickyElement;
     }
@@ -2659,17 +2748,23 @@ define("morlock/core/sticky-element",
     __exports__.create = create;function fix(stickyElement) {
       if (stickyElement.fixed) { return; }
 
-      stickyElement.elem.style.position = 'absolute';
-      stickyElement.elem.style.zIndex = stickyElement.zIndex;
-      // stickyElement.elem.style.top = stickyElement.fixedOffsetY + 'px';
+      addClass(stickyElement.elem, 'fixed');
+      setStyles(stickyElement.elem, {
+        'zIndex': stickyElement.zIndex
+      });
+
       stickyElement.fixed = true;
     }
 
     function unfix(stickyElement) {
       if (!stickyElement.fixed) { return; }
 
-      stickyElement.elem.style.zIndex = stickyElement.originalZIndex;
-      stickyElement.elem.style.top = stickyElement.originalTop;
+      removeClass(stickyElement.elem, 'fixed');
+      setStyles(stickyElement.elem, {
+        'zIndex': stickyElement.originalZIndex,
+        'top': stickyElement.originalTop
+      });
+
       stickyElement.fixed = false;
     }
   });

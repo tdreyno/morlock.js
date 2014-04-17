@@ -1,4 +1,5 @@
-import { getViewportHeight, getRect, getOption } from "morlock/core/util";
+import { getOption } from "morlock/core/util";
+import { getRect, getViewportHeight } from "morlock/core/dom";
 module Stream from "morlock/core/stream";
 module ScrollStream from "morlock/streams/scroll-stream";
 module ResizeStream from "morlock/streams/resize-stream";

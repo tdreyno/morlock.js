@@ -1,5 +1,5 @@
-import { objectVals, partial, mapObject, apply, push,
-         testMQ, getOption } from "morlock/core/util";
+import { objectVals, partial, mapObject, apply, push, getOption } from "morlock/core/util";
+import { testMQ } from "morlock/core/dom";
 module Stream from "morlock/core/stream";
 module ResizeStream from "morlock/streams/resize-stream";
 

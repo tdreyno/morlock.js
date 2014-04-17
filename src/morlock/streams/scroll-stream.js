@@ -1,5 +1,6 @@
 module Stream from "morlock/core/stream";
-import { documentScrollY, memoize, defer, partial } from "morlock/core/util";
+import { memoize, defer, partial } from "morlock/core/util";
+import { documentScrollY } from "morlock/core/dom";
 import { dispatchEvent } from "morlock/core/events";
 
 /**
