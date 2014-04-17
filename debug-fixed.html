@@ -1,0 +1,125 @@
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>morlock.js Debugger</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    #header {
+      background: black;
+      color: white;
+      font-size: 50px;
+      padding: 20px;
+    }
+
+    .lists {
+      overflow: auto;
+    }
+
+    .list {
+      width: 30%;
+      float: left;
+      position: relative;
+    }
+
+    .headline {
+      padding: 10px;
+    }
+
+    .item {
+      padding: 10px;
+      border-bottom: 1px solid #ccc;
+    }
+
+    #tableview1 .headline {
+      background: #ccc;
+      color: white;
+    }
+
+    #tableview2 .row {
+      overflow: hidden;
+    }
+
+    #tableview2 .headline {
+      float: left;
+      width: 20%;
+      font-size: 30px;
+      text-align: center;
+      text-transform: uppercase;
+    }
+
+    #tableview2 .items {
+      float: left;
+      width: 80%;
+    }
+  </style>
+</head>
+<body>
+  <div id="header">Header</div>
+  <div class="lists">
+    <div id="tableview1" class="list"></div>
+    <div id="tableview2" class="list"></div>
+  </div>
+
+  <script id="letter-template" type="text/html">
+    <div class="row">
+      <div class="headline">
+        <div class="label">{{letter}}</div>
+      </div>
+      <div class="items">
+        <div class="item">lorem ipsum dolar</div>
+        <div class="item">lorem ipsum dolar</div>
+        <div class="item">lorem ipsum dolar</div>
+        <div class="item">lorem ipsum dolar</div>
+        <div class="item">lorem ipsum dolar</div>
+        <div class="item">lorem ipsum dolar</div>
+        <div class="item">lorem ipsum dolar</div>
+        <div class="item">lorem ipsum dolar</div>
+      </div>
+    </div>
+  </script>
+
+  <script src="dist/morlock.js"></script>
+  <script>
+    function start() {
+      var header = document.getElementById('header');
+      var container1 = document.getElementById('tableview1');
+      var container2 = document.getElementById('tableview2');
+
+      var letters = 'abcdefghijklmnopqrstuvwxyz'.split('');
+      var template = document.getElementById('letter-template').innerText;
+
+      var html = morlock.Util.map(function(letter) {
+        return template.replace('{{letter}}', letter);
+      }, letters);
+
+      container1.innerHTML = html.join('');
+      container2.innerHTML = html.join('');
+
+      var headerHeight = header.getBoundingClientRect().height;
+      StickyElement.create(header, document.body, { zIndex: 20000 });
+
+      morlock.Util.forEach(function(container) {
+        morlock.Util.forEach(function(elem) {
+          StickyElement.create(elem, container, { marginTop: headerHeight, useTransform: false });
+        }, container.querySelectorAll('.headline'));
+      }, document.querySelectorAll('#tableview1 .row'));
+
+      morlock.Util.forEach(function(container) {
+        morlock.Util.forEach(function(elem) {
+          StickyElement.create(elem, container, { marginTop: headerHeight });
+        }, container.querySelectorAll('.label'));
+      }, document.querySelectorAll('#tableview2 .row'));
+    }
+
+    start();
+  </script>
+</body>
+</html>

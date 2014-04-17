@@ -8,6 +8,7 @@ module Util from 'morlock/core/util';
 module Events from 'morlock/core/events';
 module Buffer from "morlock/core/buffer";
 module Stream from "morlock/core/stream";
+module StickyElement from "morlock/core/sticky-element";
 
 var sharedPositions = {};
 var sharedBreakpointDefs = [];
@@ -219,5 +220,6 @@ export {
   ResponsiveImage,
   ScrollController,
   ElementVisibleController,
-  ScrollPositionController
+  ScrollPositionController,
+  StickyElement
 };
