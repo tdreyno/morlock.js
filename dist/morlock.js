@@ -442,6 +442,18 @@ define("morlock/core/util",
   function(__exports__) {
     
     var NATIVE_ARRAY_SLICE = Array.prototype.slice;
+    var NATIVE_ARRAY_INDEXOF = Array.prototype.indexOf;
+    var NATIVE_ARRAY_MAP = Array.prototype.map;
+    var NATIVE_ARRAY_FOREACH = Array.prototype.forEach;
+    var NATIVE_ARRAY_REVERSE = Array.prototype.reverse;
+    var NATIVE_ARRAY_REDUCE = Array.prototype.reduce;
+    var NATIVE_ARRAY_FILTER = Array.prototype.filter;
+    var NATIVE_ARRAY_UNSHIFT = Array.prototype.unshift;
+    var NATIVE_ARRAY_SHIFT = Array.prototype.shift;
+    var NATIVE_ARRAY_PUSH = Array.prototype.push;
+    var NATIVE_ARRAY_POP = Array.prototype.pop;
+    var NATIVE_ARRAY_SORT = Array.prototype.sort;
+    var NATIVE_FUNCTION_BIND = Function.prototype.bind;
 
     /**
      * Slice an array.
@@ -461,8 +473,6 @@ define("morlock/core/util",
     function copyArray(arr) {
       return slice(arr, 0);
     }
-
-    var NATIVE_ARRAY_INDEXOF = Array.prototype.indexOf;
 
     /**
      * Backwards compatible Array.prototype.indexOf
@@ -579,9 +589,7 @@ define("morlock/core/util",
       }
     }
 
-    __exports__.unary = unary;var NATIVE_ARRAY_MAP = Array.prototype.map;
-
-    /**
+    __exports__.unary = unary;/**
      * Map a function over an object.
      * @param {object} obj The object.
      * @param {function} f The function.
@@ -600,8 +608,6 @@ define("morlock/core/util",
 
       return output;
     }
-
-    var NATIVE_ARRAY_FOREACH = Array.prototype.forEach;
 
     /**
      * Loop a function over an object, for side-effects.
@@ -672,8 +678,6 @@ define("morlock/core/util",
     //   };
     // }
 
-    var NATIVE_ARRAY_REVERSE = Array.prototype.reverse;
-
     /**
      * Reverse the order of arguments.
      * @param {function} f The original function.
@@ -702,8 +706,6 @@ define("morlock/core/util",
       return map(getPropertyByName, objectKeys(obj));
     }
 
-    var NATIVE_ARRAY_REDUCE = Array.prototype.reduce;
-
     function reduce(f, arr, val) {
       if (NATIVE_ARRAY_REDUCE) {
         return arr ? NATIVE_ARRAY_REDUCE.call(arr, f, val) : val;
@@ -715,8 +717,6 @@ define("morlock/core/util",
 
       return val;
     }
-
-    var NATIVE_ARRAY_FILTER = Array.prototype.filter;
 
     function select(f, arr) {
       if (NATIVE_ARRAY_FILTER) {
@@ -882,8 +882,6 @@ define("morlock/core/util",
       };
     }
 
-    var NATIVE_FUNCTION_BIND = Function.prototype.bind;
-
     /**
      * Bind a function's "this" value.
      * @param {function} f The function.
@@ -953,12 +951,6 @@ define("morlock/core/util",
     function last(arr) {
       return arr[arr.length - 1];
     }
-
-    var NATIVE_ARRAY_UNSHIFT = Array.prototype.unshift;
-    var NATIVE_ARRAY_SHIFT = Array.prototype.shift;
-    var NATIVE_ARRAY_PUSH = Array.prototype.push;
-    var NATIVE_ARRAY_POP = Array.prototype.pop;
-    var NATIVE_ARRAY_SORT = Array.prototype.sort;
 
     function unshift(arr, v) {
       var arr2 = copyArray(arr);
@@ -1714,6 +1706,7 @@ define("morlock/core/dom",
     var partial = __dependency1__.partial;
     var flip = __dependency1__.flip;
     var indexOf = __dependency1__.indexOf;
+    var forEach = __dependency1__.forEach;
 
     /**
      * Backwards compatible Media Query matcher.
@@ -1816,13 +1809,49 @@ define("morlock/core/dom",
       elem.parentNode.insertBefore(before, elem);
     }
 
-    __exports__.insertBefore = insertBefore;var hasClass, addClass, removeClass;
-
-    function getClassesPoly_(elem) {
-      return elem.className.split(' ');
+    __exports__.insertBefore = insertBefore;function detachElement(elem) {
+      if (elem.parentNode) {
+        elem.parentNode.removeChild(elem); 
+      }
     }
 
-    if (!isDefined(window.Element) || ('classList' in document.documentElement)) {
+    __exports__.detachElement = detachElement;function inDocument_(elem) {
+      while (elem = elem.parentNode) {
+        if (elem == document) {
+          return true;
+        }
+      }
+
+      return false;
+    }
+
+    function isVisible(elem) {
+      if (!inDocument_(elem)) {
+        return false;
+      }
+
+      var isDisplayNone = (getStyle(elem, 'display') === 'none');
+
+      if (isDisplayNone) {
+        return false;
+      }
+
+      var parent = elem.parentNode;
+
+      if (parent) {
+        return isVisible(parent);
+      }
+
+      return true;
+    }
+
+    __exports__.isVisible = isVisible;var hasClass, addClass, removeClass;
+
+    function getClasses(elem) {
+      return elem.className.length > 0 ? elem.className.split(' ') : [];
+    }
+
+    __exports__.getClasses = getClasses;if (!isDefined(window.Element) || ('classList' in document.documentElement)) {
       hasClass = function hasClassNative_(elem, className) {
         return elem.classList.contains(className);
       };
@@ -1836,13 +1865,13 @@ define("morlock/core/dom",
       };
     } else {
       hasClass = function hasClassPoly_(elem, className) {
-        return indexOf(getClassesPoly_(elem), className) !== -1;
+        return indexOf(getClasses(elem), className) !== -1;
       };
 
       addClass = function addClassPoly_(elem, className) {
         if (hasClass(elem)) { return; }
 
-        var currentClasses = getClassesPoly_(elem);
+        var currentClasses = getClasses(elem);
         currentClasses.push(className);
 
         elem.className = currentClasses.join(' ');
@@ -1851,7 +1880,7 @@ define("morlock/core/dom",
       removeClass = function removeClassPoly_(elem, className) {
         if (!hasClass(elem)) { return; }
 
-        var currentClasses = getClassesPoly_(elem);
+        var currentClasses = getClasses(elem);
 
         var idx = indexOf(currentClasses, className);
         currentClasses.splice(idx, 1);
@@ -1860,7 +1889,11 @@ define("morlock/core/dom",
       };
     }
 
-    __exports__.hasClass = hasClass;
+    function addClasses(elem, classes) {
+      forEach(partial(addClass, elem), classes);
+    }
+
+    __exports__.addClasses = addClasses;__exports__.hasClass = hasClass;
     __exports__.addClass = addClass;
     __exports__.removeClass = removeClass;
   });
@@ -2383,8 +2416,8 @@ define("morlock/controllers/scroll-position-controller",
     __exports__["default"] = ScrollPositionController;
   });
 define("morlock/controllers/sticky-element-controller", 
-  ["morlock/core/util","morlock/core/dom","morlock/core/stream","morlock/streams/scroll-stream","morlock/controllers/scroll-position-controller","exports"],
-  function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __dependency5__, __exports__) {
+  ["morlock/core/util","morlock/core/dom","morlock/core/stream","morlock/streams/scroll-stream","morlock/streams/resize-stream","morlock/controllers/scroll-position-controller","exports"],
+  function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __dependency5__, __dependency6__, __exports__) {
     
     var getOption = __dependency1__.getOption;
     var partial = __dependency1__.partial;
@@ -2394,9 +2427,12 @@ define("morlock/controllers/sticky-element-controller",
     var addClass = __dependency2__.addClass;
     var removeClass = __dependency2__.removeClass;
     var insertBefore = __dependency2__.insertBefore;
+    var documentScrollY = __dependency2__.documentScrollY;
+    var detachElement = __dependency2__.detachElement;
     var Stream = __dependency3__;
     var ScrollStream = __dependency4__;
-    var ScrollPositionController = __dependency5__["default"];
+    var ResizeStream = __dependency5__;
+    var ScrollPositionController = __dependency6__["default"];
 
     function StickyElementController(elem, container, options) {
       if (!(this instanceof StickyElementController)) {
@@ -2407,92 +2443,146 @@ define("morlock/controllers/sticky-element-controller",
       this.container = container;
       this.fixed = false;
       this.useTransform = true;
-      this.originalZIndex = 0;
-      this.zIndex = 0;
+      this.originalZIndex = '';
       this.elemWidth = 0;
       this.elemHeight = 0;
       this.containerTop = 0;
       this.containerHeight = 0;
       this.originalTop = 0;
-      this.marginTop = 0;
       this.spacer = document.createElement('div');
 
       options || (options = {});
 
-      var containerPosition = getStyle(this.container, 'position');
-      if (containerPosition.length === 0) {
-        setStyle(this.container, 'position', 'relative');
-      }
+      this.zIndex = getOption(options.zIndex, 1000);
+      this.marginTop = getOption(options.marginTop, 0);
 
       this.useTransform = Modernizr.csstransforms && getOption(options.useTransform, true);
 
-      this.originalZIndex = getStyle(elem, 'zIndex');
-      this.zIndex = getOption(options.zIndex, 1000);
+      Stream.onValue(ScrollStream.create(), partial(onScroll, this));
+      Stream.onValue(
+        Stream.debounce(64, ResizeStream.create()),
+        partial(onResize, this)
+      );
+
+      setupPositions(this);
+    }
+
+    function resetPositions(stickyElement) {
+      unfix(stickyElement);
+
+      stickyElement.currentTop = null;
+
+      detachElement(stickyElement.spacer);
+
+      setStyles(stickyElement.elem, {
+        'zIndex': stickyElement.originalZIndex,
+        'width': '',
+        'position': stickyElement.originalPosition,
+        'left': '',
+        'top': stickyElement.originalOffsetTop
+      });
+    }
+
+    function setupPositions(stickyElement) {
+      var containerPosition = getStyle(stickyElement.container, 'position');
+      if (containerPosition.length === 0) {
+        setStyle(stickyElement.container, 'position', 'relative');
+      }
+
+      stickyElement.originalZIndex = getStyle(stickyElement.elem, 'zIndex');
+      stickyElement.originalPosition = getStyle(stickyElement.elem, 'position');
+      stickyElement.originalOffsetTop = getStyle(stickyElement.elem, 'top');
 
       // Slow, avoid
-      var dimensions = elem.getBoundingClientRect();
-      this.elemWidth = dimensions.width;
-      this.elemHeight = dimensions.height;
+      var dimensions = stickyElement.elem.getBoundingClientRect();
+      stickyElement.elemWidth = dimensions.width;
+      stickyElement.elemHeight = dimensions.height;
 
-      var containerDimensions = container.getBoundingClientRect();
-      this.containerTop = containerDimensions.top;
-      this.containerHeight = containerDimensions.height;
+      var currentScroll = documentScrollY();
 
-      this.originalTop = elem.offsetTop;
+      var containerDimensions = stickyElement.container.getBoundingClientRect();
+      stickyElement.containerTop = containerDimensions.top + currentScroll;
+      stickyElement.containerHeight = containerDimensions.height;
 
-      setStyles(elem, {
+      stickyElement.originalTop = stickyElement.elem.offsetTop;
+
+      setStyles(stickyElement.elem, {
         'position': 'absolute',
-        'top': this.originalTop + 'px',
-        'left': elem.offsetLeft + 'px',
-        'width': this.elemWidth + 'px'
+        'top': stickyElement.originalTop + 'px',
+        'left': stickyElement.elem.offsetLeft + 'px',
+        'width': stickyElement.elemWidth + 'px'
       });
 
-      addClass(this.spacer, 'stick-element-spacer');
+      addClass(stickyElement.spacer, 'stick-element-spacer');
 
-      setStyles(this.spacer, {
-        'width': this.elemWidth + 'px',
-        'height': this.elemHeight + 'px',
-        'display': getStyle(elem, 'display'),
-        'float': getStyle(elem, 'float'),
-        'pointerEvents': 'none'
+      setStyles(stickyElement.spacer, {
+        // 'width': stickyElement.elemWidth + 'px',
+        'height': stickyElement.elemHeight + 'px',
+        'display': getStyle(stickyElement.elem, 'display'),
+        'float': getStyle(stickyElement.elem, 'float'),
+        'pointerEvents': 'none',
+        'visibility': 'hidden',
+        'opacity': 0,
+        'zIndex': -1
       });
 
       // Insert spacer into DOM
-      insertBefore(this.spacer, elem);
+      insertBefore(stickyElement.spacer, stickyElement.elem);
 
-      this.marginTop = getOption(options.marginTop, 0);
-      var whenToStick = this.containerTop - this.marginTop;
-      var topOfContainer = new ScrollPositionController(whenToStick);
+      var whenToStick = stickyElement.containerTop - stickyElement.marginTop;
+      
+      stickyElement.onBeforeHandler_ || (stickyElement.onBeforeHandler_ = partial(unfix, stickyElement));
+      stickyElement.onAfterHandler_ || (stickyElement.onAfterHandler_ = partial(fix, stickyElement));
 
-      topOfContainer.on('before', partial(unfix, this));
-      topOfContainer.on('after', partial(fix, this));
+      if (stickyElement.topOfContainer_) {
+        stickyElement.topOfContainer_.off('before', stickyElement.onBeforeHandler_);
+        stickyElement.topOfContainer_.off('after', stickyElement.onAfterHandler_);
+      }
 
-      Stream.onValue(ScrollStream.create(), partial(onScroll, this));
+      stickyElement.topOfContainer_ = new ScrollPositionController(whenToStick);
+      stickyElement.topOfContainer_.on('before', stickyElement.onBeforeHandler_);
+      stickyElement.topOfContainer_.on('after', stickyElement.onAfterHandler_);
+
+      if (currentScroll < whenToStick) {
+        stickyElement.onBeforeHandler_();
+      } else {
+        stickyElement.onAfterHandler_();
+      }
     }
 
-    function onScroll(controller, scrollY) {
-      if (!controller.fixed) { return; }
+    function onScroll(stickyElement, scrollY) {
+      if (!stickyElement.fixed) { return; }
 
-      var newTop = scrollY + controller.marginTop - controller.containerTop;
-      var maxTop = controller.containerHeight - controller.elemHeight;
+      if (scrollY < 0) {
+        scrollY = 0;
+      }
 
-      if (controller.useTransform) {
-        maxTop -= controller.originalTop;
+      var newTop = scrollY + stickyElement.marginTop - stickyElement.containerTop;
+      var maxTop = stickyElement.containerHeight - stickyElement.elemHeight;
+
+      if (stickyElement.useTransform) {
+        maxTop -= stickyElement.originalTop;
       } else {
-        newTop += controller.originalTop;
+        newTop += stickyElement.originalTop;
       }
 
       newTop = Math.min(newTop, maxTop);
 
-      if (controller.currentTop !== newTop) {
-        if (controller.useTransform) {
-          setStyle(controller.elem, 'transform', 'translateY(' + newTop + 'px)');
+      if (stickyElement.currentTop !== newTop) {
+        if (stickyElement.useTransform) {
+          setStyle(stickyElement.elem, 'transform', 'translateY(' + newTop + 'px)');
         } else {
-          setStyle(controller.elem, 'top', newTop + 'px');
+          setStyle(stickyElement.elem, 'top', newTop + 'px');
         }
 
-        controller.currentTop = newTop;
+        stickyElement.currentTop = newTop;
       }
+    }
+
+    function onResize(stickyElement) {
+      resetPositions(stickyElement);
+      setupPositions(stickyElement);
+      onScroll(stickyElement, documentScrollY());
     }
 
     function fix(stickyElement) {

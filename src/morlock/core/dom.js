@@ -1,4 +1,4 @@
-import { memoize, isDefined, mapObject, partial, flip, indexOf } from "morlock/core/util";
+import { memoize, isDefined, mapObject, partial, flip, indexOf, forEach } from "morlock/core/util";
 
 /**
  * Backwards compatible Media Query matcher.
@@ -101,10 +101,46 @@ export function insertBefore(before, elem) {
   elem.parentNode.insertBefore(before, elem);
 }
 
+export function detachElement(elem) {
+  if (elem.parentNode) {
+    elem.parentNode.removeChild(elem); 
+  }
+}
+
+function inDocument_(elem) {
+  while (elem = elem.parentNode) {
+    if (elem == document) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+export function isVisible(elem) {
+  if (!inDocument_(elem)) {
+    return false;
+  }
+
+  var isDisplayNone = (getStyle(elem, 'display') === 'none');
+
+  if (isDisplayNone) {
+    return false;
+  }
+
+  var parent = elem.parentNode;
+
+  if (parent) {
+    return isVisible(parent);
+  }
+
+  return true;
+}
+
 var hasClass, addClass, removeClass;
 
-function getClassesPoly_(elem) {
-  return elem.className.split(' ');
+export function getClasses(elem) {
+  return elem.className.length > 0 ? elem.className.split(' ') : [];
 }
 
 if (!isDefined(window.Element) || ('classList' in document.documentElement)) {
@@ -121,13 +157,13 @@ if (!isDefined(window.Element) || ('classList' in document.documentElement)) {
   };
 } else {
   hasClass = function hasClassPoly_(elem, className) {
-    return indexOf(getClassesPoly_(elem), className) !== -1;
+    return indexOf(getClasses(elem), className) !== -1;
   };
 
   addClass = function addClassPoly_(elem, className) {
     if (hasClass(elem)) { return; }
 
-    var currentClasses = getClassesPoly_(elem);
+    var currentClasses = getClasses(elem);
     currentClasses.push(className);
 
     elem.className = currentClasses.join(' ');
@@ -136,13 +172,17 @@ if (!isDefined(window.Element) || ('classList' in document.documentElement)) {
   removeClass = function removeClassPoly_(elem, className) {
     if (!hasClass(elem)) { return; }
 
-    var currentClasses = getClassesPoly_(elem);
+    var currentClasses = getClasses(elem);
 
     var idx = indexOf(currentClasses, className);
     currentClasses.splice(idx, 1);
 
     elem.className = currentClasses.join(' ');
   };
+}
+
+export function addClasses(elem, classes) {
+  forEach(partial(addClass, elem), classes);
 }
 
 export { hasClass, addClass, removeClass };

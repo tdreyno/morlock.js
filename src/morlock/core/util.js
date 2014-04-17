@@ -1,4 +1,16 @@
 var NATIVE_ARRAY_SLICE = Array.prototype.slice;
+var NATIVE_ARRAY_INDEXOF = Array.prototype.indexOf;
+var NATIVE_ARRAY_MAP = Array.prototype.map;
+var NATIVE_ARRAY_FOREACH = Array.prototype.forEach;
+var NATIVE_ARRAY_REVERSE = Array.prototype.reverse;
+var NATIVE_ARRAY_REDUCE = Array.prototype.reduce;
+var NATIVE_ARRAY_FILTER = Array.prototype.filter;
+var NATIVE_ARRAY_UNSHIFT = Array.prototype.unshift;
+var NATIVE_ARRAY_SHIFT = Array.prototype.shift;
+var NATIVE_ARRAY_PUSH = Array.prototype.push;
+var NATIVE_ARRAY_POP = Array.prototype.pop;
+var NATIVE_ARRAY_SORT = Array.prototype.sort;
+var NATIVE_FUNCTION_BIND = Function.prototype.bind;
 
 /**
  * Slice an array.
@@ -18,8 +30,6 @@ function slice(arr, pos) {
 function copyArray(arr) {
   return slice(arr, 0);
 }
-
-var NATIVE_ARRAY_INDEXOF = Array.prototype.indexOf;
 
 /**
  * Backwards compatible Array.prototype.indexOf
@@ -136,8 +146,6 @@ export function unary(fn) {
   }
 }
 
-var NATIVE_ARRAY_MAP = Array.prototype.map;
-
 /**
  * Map a function over an object.
  * @param {object} obj The object.
@@ -157,8 +165,6 @@ function map(f, arr) {
 
   return output;
 }
-
-var NATIVE_ARRAY_FOREACH = Array.prototype.forEach;
 
 /**
  * Loop a function over an object, for side-effects.
@@ -229,8 +235,6 @@ function set(obj, key, v) {
 //   };
 // }
 
-var NATIVE_ARRAY_REVERSE = Array.prototype.reverse;
-
 /**
  * Reverse the order of arguments.
  * @param {function} f The original function.
@@ -259,8 +263,6 @@ function objectVals(obj) {
   return map(getPropertyByName, objectKeys(obj));
 }
 
-var NATIVE_ARRAY_REDUCE = Array.prototype.reduce;
-
 function reduce(f, arr, val) {
   if (NATIVE_ARRAY_REDUCE) {
     return arr ? NATIVE_ARRAY_REDUCE.call(arr, f, val) : val;
@@ -272,8 +274,6 @@ function reduce(f, arr, val) {
 
   return val;
 }
-
-var NATIVE_ARRAY_FILTER = Array.prototype.filter;
 
 function select(f, arr) {
   if (NATIVE_ARRAY_FILTER) {
@@ -439,8 +439,6 @@ function when(truth, f) {
   };
 }
 
-var NATIVE_FUNCTION_BIND = Function.prototype.bind;
-
 /**
  * Bind a function's "this" value.
  * @param {function} f The function.
@@ -510,12 +508,6 @@ function first(arr) {
 function last(arr) {
   return arr[arr.length - 1];
 }
-
-var NATIVE_ARRAY_UNSHIFT = Array.prototype.unshift;
-var NATIVE_ARRAY_SHIFT = Array.prototype.shift;
-var NATIVE_ARRAY_PUSH = Array.prototype.push;
-var NATIVE_ARRAY_POP = Array.prototype.pop;
-var NATIVE_ARRAY_SORT = Array.prototype.sort;
 
 function unshift(arr, v) {
   var arr2 = copyArray(arr);

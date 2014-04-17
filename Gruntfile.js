@@ -27,6 +27,7 @@ module.exports = function (grunt) {
         trailing: true,
         eqnull: true,
         expr: true,
+        boss: true,
         "-W041": true, // Comparing == against 0
         globals: {
           define: true,

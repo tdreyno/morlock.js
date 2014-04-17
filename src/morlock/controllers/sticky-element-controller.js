@@ -1,7 +1,9 @@
 import { getOption, partial } from "morlock/core/util";
-import { getStyle, setStyle, setStyles, addClass, removeClass, insertBefore } from "morlock/core/dom";
+import { getStyle, setStyle, setStyles, addClass, removeClass, insertBefore,
+         documentScrollY, detachElement } from "morlock/core/dom";
 module Stream from "morlock/core/stream";
 module ScrollStream from "morlock/streams/scroll-stream";
+module ResizeStream from "morlock/streams/resize-stream";
 import ScrollPositionController from "morlock/controllers/scroll-position-controller";
 
 function StickyElementController(elem, container, options) {
@@ -13,92 +15,146 @@ function StickyElementController(elem, container, options) {
   this.container = container;
   this.fixed = false;
   this.useTransform = true;
-  this.originalZIndex = 0;
-  this.zIndex = 0;
+  this.originalZIndex = '';
   this.elemWidth = 0;
   this.elemHeight = 0;
   this.containerTop = 0;
   this.containerHeight = 0;
   this.originalTop = 0;
-  this.marginTop = 0;
   this.spacer = document.createElement('div');
 
   options || (options = {});
 
-  var containerPosition = getStyle(this.container, 'position');
-  if (containerPosition.length === 0) {
-    setStyle(this.container, 'position', 'relative');
-  }
+  this.zIndex = getOption(options.zIndex, 1000);
+  this.marginTop = getOption(options.marginTop, 0);
 
   this.useTransform = Modernizr.csstransforms && getOption(options.useTransform, true);
 
-  this.originalZIndex = getStyle(elem, 'zIndex');
-  this.zIndex = getOption(options.zIndex, 1000);
+  Stream.onValue(ScrollStream.create(), partial(onScroll, this));
+  Stream.onValue(
+    Stream.debounce(64, ResizeStream.create()),
+    partial(onResize, this)
+  );
+
+  setupPositions(this);
+}
+
+function resetPositions(stickyElement) {
+  unfix(stickyElement);
+
+  stickyElement.currentTop = null;
+
+  detachElement(stickyElement.spacer);
+
+  setStyles(stickyElement.elem, {
+    'zIndex': stickyElement.originalZIndex,
+    'width': '',
+    'position': stickyElement.originalPosition,
+    'left': '',
+    'top': stickyElement.originalOffsetTop
+  });
+}
+
+function setupPositions(stickyElement) {
+  var containerPosition = getStyle(stickyElement.container, 'position');
+  if (containerPosition.length === 0) {
+    setStyle(stickyElement.container, 'position', 'relative');
+  }
+
+  stickyElement.originalZIndex = getStyle(stickyElement.elem, 'zIndex');
+  stickyElement.originalPosition = getStyle(stickyElement.elem, 'position');
+  stickyElement.originalOffsetTop = getStyle(stickyElement.elem, 'top');
 
   // Slow, avoid
-  var dimensions = elem.getBoundingClientRect();
-  this.elemWidth = dimensions.width;
-  this.elemHeight = dimensions.height;
+  var dimensions = stickyElement.elem.getBoundingClientRect();
+  stickyElement.elemWidth = dimensions.width;
+  stickyElement.elemHeight = dimensions.height;
 
-  var containerDimensions = container.getBoundingClientRect();
-  this.containerTop = containerDimensions.top;
-  this.containerHeight = containerDimensions.height;
+  var currentScroll = documentScrollY();
 
-  this.originalTop = elem.offsetTop;
+  var containerDimensions = stickyElement.container.getBoundingClientRect();
+  stickyElement.containerTop = containerDimensions.top + currentScroll;
+  stickyElement.containerHeight = containerDimensions.height;
 
-  setStyles(elem, {
+  stickyElement.originalTop = stickyElement.elem.offsetTop;
+
+  setStyles(stickyElement.elem, {
     'position': 'absolute',
-    'top': this.originalTop + 'px',
-    'left': elem.offsetLeft + 'px',
-    'width': this.elemWidth + 'px'
+    'top': stickyElement.originalTop + 'px',
+    'left': stickyElement.elem.offsetLeft + 'px',
+    'width': stickyElement.elemWidth + 'px'
   });
 
-  addClass(this.spacer, 'stick-element-spacer');
+  addClass(stickyElement.spacer, 'stick-element-spacer');
 
-  setStyles(this.spacer, {
-    'width': this.elemWidth + 'px',
-    'height': this.elemHeight + 'px',
-    'display': getStyle(elem, 'display'),
-    'float': getStyle(elem, 'float'),
-    'pointerEvents': 'none'
+  setStyles(stickyElement.spacer, {
+    // 'width': stickyElement.elemWidth + 'px',
+    'height': stickyElement.elemHeight + 'px',
+    'display': getStyle(stickyElement.elem, 'display'),
+    'float': getStyle(stickyElement.elem, 'float'),
+    'pointerEvents': 'none',
+    'visibility': 'hidden',
+    'opacity': 0,
+    'zIndex': -1
   });
 
   // Insert spacer into DOM
-  insertBefore(this.spacer, elem);
+  insertBefore(stickyElement.spacer, stickyElement.elem);
 
-  this.marginTop = getOption(options.marginTop, 0);
-  var whenToStick = this.containerTop - this.marginTop;
-  var topOfContainer = new ScrollPositionController(whenToStick);
+  var whenToStick = stickyElement.containerTop - stickyElement.marginTop;
+  
+  stickyElement.onBeforeHandler_ || (stickyElement.onBeforeHandler_ = partial(unfix, stickyElement));
+  stickyElement.onAfterHandler_ || (stickyElement.onAfterHandler_ = partial(fix, stickyElement));
 
-  topOfContainer.on('before', partial(unfix, this));
-  topOfContainer.on('after', partial(fix, this));
+  if (stickyElement.topOfContainer_) {
+    stickyElement.topOfContainer_.off('before', stickyElement.onBeforeHandler_);
+    stickyElement.topOfContainer_.off('after', stickyElement.onAfterHandler_);
+  }
 
-  Stream.onValue(ScrollStream.create(), partial(onScroll, this));
+  stickyElement.topOfContainer_ = new ScrollPositionController(whenToStick);
+  stickyElement.topOfContainer_.on('before', stickyElement.onBeforeHandler_);
+  stickyElement.topOfContainer_.on('after', stickyElement.onAfterHandler_);
+
+  if (currentScroll < whenToStick) {
+    stickyElement.onBeforeHandler_();
+  } else {
+    stickyElement.onAfterHandler_();
+  }
 }
 
-function onScroll(controller, scrollY) {
-  if (!controller.fixed) { return; }
+function onScroll(stickyElement, scrollY) {
+  if (!stickyElement.fixed) { return; }
 
-  var newTop = scrollY + controller.marginTop - controller.containerTop;
-  var maxTop = controller.containerHeight - controller.elemHeight;
+  if (scrollY < 0) {
+    scrollY = 0;
+  }
 
-  if (controller.useTransform) {
-    maxTop -= controller.originalTop;
+  var newTop = scrollY + stickyElement.marginTop - stickyElement.containerTop;
+  var maxTop = stickyElement.containerHeight - stickyElement.elemHeight;
+
+  if (stickyElement.useTransform) {
+    maxTop -= stickyElement.originalTop;
   } else {
-    newTop += controller.originalTop;
+    newTop += stickyElement.originalTop;
   }
 
   newTop = Math.min(newTop, maxTop);
 
-  if (controller.currentTop !== newTop) {
-    if (controller.useTransform) {
-      setStyle(controller.elem, 'transform', 'translateY(' + newTop + 'px)');
+  if (stickyElement.currentTop !== newTop) {
+    if (stickyElement.useTransform) {
+      setStyle(stickyElement.elem, 'transform', 'translateY(' + newTop + 'px)');
     } else {
-      setStyle(controller.elem, 'top', newTop + 'px');
+      setStyle(stickyElement.elem, 'top', newTop + 'px');
     }
 
-    controller.currentTop = newTop;
+    stickyElement.currentTop = newTop;
   }
+}
+
+function onResize(stickyElement) {
+  resetPositions(stickyElement);
+  setupPositions(stickyElement);
+  onScroll(stickyElement, documentScrollY());
 }
 
 function fix(stickyElement) {
