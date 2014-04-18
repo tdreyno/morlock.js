@@ -113,7 +113,7 @@ export function memoize(f, argsToStringFunc) {
   argsToStringFunc = isDefined(argsToStringFunc) ? argsToStringFunc : JSON.stringify;
 
   return function memoizedExecute_() {
-    var key = argsToStringFunc.apply(this, arguments);
+    var key = arguments.length > 0 ? argsToStringFunc.apply(this, arguments) : 'noargs';
 
     if (!isDefined(cache[key])) {
       cache[key] = f.apply(this, arguments);

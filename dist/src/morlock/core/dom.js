@@ -15,7 +15,7 @@ define("morlock/core/dom",
      * @param {String} mq Media query to match.
      * @return {Boolean} Whether it matched.
      */
-    var testMQ = Modernizr.mq;
+    var testMQ = CustomModernizr.mq;
     __exports__.testMQ = testMQ;
     /**
      * Return a function which gets the viewport width or height.
@@ -93,7 +93,7 @@ define("morlock/core/dom",
       return rect;
     }
 
-    __exports__.getRect = getRect;var cssPrefix = memoize(Modernizr.prefixed);
+    __exports__.getRect = getRect;var cssPrefix = memoize(CustomModernizr.prefixed);
     __exports__.cssPrefix = cssPrefix;
     function setStyle(elem, key, value) {
       elem.style[cssPrefix(key)] = value;

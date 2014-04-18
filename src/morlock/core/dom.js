@@ -5,7 +5,7 @@ import { memoize, isDefined, mapObject, partial, flip, indexOf, forEach } from "
  * @param {String} mq Media query to match.
  * @return {Boolean} Whether it matched.
  */
-export var testMQ = Modernizr.mq;
+export var testMQ = CustomModernizr.mq;
 
 /**
  * Return a function which gets the viewport width or height.
@@ -83,7 +83,7 @@ export function getRect(elem, buffer, currentScrollY) {
   return rect;
 }
 
-export var cssPrefix = memoize(Modernizr.prefixed);
+export var cssPrefix = memoize(CustomModernizr.prefixed);
 
 export function setStyle(elem, key, value) {
   elem.style[cssPrefix(key)] = value;

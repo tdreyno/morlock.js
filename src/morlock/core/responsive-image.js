@@ -189,7 +189,7 @@ function setDivTag(image, img) {
   image.element.style.backgroundImage = 'url(' + img.src + ')';
 
   if (image.preserveAspectRatio) {
-    var sizeVar = Modernizr.prefixed('backgroundSize');
+    var sizeVar = CustomModernizr.prefixed('backgroundSize');
     image.element.style[sizeVar] = 'cover';
 
     var w, h;
@@ -222,7 +222,7 @@ function getPath(image, s) {
 
   var parts = image.src.split('.');
   var currentExt = parts.pop();
-  var ext = (image.hasWebp && Modernizr.webp) ? 'webp' : currentExt;
+  var ext = (image.hasWebp && CustomModernizr.webp) ? 'webp' : currentExt;
 
   return parts.join('.') + '-' + s + (image.hasRetina ? '@2x' : '') + '.' + ext;
 }
