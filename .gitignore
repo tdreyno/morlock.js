@@ -1,6 +1,5 @@
 /node_modules
 /tmp
-/dist/src/
 .DS_Store
 Gemfile.lock
 bin
