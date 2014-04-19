@@ -577,6 +577,8 @@ define("morlock/core/util",
       };
     }
 
+    var isTrue = partial(equals, true);
+    __exports__.isTrue = isTrue;
     var rAF = (function() {
       var correctRAF = window.requestAnimationFrame;
       var lastTime = 0;

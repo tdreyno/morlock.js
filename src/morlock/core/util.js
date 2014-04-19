@@ -573,6 +573,8 @@ function constantly(val) {
   };
 }
 
+export var isTrue = partial(equals, true);
+
 var rAF = (function() {
   var correctRAF = window.requestAnimationFrame;
   var lastTime = 0;

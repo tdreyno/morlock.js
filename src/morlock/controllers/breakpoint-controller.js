@@ -55,18 +55,16 @@ function BreakpointController(options) {
     }
   }
 
-  return {
-    on: function on(/* name, cb */) {
-      onOffStream(arguments, Stream.onValue);
+  this.on = function on(/* name, cb */) {
+    onOffStream(arguments, Stream.onValue);
 
-      return this;
-    },
+    return this;
+  };
 
-    off: function(/* name, cb */) {
-      onOffStream(arguments, Stream.offValue);
+  this.off = function(/* name, cb */) {
+    onOffStream(arguments, Stream.offValue);
 
-      return this;
-    }
+    return this;
   };
 }
 
