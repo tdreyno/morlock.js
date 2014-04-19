@@ -31,7 +31,7 @@ module.exports = function (grunt) {
         "-W041": true, // Comparing == against 0
         globals: {
           define: true,
-          Modernizr: true,
+          CustomModernizr: true,
           jQuery: true
         }
       },

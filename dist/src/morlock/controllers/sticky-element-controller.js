@@ -39,7 +39,7 @@ define("morlock/controllers/sticky-element-controller",
       this.zIndex = getOption(options.zIndex, 1000);
       this.marginTop = getOption(options.marginTop, 0);
 
-      this.useTransform = Modernizr.csstransforms && getOption(options.useTransform, true);
+      this.useTransform = CustomModernizr.csstransforms && getOption(options.useTransform, true);
 
       Stream.onValue(ScrollStream.create(), partial(onScroll, this));
       Stream.onValue(
