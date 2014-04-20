@@ -1,7 +1,3 @@
-/* CustomModernizr 2.7.1 (Custom Build) | MIT & BSD
- * Build: http://modernizr.com/download/#-backgroundsize-csstransforms-mq-addtest-prefixed-teststyles-testprop-testallprops-hasevent-prefixes-domprefixes-img_webp
- */
-;window.CustomModernizr=function(a,b,c){function A(a){i.cssText=a}function B(a,b){return A(l.join(a+";")+(b||""))}function C(a,b){return typeof a===b}function D(a,b){return!!~(""+a).indexOf(b)}function E(a,b){for(var d in a){var e=a[d];if(!D(e,"-")&&i[e]!==c)return b=="pfx"?e:!0}return!1}function F(a,b,d){for(var e in a){var f=b[a[e]];if(f!==c)return d===!1?a[e]:C(f,"function")?f.bind(d||b):f}return!1}function G(a,b,c){var d=a.charAt(0).toUpperCase()+a.slice(1),e=(a+" "+n.join(d+" ")+d).split(" ");return C(b,"string")||C(b,"undefined")?E(e,b):(e=(a+" "+o.join(d+" ")+d).split(" "),F(e,b,c))}var d="2.7.1",e={},f=b.documentElement,g="modernizr",h=b.createElement(g),i=h.style,j,k={}.toString,l=" -webkit- -moz- -o- -ms- ".split(" "),m="Webkit Moz O ms",n=m.split(" "),o=m.toLowerCase().split(" "),p={},q={},r={},s=[],t=s.slice,u,v=function(a,c,d,e){var h,i,j,k,l=b.createElement("div"),m=b.body,n=m||b.createElement("body");if(parseInt(d,10))while(d--)j=b.createElement("div"),j.id=e?e[d]:g+(d+1),l.appendChild(j);return h=["&#173;",'<style id="s',g,'">',a,"</style>"].join(""),l.id=g,(m?l:n).innerHTML+=h,n.appendChild(l),m||(n.style.background="",n.style.overflow="hidden",k=f.style.overflow,f.style.overflow="hidden",f.appendChild(n)),i=c(l,a),m?l.parentNode.removeChild(l):(n.parentNode.removeChild(n),f.style.overflow=k),!!i},w=function(b){var c=a.matchMedia||a.msMatchMedia;if(c)return c(b).matches;var d;return v("@media "+b+" { #"+g+" { position: absolute; } }",function(b){d=(a.getComputedStyle?getComputedStyle(b,null):b.currentStyle)["position"]=="absolute"}),d},x=function(){function d(d,e){e=e||b.createElement(a[d]||"div"),d="on"+d;var f=d in e;return f||(e.setAttribute||(e=b.createElement("div")),e.setAttribute&&e.removeAttribute&&(e.setAttribute(d,""),f=C(e[d],"function"),C(e[d],"undefined")||(e[d]=c),e.removeAttribute(d))),e=null,f}var a={select:"input",change:"input",submit:"form",reset:"form",error:"img",load:"img",abort:"img"};return d}(),y={}.hasOwnProperty,z;!C(y,"undefined")&&!C(y.call,"undefined")?z=function(a,b){return y.call(a,b)}:z=function(a,b){return b in a&&C(a.constructor.prototype[b],"undefined")},Function.prototype.bind||(Function.prototype.bind=function(b){var c=this;if(typeof c!="function")throw new TypeError;var d=t.call(arguments,1),e=function(){if(this instanceof e){var a=function(){};a.prototype=c.prototype;var f=new a,g=c.apply(f,d.concat(t.call(arguments)));return Object(g)===g?g:f}return c.apply(b,d.concat(t.call(arguments)))};return e}),p.backgroundsize=function(){return G("backgroundSize")},p.csstransforms=function(){return!!G("transform")};for(var H in p)z(p,H)&&(u=H.toLowerCase(),e[u]=p[H](),s.push((e[u]?"":"no-")+u));return e.addTest=function(a,b){if(typeof a=="object")for(var d in a)z(a,d)&&e.addTest(d,a[d]);else{a=a.toLowerCase();if(e[a]!==c)return e;b=typeof b=="function"?b():b,typeof enableClasses!="undefined"&&enableClasses&&(f.className+=" "+(b?"":"no-")+a),e[a]=b}return e},A(""),h=j=null,e._version=d,e._prefixes=l,e._domPrefixes=o,e._cssomPrefixes=n,e.mq=w,e.hasEvent=x,e.testProp=function(a){return E([a])},e.testAllProps=G,e.testStyles=v,e.prefixed=function(a,b,c){return b?G(a,b,c):G(a,"pfx")},e}(this,this.document),function(){var a=new Image;a.onerror=function(){CustomModernizr.addTest("webp",!1)},a.onload=function(){CustomModernizr.addTest("webp",function(){return a.width==1})},a.src="data:image/webp;base64,UklGRiwAAABXRUJQVlA4ICAAAAAUAgCdASoBAAEAL/3+/3+CAB/AAAFzrNsAAP5QAAAAAA=="}();
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
     //Allow using this built library as an AMD module
@@ -1698,9 +1694,353 @@ define("morlock/controllers/resize-controller",
 
     __exports__["default"] = ResizeController;
   });
+define("vendor/modernizr", 
+  ["exports"],
+  function(__exports__) {
+    
+    /* Modernizr 2.7.2 (Custom Build) | MIT & BSD
+     * Build: http://modernizr.com/download/#-backgroundsize-csstransforms-mq-addtest-prefixed-teststyles-testprop-testallprops-hasevent-prefixes-domprefixes
+     */
+    ;
+
+
+
+    // window.Modernizr = (function( window, document, undefined ) {
+
+        var version = '2.7.2',
+
+        Modernizr = {},
+
+
+        docElement = document.documentElement,
+
+        mod = 'modernizr',
+        modElem = document.createElement(mod),
+        mStyle = modElem.style,
+
+        inputElem  ,
+
+
+        toString = {}.toString,
+
+        prefixes = ' -webkit- -moz- -o- -ms- '.split(' '),
+
+
+
+        omPrefixes = 'Webkit Moz O ms',
+
+        cssomPrefixes = omPrefixes.split(' '),
+
+        domPrefixes = omPrefixes.toLowerCase().split(' '),
+
+
+        tests = {},
+        inputs = {},
+        attrs = {},
+
+        classes = [],
+
+        slice = classes.slice,
+
+        featureName, 
+
+
+        injectElementWithStyles = function( rule, callback, nodes, testnames ) {
+
+          var style, ret, node, docOverflow,
+              div = document.createElement('div'),
+                    body = document.body,
+                    fakeBody = body || document.createElement('body');
+
+          if ( parseInt(nodes, 10) ) {
+                          while ( nodes-- ) {
+                  node = document.createElement('div');
+                  node.id = testnames ? testnames[nodes] : mod + (nodes + 1);
+                  div.appendChild(node);
+              }
+          }
+
+                    style = ['&#173;','<style id="s', mod, '">', rule, '</style>'].join('');
+          div.id = mod;
+              (body ? div : fakeBody).innerHTML += style;
+          fakeBody.appendChild(div);
+          if ( !body ) {
+                    fakeBody.style.background = '';
+                    fakeBody.style.overflow = 'hidden';
+              docOverflow = docElement.style.overflow;
+              docElement.style.overflow = 'hidden';
+              docElement.appendChild(fakeBody);
+          }
+
+          ret = callback(div, rule);
+            if ( !body ) {
+              fakeBody.parentNode.removeChild(fakeBody);
+              docElement.style.overflow = docOverflow;
+          } else {
+              div.parentNode.removeChild(div);
+          }
+
+          return !!ret;
+
+        },
+
+        testMediaQuery = function( mq ) {
+
+          var matchMedia = window.matchMedia || window.msMatchMedia;
+          if ( matchMedia ) {
+            return matchMedia(mq).matches;
+          }
+
+          var bool;
+
+          injectElementWithStyles('@media ' + mq + ' { #' + mod + ' { position: absolute; } }', function( node ) {
+            bool = (window.getComputedStyle ?
+                      getComputedStyle(node, null) :
+                      node.currentStyle)['position'] == 'absolute';
+          });
+
+          return bool;
+
+         },
+     
+
+        isEventSupported = (function() {
+
+          var TAGNAMES = {
+            'select': 'input', 'change': 'input',
+            'submit': 'form', 'reset': 'form',
+            'error': 'img', 'load': 'img', 'abort': 'img'
+          };
+
+          function isEventSupported( eventName, element ) {
+
+            element = element || document.createElement(TAGNAMES[eventName] || 'div');
+            eventName = 'on' + eventName;
+
+                var isSupported = eventName in element;
+
+            if ( !isSupported ) {
+                    if ( !element.setAttribute ) {
+                element = document.createElement('div');
+              }
+              if ( element.setAttribute && element.removeAttribute ) {
+                element.setAttribute(eventName, '');
+                isSupported = is(element[eventName], 'function');
+
+                        if ( !is(element[eventName], 'undefined') ) {
+                  element[eventName] = undefined;
+                }
+                element.removeAttribute(eventName);
+              }
+            }
+
+            element = null;
+            return isSupported;
+          }
+          return isEventSupported;
+        })(),
+
+
+        _hasOwnProperty = ({}).hasOwnProperty, hasOwnProp;
+
+        if ( !is(_hasOwnProperty, 'undefined') && !is(_hasOwnProperty.call, 'undefined') ) {
+          hasOwnProp = function (object, property) {
+            return _hasOwnProperty.call(object, property);
+          };
+        }
+        else {
+          hasOwnProp = function (object, property) { 
+            return ((property in object) && is(object.constructor.prototype[property], 'undefined'));
+          };
+        }
+
+
+        if (!Function.prototype.bind) {
+          Function.prototype.bind = function bind(that) {
+
+            var target = this;
+
+            if (typeof target != "function") {
+                throw new TypeError();
+            }
+
+            var args = slice.call(arguments, 1),
+                bound = function () {
+
+                if (this instanceof bound) {
+
+                  var F = function(){};
+                  F.prototype = target.prototype;
+                  var self = new F();
+
+                  var result = target.apply(
+                      self,
+                      args.concat(slice.call(arguments))
+                  );
+                  if (Object(result) === result) {
+                      return result;
+                  }
+                  return self;
+
+                } else {
+
+                  return target.apply(
+                      that,
+                      args.concat(slice.call(arguments))
+                  );
+
+                }
+
+            };
+
+            return bound;
+          };
+        }
+
+        function setCss( str ) {
+            mStyle.cssText = str;
+        }
+
+        function setCssAll( str1, str2 ) {
+            return setCss(prefixes.join(str1 + ';') + ( str2 || '' ));
+        }
+
+        function is( obj, type ) {
+            return typeof obj === type;
+        }
+
+        function contains( str, substr ) {
+            return !!~('' + str).indexOf(substr);
+        }
+
+        function testProps( props, prefixed ) {
+            for ( var i in props ) {
+                var prop = props[i];
+                if ( !contains(prop, "-") && mStyle[prop] !== undefined ) {
+                    return prefixed == 'pfx' ? prop : true;
+                }
+            }
+            return false;
+        }
+
+        function testDOMProps( props, obj, elem ) {
+            for ( var i in props ) {
+                var item = obj[props[i]];
+                if ( item !== undefined) {
+
+                                if (elem === false) return props[i];
+
+                                if (is(item, 'function')){
+                                    return item.bind(elem || obj);
+                    }
+
+                                return item;
+                }
+            }
+            return false;
+        }
+
+        function testPropsAll( prop, prefixed, elem ) {
+
+            var ucProp  = prop.charAt(0).toUpperCase() + prop.slice(1),
+                props   = (prop + ' ' + cssomPrefixes.join(ucProp + ' ') + ucProp).split(' ');
+
+                if(is(prefixed, "string") || is(prefixed, "undefined")) {
+              return testProps(props, prefixed);
+
+                } else {
+              props = (prop + ' ' + (domPrefixes).join(ucProp + ' ') + ucProp).split(' ');
+              return testDOMProps(props, prefixed, elem);
+            }
+        }    tests['backgroundsize'] = function() {
+            return testPropsAll('backgroundSize');
+        };
+
+
+
+        tests['csstransforms'] = function() {
+            return !!testPropsAll('transform');
+        };
+
+
+        for ( var feature in tests ) {
+            if ( hasOwnProp(tests, feature) ) {
+                                        featureName  = feature.toLowerCase();
+                Modernizr[featureName] = tests[feature]();
+
+                classes.push((Modernizr[featureName] ? '' : 'no-') + featureName);
+            }
+        }
+
+
+
+         Modernizr.addTest = function ( feature, test ) {
+           if ( typeof feature == 'object' ) {
+             for ( var key in feature ) {
+               if ( hasOwnProp( feature, key ) ) {
+                 Modernizr.addTest( key, feature[ key ] );
+               }
+             }
+           } else {
+
+             feature = feature.toLowerCase();
+
+             if ( Modernizr[feature] !== undefined ) {
+                                                  return Modernizr;
+             }
+
+             test = typeof test == 'function' ? test() : test;
+
+             if (typeof enableClasses !== "undefined" && enableClasses) {
+               docElement.className += ' ' + (test ? '' : 'no-') + feature;
+             }
+             Modernizr[feature] = test;
+
+           }
+
+           return Modernizr; 
+         };
+
+
+        setCss('');
+        modElem = inputElem = null;
+
+
+        Modernizr._version      = version;
+
+        Modernizr._prefixes     = prefixes;
+        Modernizr._domPrefixes  = domPrefixes;
+        Modernizr._cssomPrefixes  = cssomPrefixes;
+
+        Modernizr.mq            = testMediaQuery;
+
+        Modernizr.hasEvent      = isEventSupported;
+
+        Modernizr.testProp      = function(prop){
+            return testProps([prop]);
+        };
+
+        Modernizr.testAllProps  = testPropsAll;
+
+
+        Modernizr.testStyles    = injectElementWithStyles;
+        Modernizr.prefixed      = function(prop, obj, elem){
+          if(!obj) {
+            return testPropsAll(prop, 'pfx');
+          } else {
+                return testPropsAll(prop, obj, elem);
+          }
+        };
+
+        __exports__["default"] = Modernizr;
+
+        // return Modernizr;
+
+    // })(this, this.document);
+  });
 define("morlock/core/dom", 
-  ["morlock/core/util","exports"],
-  function(__dependency1__, __exports__) {
+  ["morlock/core/util","vendor/modernizr","exports"],
+  function(__dependency1__, __dependency2__, __exports__) {
     
     var memoize = __dependency1__.memoize;
     var isDefined = __dependency1__.isDefined;
@@ -1709,6 +2049,7 @@ define("morlock/core/dom",
     var flip = __dependency1__.flip;
     var indexOf = __dependency1__.indexOf;
     var forEach = __dependency1__.forEach;
+    var CustomModernizr = __dependency2__["default"];
 
     /**
      * Backwards compatible Media Query matcher.
@@ -2416,8 +2757,8 @@ define("morlock/controllers/scroll-position-controller",
     __exports__["default"] = ScrollPositionController;
   });
 define("morlock/controllers/sticky-element-controller", 
-  ["morlock/core/util","morlock/core/dom","morlock/core/stream","morlock/streams/scroll-stream","morlock/streams/resize-stream","morlock/controllers/scroll-position-controller","exports"],
-  function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __dependency5__, __dependency6__, __exports__) {
+  ["morlock/core/util","morlock/core/dom","morlock/core/stream","morlock/streams/scroll-stream","morlock/streams/resize-stream","morlock/controllers/scroll-position-controller","vendor/modernizr","exports"],
+  function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __dependency5__, __dependency6__, __dependency7__, __exports__) {
     
     var getOption = __dependency1__.getOption;
     var partial = __dependency1__.partial;
@@ -2433,6 +2774,7 @@ define("morlock/controllers/sticky-element-controller",
     var ScrollStream = __dependency4__;
     var ResizeStream = __dependency5__;
     var ScrollPositionController = __dependency6__["default"];
+    var CustomModernizr = __dependency7__["default"];
 
     function StickyElementController(elem, container, options) {
       if (!(this instanceof StickyElementController)) {
@@ -2611,8 +2953,8 @@ define("morlock/controllers/sticky-element-controller",
     __exports__["default"] = StickyElementController;
   });
 define("morlock/core/responsive-image", 
-  ["morlock/core/util","morlock/core/dom","morlock/controllers/element-visible-controller","exports"],
-  function(__dependency1__, __dependency2__, __dependency3__, __exports__) {
+  ["morlock/core/util","morlock/core/dom","morlock/controllers/element-visible-controller","vendor/modernizr","exports"],
+  function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __exports__) {
     
     var map = __dependency1__.map;
     var mapObject = __dependency1__.mapObject;
@@ -2623,6 +2965,7 @@ define("morlock/core/responsive-image",
     var flip = __dependency1__.flip;
     var testMQ = __dependency2__.testMQ;
     var ElementVisibleController = __dependency3__["default"];
+    var CustomModernizr = __dependency4__["default"];
 
     /**
      * Ghetto Record implementation.
@@ -2637,7 +2980,6 @@ define("morlock/core/responsive-image",
       this.knownSizes = [];
       this.currentBreakpoint = null;
       this.src = null;
-      this.hasWebp = false;
       this.isFlexible = false;
       this.hasRetina = false;
       this.preserveAspectRatio = false;
@@ -2673,7 +3015,6 @@ define("morlock/core/responsive-image",
       imageMap.src = element.getAttribute('data-src');
 
       imageMap.lazyLoad = element.getAttribute('data-lazyload') === 'true';
-      imageMap.hasWebp = element.getAttribute('data-hasWebp') === 'true';
       imageMap.isFlexible = element.getAttribute('data-isFlexible') !== 'false';
       imageMap.hasRetina = (element.getAttribute('data-hasRetina') === 'true') && (window.devicePixelRatio > 1.5);
       imageMap.preserveAspectRatio = element.getAttribute('data-preserveAspectRatio') === 'true';
@@ -2843,8 +3184,7 @@ define("morlock/core/responsive-image",
       if (s === 0) { return image.src; }
 
       var parts = image.src.split('.');
-      var currentExt = parts.pop();
-      var ext = (image.hasWebp && CustomModernizr.webp) ? 'webp' : currentExt;
+      var ext = parts.pop();
 
       return parts.join('.') + '-' + s + (image.hasRetina ? '@2x' : '') + '.' + ext;
     }

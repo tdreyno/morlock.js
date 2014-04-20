@@ -1,6 +1,6 @@
 define("morlock/core/dom", 
-  ["morlock/core/util","exports"],
-  function(__dependency1__, __exports__) {
+  ["morlock/core/util","vendor/modernizr","exports"],
+  function(__dependency1__, __dependency2__, __exports__) {
     "use strict";
     var memoize = __dependency1__.memoize;
     var isDefined = __dependency1__.isDefined;
@@ -9,6 +9,7 @@ define("morlock/core/dom",
     var flip = __dependency1__.flip;
     var indexOf = __dependency1__.indexOf;
     var forEach = __dependency1__.forEach;
+    var CustomModernizr = __dependency2__["default"];
 
     /**
      * Backwards compatible Media Query matcher.

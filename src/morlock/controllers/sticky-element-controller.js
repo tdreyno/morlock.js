@@ -5,6 +5,7 @@ module Stream from "morlock/core/stream";
 module ScrollStream from "morlock/streams/scroll-stream";
 module ResizeStream from "morlock/streams/resize-stream";
 import ScrollPositionController from "morlock/controllers/scroll-position-controller";
+import CustomModernizr from "vendor/modernizr";
 
 function StickyElementController(elem, container, options) {
   if (!(this instanceof StickyElementController)) {

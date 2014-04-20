@@ -1,6 +1,6 @@
 define("morlock/controllers/sticky-element-controller", 
-  ["morlock/core/util","morlock/core/dom","morlock/core/stream","morlock/streams/scroll-stream","morlock/streams/resize-stream","morlock/controllers/scroll-position-controller","exports"],
-  function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __dependency5__, __dependency6__, __exports__) {
+  ["morlock/core/util","morlock/core/dom","morlock/core/stream","morlock/streams/scroll-stream","morlock/streams/resize-stream","morlock/controllers/scroll-position-controller","vendor/modernizr","exports"],
+  function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __dependency5__, __dependency6__, __dependency7__, __exports__) {
     "use strict";
     var getOption = __dependency1__.getOption;
     var partial = __dependency1__.partial;
@@ -16,6 +16,7 @@ define("morlock/controllers/sticky-element-controller",
     var ScrollStream = __dependency4__;
     var ResizeStream = __dependency5__;
     var ScrollPositionController = __dependency6__["default"];
+    var CustomModernizr = __dependency7__["default"];
 
     function StickyElementController(elem, container, options) {
       if (!(this instanceof StickyElementController)) {

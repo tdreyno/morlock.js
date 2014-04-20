@@ -31,7 +31,6 @@ module.exports = function (grunt) {
         "-W041": true, // Comparing == against 0
         globals: {
           define: true,
-          CustomModernizr: true,
           jQuery: true
         }
       },
@@ -64,7 +63,7 @@ module.exports = function (grunt) {
         baseUrl: "dist/src/",
 
         wrap: {
-          startFile: ['vendor/modernizr.js', 'frags/start.frag'],
+          startFile: 'frags/start.frag',
           endFile: 'frags/end.frag'
         }
       },

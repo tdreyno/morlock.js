@@ -1,6 +1,7 @@
 import { map, mapObject, partial, sortBy, parseInteger, set, flip } from "morlock/core/util";
 import { testMQ } from "morlock/core/dom";
 import ElementVisibleController from "morlock/controllers/element-visible-controller";
+import CustomModernizr from "vendor/modernizr";
 
 /**
  * Ghetto Record implementation.
@@ -15,7 +16,6 @@ function ResponsiveImage() {
   this.knownSizes = [];
   this.currentBreakpoint = null;
   this.src = null;
-  this.hasWebp = false;
   this.isFlexible = false;
   this.hasRetina = false;
   this.preserveAspectRatio = false;
@@ -51,7 +51,6 @@ function createFromElement(element) {
   imageMap.src = element.getAttribute('data-src');
 
   imageMap.lazyLoad = element.getAttribute('data-lazyload') === 'true';
-  imageMap.hasWebp = element.getAttribute('data-hasWebp') === 'true';
   imageMap.isFlexible = element.getAttribute('data-isFlexible') !== 'false';
   imageMap.hasRetina = (element.getAttribute('data-hasRetina') === 'true') && (window.devicePixelRatio > 1.5);
   imageMap.preserveAspectRatio = element.getAttribute('data-preserveAspectRatio') === 'true';
@@ -221,8 +220,7 @@ function getPath(image, s) {
   if (s === 0) { return image.src; }
 
   var parts = image.src.split('.');
-  var currentExt = parts.pop();
-  var ext = (image.hasWebp && CustomModernizr.webp) ? 'webp' : currentExt;
+  var ext = parts.pop();
 
   return parts.join('.') + '-' + s + (image.hasRetina ? '@2x' : '') + '.' + ext;
 }

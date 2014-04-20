@@ -1,6 +1,6 @@
 define("morlock/core/responsive-image", 
-  ["morlock/core/util","morlock/core/dom","morlock/controllers/element-visible-controller","exports"],
-  function(__dependency1__, __dependency2__, __dependency3__, __exports__) {
+  ["morlock/core/util","morlock/core/dom","morlock/controllers/element-visible-controller","vendor/modernizr","exports"],
+  function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __exports__) {
     "use strict";
     var map = __dependency1__.map;
     var mapObject = __dependency1__.mapObject;
@@ -11,6 +11,7 @@ define("morlock/core/responsive-image",
     var flip = __dependency1__.flip;
     var testMQ = __dependency2__.testMQ;
     var ElementVisibleController = __dependency3__["default"];
+    var CustomModernizr = __dependency4__["default"];
 
     /**
      * Ghetto Record implementation.
@@ -25,7 +26,6 @@ define("morlock/core/responsive-image",
       this.knownSizes = [];
       this.currentBreakpoint = null;
       this.src = null;
-      this.hasWebp = false;
       this.isFlexible = false;
       this.hasRetina = false;
       this.preserveAspectRatio = false;
@@ -61,7 +61,6 @@ define("morlock/core/responsive-image",
       imageMap.src = element.getAttribute('data-src');
 
       imageMap.lazyLoad = element.getAttribute('data-lazyload') === 'true';
-      imageMap.hasWebp = element.getAttribute('data-hasWebp') === 'true';
       imageMap.isFlexible = element.getAttribute('data-isFlexible') !== 'false';
       imageMap.hasRetina = (element.getAttribute('data-hasRetina') === 'true') && (window.devicePixelRatio > 1.5);
       imageMap.preserveAspectRatio = element.getAttribute('data-preserveAspectRatio') === 'true';
@@ -231,8 +230,7 @@ define("morlock/core/responsive-image",
       if (s === 0) { return image.src; }
 
       var parts = image.src.split('.');
-      var currentExt = parts.pop();
-      var ext = (image.hasWebp && CustomModernizr.webp) ? 'webp' : currentExt;
+      var ext = parts.pop();
 
       return parts.join('.') + '-' + s + (image.hasRetina ? '@2x' : '') + '.' + ext;
     }

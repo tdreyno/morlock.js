@@ -1,4 +1,5 @@
 import { memoize, isDefined, mapObject, partial, flip, indexOf, forEach } from "morlock/core/util";
+import CustomModernizr from "vendor/modernizr";
 
 /**
  * Backwards compatible Media Query matcher.
