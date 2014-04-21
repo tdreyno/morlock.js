@@ -16,7 +16,7 @@
     root.ElementVisibleController = parts.ElementVisibleController;
     root.ScrollPositionController = parts.ScrollPositionController;
     root.StickyElementController = parts.StickyElementController;
-    root.morlock = parts.morlock;
+    root.morlock = parts.API;
   }
 }(this, function () {
   //almond, and your modules will be inlined here

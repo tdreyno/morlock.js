@@ -16,7 +16,7 @@
     root.ElementVisibleController = parts.ElementVisibleController;
     root.ScrollPositionController = parts.ScrollPositionController;
     root.StickyElementController = parts.StickyElementController;
-    root.morlock = parts.morlock;
+    root.morlock = parts.API;
   }
 }(this, function () {
   //almond, and your modules will be inlined here
@@ -3193,9 +3193,9 @@ define("morlock/core/responsive-image",
     __exports__.createFromElement = createFromElement;
     __exports__.update = update;
   });
-define("morlock/base", 
-  ["morlock/controllers/resize-controller","morlock/controllers/breakpoint-controller","morlock/controllers/scroll-controller","morlock/controllers/element-visible-controller","morlock/controllers/scroll-position-controller","morlock/controllers/sticky-element-controller","morlock/core/responsive-image","morlock/core/util","morlock/core/events","morlock/core/buffer","morlock/core/stream","exports"],
-  function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __dependency5__, __dependency6__, __dependency7__, __dependency8__, __dependency9__, __dependency10__, __dependency11__, __exports__) {
+define("morlock/api", 
+  ["morlock/controllers/resize-controller","morlock/controllers/breakpoint-controller","morlock/controllers/scroll-controller","morlock/controllers/element-visible-controller","morlock/controllers/scroll-position-controller","morlock/controllers/sticky-element-controller","morlock/core/util","morlock/core/events","morlock/core/buffer","morlock/core/stream","exports"],
+  function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __dependency5__, __dependency6__, __dependency7__, __dependency8__, __dependency9__, __dependency10__, __exports__) {
     
     var ResizeController = __dependency1__["default"];
     var BreakpointController = __dependency2__["default"];
@@ -3203,15 +3203,10 @@ define("morlock/base",
     var ElementVisibleController = __dependency4__["default"];
     var ScrollPositionController = __dependency5__["default"];
     var StickyElementController = __dependency6__["default"];
-    var ResponsiveImage = __dependency7__;
-    var Util = __dependency8__;
-    var Events = __dependency9__;
-    var Buffer = __dependency10__;
-    var Stream = __dependency11__;
-
-    var sharedPositions = {};
-    var sharedBreakpointDefs = [];
-    var sharedBreakpointsVals = [];
+    var Util = __dependency7__;
+    var Events = __dependency8__;
+    var Buffer = __dependency9__;
+    var Stream = __dependency10__;
 
     var getResizeTracker = Util.memoize(function() {
       return new ResizeController();
@@ -3221,13 +3216,15 @@ define("morlock/base",
       return new ScrollController();
     });
 
-    function getPositionTracker(pos) {
-      sharedPositions[pos] = sharedPositions[pos] || morlock.observePosition(pos);
-      return sharedPositions[pos];
-    }
+    var getPositionTracker = Util.memoize(function(pos) {
+      return morlock.observePosition(pos);
+    });
 
+    var sharedBreakpointDefs = [];
+    var sharedBreakpointsVals = [];
     function getBreakpointTracker(def) {
       var found = false;
+
       for (var i = 0; i < sharedBreakpointDefs.length; i++) {
         if (Util.equals(sharedBreakpointDefs[i], def)) {
           found = true;
@@ -3244,6 +3241,97 @@ define("morlock/base",
         return controller;
       }
     }
+
+    var morlock = {
+      onResize: function onResize(cb) {
+        var st = getResizeTracker();
+        return st.on('resize', cb);
+      },
+
+      onResizeEnd: function onResizeEnd(cb) {
+        var st = getResizeTracker();
+        return st.on('resizeEnd', cb);
+      },
+
+      onScroll: function onScroll(cb) {
+        var st = getScrollTracker();
+        return st.on('scroll', cb);
+      },
+
+      onScrollEnd: function onScrollEnd(cb) {
+        var st = getScrollTracker();
+        return st.on('scrollEnd', cb);
+      },
+
+      observeElement: function observeElement(elem, options) {
+        return new ElementVisibleController(elem, options);
+      },
+
+      observePosition: function observePosition(positionY) {
+        return new ScrollPositionController(positionY);
+      },
+
+      stickyElement: function stickyElement(elem, container, options) {
+        return new StickyElementController(elem, container, options);
+      },
+
+      breakpoint: {
+        enter: function(def, cb) {
+          var controller = getBreakpointTracker({
+            breakpoints: {
+              singleton: def
+            }
+          });
+
+          controller.on('breakpoint:singleton', function(data) {
+            if (data[1] === 'enter') {
+              cb(data);
+            }
+          });
+        },
+
+        exit: function(def, cb) {
+          var controller = getBreakpointTracker({
+            breakpoints: {
+              singleton: def
+            }
+          });
+
+          controller.on('breakpoint:singleton', function(data) {
+            if (data[1] === 'exit') {
+              cb(data);
+            }
+          });
+        }
+      },
+
+      position: {
+        before: function(pos, cb) {
+          var observer = getPositionTracker(pos);
+          return observer.on('before', cb);
+        },
+
+        after: function(pos, cb) {
+          var observer = getPositionTracker(pos);
+          return observer.on('after', cb);
+        }
+      }
+    };
+
+    morlock.Stream = Stream;
+    morlock.Events = Events;
+    morlock.Buffer = Buffer;
+    morlock.Util = Util;
+
+    __exports__["default"] = morlock;
+  });
+define("morlock/jquery", 
+  ["morlock/api","morlock/controllers/breakpoint-controller","morlock/controllers/sticky-element-controller","exports"],
+  function(__dependency1__, __dependency2__, __dependency3__, __exports__) {
+    
+    var morlock = __dependency1__["default"];
+    var BreakpointController = __dependency2__["default"];
+    var StickyElementController = __dependency3__["default"];
 
     function defineJQueryPlugins($) {
       $.fn.morlockResize = function() {
@@ -3339,96 +3427,31 @@ define("morlock/base",
         });
       };
     }
+    __exports__.defineJQueryPlugins = defineJQueryPlugins;
+  });
+define("morlock/base", 
+  ["morlock/controllers/resize-controller","morlock/controllers/breakpoint-controller","morlock/controllers/scroll-controller","morlock/controllers/element-visible-controller","morlock/controllers/scroll-position-controller","morlock/controllers/sticky-element-controller","morlock/core/responsive-image","morlock/api","morlock/jquery","exports"],
+  function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __dependency5__, __dependency6__, __dependency7__, __dependency8__, __dependency9__, __exports__) {
+    
+    var ResizeController = __dependency1__["default"];
+    var BreakpointController = __dependency2__["default"];
+    var ScrollController = __dependency3__["default"];
+    var ElementVisibleController = __dependency4__["default"];
+    var ScrollPositionController = __dependency5__["default"];
+    var StickyElementController = __dependency6__["default"];
+    var ResponsiveImage = __dependency7__;
+    var API = __dependency8__["default"];
+    var defineJQueryPlugins = __dependency9__.defineJQueryPlugins;
 
-    var morlock = {
-      onResize: function onResize(cb) {
-        var st = getResizeTracker();
-        return st.on('resize', cb);
-      },
+    API.enableJQuery = function enableJQuery($) {
+      $ || ($ = jQuery);
 
-      onResizeEnd: function onResizeEnd(cb) {
-        var st = getResizeTracker();
-        return st.on('resizeEnd', cb);
-      },
+      if (!$) { return; }
 
-      onScroll: function onScroll(cb) {
-        var st = getScrollTracker();
-        return st.on('scroll', cb);
-      },
-
-      onScrollEnd: function onScrollEnd(cb) {
-        var st = getScrollTracker();
-        return st.on('scrollEnd', cb);
-      },
-
-      observeElement: function observeElement(elem, options) {
-        return new ElementVisibleController(elem, options);
-      },
-
-      observePosition: function observePosition(positionY) {
-        return new ScrollPositionController(positionY);
-      },
-
-      stickyElement: function stickyElement(elem, container, options) {
-        return new StickyElementController(elem, container, options);
-      },
-
-      breakpoint: {
-        enter: function(def, cb) {
-          var controller = getBreakpointTracker({
-            breakpoints: {
-              singleton: def
-            }
-          });
-
-          controller.on('breakpoint:singleton', function(data) {
-            if (data[1] === 'enter') {
-              cb(data);
-            }
-          });
-        },
-
-        exit: function(def, cb) {
-          var controller = getBreakpointTracker({
-            breakpoints: {
-              singleton: def
-            }
-          });
-
-          controller.on('breakpoint:singleton', function(data) {
-            if (data[1] === 'exit') {
-              cb(data);
-            }
-          });
-        }
-      },
-
-      position: {
-        before: function(pos, cb) {
-          var observer = getPositionTracker(pos);
-          return observer.on('before', cb);
-        },
-
-        after: function(pos, cb) {
-          var observer = getPositionTracker(pos);
-          return observer.on('after', cb);
-        }
-      },
-
-      enableJQuery: function($) {
-        $ || ($ = jQuery);
-
-        if (!$) { return; }
-
-        defineJQueryPlugins($);
-      }
+      defineJQueryPlugins($);
     };
-    __exports__.morlock = morlock;
-    morlock.Stream = Stream;
-    morlock.Events = Events;
-    morlock.Buffer = Buffer;
-    morlock.Util = Util;
 
+    __exports__.API = API;
     __exports__.ResizeController = ResizeController;
     __exports__.BreakpointController = BreakpointController;
     __exports__.ResponsiveImage = ResponsiveImage;
