@@ -3,7 +3,7 @@ import BreakpointController from "morlock/controllers/breakpoint-controller";
 import StickyElementController from "morlock/controllers/sticky-element-controller";
 
 export function defineJQueryPlugins($) {
-  $.fn.morlockResize = function() {
+  $.fn.morlockResize = function(options) {
     return $(this).each(function() {
       if (this !== window) {
         // console.log('must attach event to window', this);
@@ -16,7 +16,7 @@ export function defineJQueryPlugins($) {
       });
       morlock.onResizeEnd(function(d) {
         $this.trigger('morlockResizeEnd', d);
-      });
+      }, options);
     });
   };
 

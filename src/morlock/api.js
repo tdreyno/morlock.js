@@ -9,12 +9,12 @@ module Events from 'morlock/core/events';
 module Buffer from "morlock/core/buffer";
 module Stream from "morlock/core/stream";
 
-var getResizeTracker = Util.memoize(function() {
-  return new ResizeController();
+var getResizeTracker = Util.memoize(function(options) {
+  return new ResizeController(options);
 });
 
-var getScrollTracker = Util.memoize(function() {
-  return new ScrollController();
+var getScrollTracker = Util.memoize(function(options) {
+  return new ScrollController(options);
 });
 
 var getPositionTracker = Util.memoize(function(pos) {
@@ -45,12 +45,12 @@ function getBreakpointTracker(def) {
 
 var morlock = {
   onResize: function onResize(cb) {
-    var st = getResizeTracker();
+    var st = getResizeTracker({ debounceMs: 0 });
     return st.on('resize', cb);
   },
 
-  onResizeEnd: function onResizeEnd(cb) {
-    var st = getResizeTracker();
+  onResizeEnd: function onResizeEnd(cb, options) {
+    var st = getResizeTracker(options);
     return st.on('resizeEnd', cb);
   },
 

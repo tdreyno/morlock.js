@@ -13,12 +13,12 @@ define("morlock/api",
     var Buffer = __dependency9__;
     var Stream = __dependency10__;
 
-    var getResizeTracker = Util.memoize(function() {
-      return new ResizeController();
+    var getResizeTracker = Util.memoize(function(options) {
+      return new ResizeController(options);
     });
 
-    var getScrollTracker = Util.memoize(function() {
-      return new ScrollController();
+    var getScrollTracker = Util.memoize(function(options) {
+      return new ScrollController(options);
     });
 
     var getPositionTracker = Util.memoize(function(pos) {
@@ -49,12 +49,12 @@ define("morlock/api",
 
     var morlock = {
       onResize: function onResize(cb) {
-        var st = getResizeTracker();
+        var st = getResizeTracker({ debounceMs: 0 });
         return st.on('resize', cb);
       },
 
-      onResizeEnd: function onResizeEnd(cb) {
-        var st = getResizeTracker();
+      onResizeEnd: function onResizeEnd(cb, options) {
+        var st = getResizeTracker(options);
         return st.on('resizeEnd', cb);
       },
 

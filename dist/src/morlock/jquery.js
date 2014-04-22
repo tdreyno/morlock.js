@@ -7,7 +7,7 @@ define("morlock/jquery",
     var StickyElementController = __dependency3__["default"];
 
     function defineJQueryPlugins($) {
-      $.fn.morlockResize = function() {
+      $.fn.morlockResize = function(options) {
         return $(this).each(function() {
           if (this !== window) {
             // console.log('must attach event to window', this);
@@ -20,7 +20,7 @@ define("morlock/jquery",
           });
           morlock.onResizeEnd(function(d) {
             $this.trigger('morlockResizeEnd', d);
-          });
+          }, options);
         });
       };
 
