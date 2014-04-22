@@ -1,7 +1,9 @@
 {
   "name": "morlock",
   "description": "Low level libraries for responsive & interactive websites",
-  "dependencies": {},
+  "dependencies": {
+    "almond": "^0.2.9"
+  },
   "devDependencies": {
     "grunt": "~0.4.1",
     "grunt-es6-module-transpiler": "~0.6.0",

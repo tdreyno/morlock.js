@@ -57,14 +57,14 @@ module.exports = function (grunt) {
 
     requirejs: {
       options: {
-        name: "../../vendor/almond",
+        name: "../../node_modules/almond/almond",
         include: ["morlock/base"],
         insertRequire: ['morlock/base'],
         baseUrl: "dist/src/",
 
         wrap: {
-          startFile: 'frags/start.frag',
-          endFile: 'frags/end.frag'
+          startFile: 'src/frags/start.frag',
+          endFile: 'src/frags/end.frag'
         }
       },
 
