@@ -1,4 +1,4 @@
-import { getOption, partial } from "morlock/core/util";
+import { getOption, autoCurry, partial } from "morlock/core/util";
 import { getStyle, setStyle, setStyles, addClass, removeClass, insertBefore,
          documentScrollY, detachElement } from "morlock/core/dom";
 module Stream from "morlock/core/stream";
@@ -31,7 +31,7 @@ function StickyElementController(elem, container, options) {
 
   this.useTransform = CustomModernizr.csstransforms && getOption(options.useTransform, true);
 
-  Stream.onValue(ScrollStream.create(), partial(onScroll, this));
+  Stream.onValue(ScrollStream.create(), onScroll(this));
   Stream.onValue(
     Stream.debounce(64, ResizeStream.create()),
     partial(onResize, this)
@@ -123,7 +123,7 @@ function setupPositions(stickyElement) {
   }
 }
 
-function onScroll(stickyElement, scrollY) {
+var onScroll = autoCurry(function onScroll_(stickyElement, scrollY) {
   if (!stickyElement.fixed) { return; }
 
   if (scrollY < 0) {
@@ -150,13 +150,13 @@ function onScroll(stickyElement, scrollY) {
 
     stickyElement.currentTop = newTop;
   }
-}
+});
 
-function onResize(stickyElement) {
+var onResize = autoCurry(function onResize_(stickyElement) {
   resetPositions(stickyElement);
   setupPositions(stickyElement);
   onScroll(stickyElement, documentScrollY());
-}
+});
 
 function fix(stickyElement) {
   if (stickyElement.fixed) { return; }

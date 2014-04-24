@@ -35,7 +35,6 @@
         }
       });
 
-
       // var intervalStream = s.interval(1000);
       // var resizeStream = r.create({ throttleMs: 0 });
       // var dimensionsStream = s.map(function() {
@@ -93,7 +92,7 @@
       });
 
       setTimeout(function() {
-        console.log('GO!')
+        // console.log('GO!')
         var onBefore = function() {
           console.log('ONOFF: before 200');
         };
@@ -102,18 +101,18 @@
         };
         var observer = (new ScrollPositionController(200)).on('before', onBefore).on('after', onAfter);
 
-        rc.on('resize', function() {
-          observer.off('before', onBefore).off('after', onAfter);
+        // rc.on('resize', function() {
+        //   observer.off('before', onBefore).off('after', onAfter);
 
-          onBefore = function() {
-            console.log('ONOFF: before 400');
-          };
-          onAfter = function() {
-            console.log('ONOFF: after 400');
-          };
+        //   onBefore = function() {
+        //     console.log('ONOFF: before 400');
+        //   };
+        //   onAfter = function() {
+        //     console.log('ONOFF: after 400');
+        //   };
 
-          observer = (new ScrollPositionController(400)).on('before', onBefore).on('after', onAfter);
-        })
+        //   observer = (new ScrollPositionController(400)).on('before', onBefore).on('after', onAfter);
+        // });
       }, 2000);
 
       morlock.position.before(400, function() {

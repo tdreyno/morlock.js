@@ -6,7 +6,6 @@ define("morlock/streams/resize-stream",
     var getOption = __dependency2__.getOption;
     var memoize = __dependency2__.memoize;
     var defer = __dependency2__.defer;
-    var partial = __dependency2__.partial;
 
     /**
      * Create a new Stream containing resize events.
@@ -29,7 +28,7 @@ define("morlock/streams/resize-stream",
         Stream.delay(orientationChangeDelayMs, orientationChangeStream)
       );
 
-      defer(partial(Stream.emit, resizedStream), 10);
+      defer(Stream.emit(resizedStream), 10);
 
       return Stream.skipDuplicates(Stream.map(windowDimensions_, resizedStream));
     });

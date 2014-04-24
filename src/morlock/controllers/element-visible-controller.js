@@ -1,4 +1,4 @@
-import { partial, equals } from "morlock/core/util";
+import { equals } from "morlock/core/util";
 module Stream from "morlock/core/stream";
 module ElementTrackerStream from "morlock/streams/element-tracker-stream";
 
@@ -18,8 +18,8 @@ function ElementVisibleController(elem, options) {
 
   var trackerStream = ElementTrackerStream.create(elem, options);
 
-  var enterStream = Stream.filter(partial(equals, 'enter'), trackerStream);
-  var exitStream = Stream.filter(partial(equals, 'exit'), trackerStream);
+  var enterStream = Stream.filter(equals('enter'), trackerStream);
+  var exitStream = Stream.filter(equals('exit'), trackerStream);
 
   function onOffStream(args, f) {
     var name = 'both';

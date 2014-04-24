@@ -1,4 +1,4 @@
-import { objectKeys, partial, first, compose, isTrue, select, get } from "morlock/core/util";
+import { objectKeys, first, compose, isTrue, select, get } from "morlock/core/util";
 module Stream from "morlock/core/stream";
 module BreakpointStream from "morlock/streams/breakpoint-stream";
 
@@ -28,7 +28,7 @@ function BreakpointController(options) {
   }
 
   this.getActiveBreakpoints = function getActiveBreakpoints() {
-    var isActive = compose(isTrue, partial(get, activeBreakpoints));
+    var isActive = compose(isTrue, get(activeBreakpoints));
     return select(isActive, objectKeys(activeBreakpoints));
   };
 

@@ -2,7 +2,6 @@ define("morlock/controllers/element-visible-controller",
   ["morlock/core/util","morlock/core/stream","morlock/streams/element-tracker-stream","exports"],
   function(__dependency1__, __dependency2__, __dependency3__, __exports__) {
     "use strict";
-    var partial = __dependency1__.partial;
     var equals = __dependency1__.equals;
     var Stream = __dependency2__;
     var ElementTrackerStream = __dependency3__;
@@ -23,8 +22,8 @@ define("morlock/controllers/element-visible-controller",
 
       var trackerStream = ElementTrackerStream.create(elem, options);
 
-      var enterStream = Stream.filter(partial(equals, 'enter'), trackerStream);
-      var exitStream = Stream.filter(partial(equals, 'exit'), trackerStream);
+      var enterStream = Stream.filter(equals('enter'), trackerStream);
+      var exitStream = Stream.filter(equals('exit'), trackerStream);
 
       function onOffStream(args, f) {
         var name = 'both';

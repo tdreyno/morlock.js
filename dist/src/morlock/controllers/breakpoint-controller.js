@@ -3,7 +3,6 @@ define("morlock/controllers/breakpoint-controller",
   function(__dependency1__, __dependency2__, __dependency3__, __exports__) {
     "use strict";
     var objectKeys = __dependency1__.objectKeys;
-    var partial = __dependency1__.partial;
     var first = __dependency1__.first;
     var compose = __dependency1__.compose;
     var isTrue = __dependency1__.isTrue;
@@ -38,7 +37,7 @@ define("morlock/controllers/breakpoint-controller",
       }
 
       this.getActiveBreakpoints = function getActiveBreakpoints() {
-        var isActive = compose(isTrue, partial(get, activeBreakpoints));
+        var isActive = compose(isTrue, get(activeBreakpoints));
         return select(isActive, objectKeys(activeBreakpoints));
       };
 

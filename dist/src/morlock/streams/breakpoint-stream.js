@@ -3,11 +3,10 @@ define("morlock/streams/breakpoint-stream",
   function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __exports__) {
     "use strict";
     var objectVals = __dependency1__.objectVals;
-    var partial = __dependency1__.partial;
     var mapObject = __dependency1__.mapObject;
     var apply = __dependency1__.apply;
-    var push = __dependency1__.push;
     var getOption = __dependency1__.getOption;
+    var push = __dependency1__.push;
     var testMQ = __dependency2__.testMQ;
     var Stream = __dependency3__;
     var ResizeStream = __dependency4__;
@@ -52,7 +51,7 @@ define("morlock/streams/breakpoint-stream",
           }
         });
 
-        return Stream.map(partial(push, [key]), s);
+        return Stream.map(push([key]), s);
       }, breakpoints);
 
       return apply(Stream.merge, objectVals(breakpointStreams));

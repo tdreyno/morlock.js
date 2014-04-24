@@ -1,4 +1,4 @@
-import { memoize, isDefined, mapObject, partial, flip, indexOf, forEach } from "morlock/core/util";
+import { memoize, isDefined, mapObject, flip, indexOf, forEach, autoCurry } from "morlock/core/util";
 import CustomModernizr from "vendor/modernizr";
 
 /**
@@ -86,12 +86,12 @@ export function getRect(elem, buffer, currentScrollY) {
 
 export var cssPrefix = memoize(CustomModernizr.prefixed);
 
-export function setStyle(elem, key, value) {
+export var setStyle = autoCurry(function setStyle_(elem, key, value) {
   elem.style[cssPrefix(key)] = value;
-}
+});
 
 export function setStyles(elem, styles) {
-  mapObject(flip(partial(setStyle, elem)), styles);
+  mapObject(flip(setStyle(elem)), styles);
 }
 
 export function getStyle(elem, key) {
@@ -138,30 +138,30 @@ export function isVisible(elem) {
   return true;
 }
 
-var hasClass, addClass, removeClass;
+var hasClass_, addClass_, removeClass_;
 
 export function getClasses(elem) {
   return elem.className.length > 0 ? elem.className.split(' ') : [];
 }
 
 if (!isDefined(window.Element) || ('classList' in document.documentElement)) {
-  hasClass = function hasClassNative_(elem, className) {
+  hasClass_ = function hasClassNative_(elem, className) {
     return elem.classList.contains(className);
   };
 
-  addClass = function addClassNative_(elem, className) {
+  addClass_ = function addClassNative_(elem, className) {
     elem.classList.add(className);
   };
 
-  removeClass = function removeClassNative_(elem, className) {
+  removeClass_ = function removeClassNative_(elem, className) {
     elem.classList.remove(className);
   };
 } else {
-  hasClass = function hasClassPoly_(elem, className) {
+  hasClass_ = function hasClassPoly_(elem, className) {
     return indexOf(getClasses(elem), className) !== -1;
   };
 
-  addClass = function addClassPoly_(elem, className) {
+  addClass_ = function addClassPoly_(elem, className) {
     if (hasClass(elem)) { return; }
 
     var currentClasses = getClasses(elem);
@@ -170,7 +170,7 @@ if (!isDefined(window.Element) || ('classList' in document.documentElement)) {
     elem.className = currentClasses.join(' ');
   };
 
-  removeClass = function removeClassPoly_(elem, className) {
+  removeClass_ = function removeClassPoly_(elem, className) {
     if (!hasClass(elem)) { return; }
 
     var currentClasses = getClasses(elem);
@@ -182,8 +182,10 @@ if (!isDefined(window.Element) || ('classList' in document.documentElement)) {
   };
 }
 
-export function addClasses(elem, classes) {
-  forEach(partial(addClass, elem), classes);
-}
+export var hasClass = autoCurry(hasClass_);
+export var addClass = autoCurry(addClass_);
+export var removeClass = autoCurry(removeClass_);
 
-export { hasClass, addClass, removeClass };
+export var addClasses = autoCurry(function addClasses_(elem, classes) {
+  forEach(addClass(elem), classes);
+});

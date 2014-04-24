@@ -1,5 +1,5 @@
 module Stream from "morlock/core/stream";
-import { getOption, memoize, defer, partial } from "morlock/core/util";
+import { getOption, memoize, defer } from "morlock/core/util";
 
 /**
  * Create a new Stream containing resize events.
@@ -22,7 +22,7 @@ export var create = memoize(function create_(options) {
     Stream.delay(orientationChangeDelayMs, orientationChangeStream)
   );
 
-  defer(partial(Stream.emit, resizedStream), 10);
+  defer(Stream.emit(resizedStream), 10);
 
   return Stream.skipDuplicates(Stream.map(windowDimensions_, resizedStream));
 });

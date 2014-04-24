@@ -1,4 +1,4 @@
-import { objectVals, partial, mapObject, apply, push, getOption } from "morlock/core/util";
+import { objectVals, mapObject, apply, getOption, push } from "morlock/core/util";
 import { testMQ } from "morlock/core/dom";
 module Stream from "morlock/core/stream";
 module ResizeStream from "morlock/streams/resize-stream";
@@ -43,7 +43,7 @@ export function create(breakpoints, options) {
       }
     });
 
-    return Stream.map(partial(push, [key]), s);
+    return Stream.map(push([key]), s);
   }, breakpoints);
 
   return apply(Stream.merge, objectVals(breakpointStreams));

@@ -481,7 +481,11 @@ define("morlock/core/util",
       return slice(arr, 0);
     }
 
-    /**
+    function concat(arr1, arr2) {
+      return arr1.concat(arr2);
+    }
+
+    __exports__.concat = concat;/**
      * Backwards compatible Array.prototype.indexOf
      * @param {array} list List of items.
      * @param {object} item Item to search for.
@@ -548,7 +552,7 @@ define("morlock/core/util",
 
         timeoutId = setTimeout(function() {
           timeoutId = null;
-          f.apply(null, lastArgs);
+          apply(f, lastArgs);
         }, delay);
       };
     }
@@ -573,7 +577,45 @@ define("morlock/core/util",
       };
     }
 
-    __exports__.memoize = memoize;/**
+    __exports__.memoize = memoize;function curry(fn) {
+      var args = rest(arguments);
+
+      return function curriedFunction_() {
+        return apply(fn, args.concat(copyArray(arguments)));
+      };
+    }
+
+    function autoCurry(fn, numArgs) {
+      numArgs || (numArgs = fn.length);
+
+      var f = function autoCurriedFunction_() {
+        if (arguments.length < numArgs) {
+          var newLength = numArgs - arguments.length;
+          if (newLength > 0) {
+            return autoCurry(
+              apply(curry, concat([fn], copyArray(arguments))),
+              newLength
+            );
+          } else {
+            return apply(curry, concat([fn], copyArray(arguments)));
+          }
+        } else {
+          return apply(fn, arguments);
+        }
+      };
+
+      f.curried = true;
+      
+      f.toString = function curriedToString_() {
+        return fn.toString();
+      };
+
+      f.arity = fn.length; // can't seem to set .length of f
+
+      return f;
+    }
+
+    __exports__.autoCurry = autoCurry;/**
      * Map a function over an object.
      * @param {object} obj The object.
      * @param {function} f The function.
@@ -664,9 +706,9 @@ define("morlock/core/util",
      * @param {String} key The key.
      * @return {object} Some result.
      */
-    function get(obj, key) {
+    var get = autoCurry(function get_(obj, key) {
       return obj[key];
-    }
+    });
 
     /**
      * Set a value on an object.
@@ -696,6 +738,8 @@ define("morlock/core/util",
       };
     }
 
+    var pluck = flip(get);
+    __exports__.pluck = pluck;
     function isEmpty(arr) {
       return !(arr && arr.length);
     }
@@ -709,7 +753,7 @@ define("morlock/core/util",
     }
 
     __exports__.getOption = getOption;function objectVals(obj) {
-      var getPropertyByName = partial(get, obj);
+      var getPropertyByName = get(obj);
       return map(getPropertyByName, objectKeys(obj));
     }
 
@@ -871,9 +915,9 @@ define("morlock/core/util",
       return hasOwnProperty.call(obj, key);
     }
 
-    function equals(a, b) {
+    var equals = autoCurry(function equals_(a, b) {
       return eq(a, b, [], []);
-    }
+    });
 
     function when(truth, f) {
       return function whenExecute_() {
@@ -959,35 +1003,35 @@ define("morlock/core/util",
       return arr[arr.length - 1];
     }
 
-    function unshift(arr, v) {
+    var unshift = autoCurry(function unshift_(arr, v) {
       var arr2 = copyArray(arr);
       NATIVE_ARRAY_UNSHIFT.call(arr2, v);
       return arr2;
-    }
+    });
 
-    function shift(arr, v) {
+    function shift(arr) {
       var arr2 = copyArray(arr);
-      NATIVE_ARRAY_SHIFT.call(arr2, v);
+      NATIVE_ARRAY_SHIFT.call(arr2);
       return arr2;
     }
 
-    function push(arr, v) {
+    var push = autoCurry(function push_(arr, v) {
       var arr2 = copyArray(arr);
       NATIVE_ARRAY_PUSH.call(arr2, v);
       return arr2;
-    }
+    });
 
-    function pop(arr, v) {
+    function pop(arr) {
       var arr2 = copyArray(arr);
-      NATIVE_ARRAY_POP.call(arr2, v);
+      NATIVE_ARRAY_POP.call(arr2);
       return arr2;
     }
 
-    function sortBy(arr, f) {
+    var sortBy = autoCurry(function sortBy_(arr, f) {
       var arr2 = copyArray(arr);
       NATIVE_ARRAY_SORT.call(arr2, f);
       return arr2;
-    }
+    });
 
     function compose(/*fns*/) {
       var fns = arguments;
@@ -1023,7 +1067,7 @@ define("morlock/core/util",
       };
     }
 
-    var isTrue = partial(equals, true);
+    var isTrue = equals(true);
     __exports__.isTrue = isTrue;
     var rAF = (function() {
       var correctRAF = window.requestAnimationFrame;
@@ -1278,6 +1322,7 @@ define("morlock/core/stream",
     var unary = __dependency3__.unary;
     var flippedCall = __dependency3__.flippedCall;
     var isDefined = __dependency3__.isDefined;
+    var autoCurry = __dependency3__.autoCurry;
     var partial = __dependency3__.partial;
     var once = __dependency3__.once;
     var copyArray = __dependency3__.copyArray;
@@ -1313,14 +1358,14 @@ define("morlock/core/stream",
       return new Stream(trackSubscribers, buffer);
     }
 
-    function emit(stream, val) {
+    var emit = autoCurry(function emit_(stream, val) {
       if (stream.closed) { return; }
 
       mapArray(unary(partial(flippedCall, val)), stream.subscribers);
 
       pushBuffer(stream.values, val);
-    }
-
+    });
+    __exports__.emit = emit;
     function getValue(stream) {
       return lastBufferValue(stream.values);
     }
@@ -1389,7 +1434,7 @@ define("morlock/core/stream",
 
     __exports__.onEmpty = onEmpty;function createFromEvents(target, eventName) {
       var outputStream = create(true);
-      var boundEmit = partial(emit, outputStream);
+      var boundEmit = emit(outputStream);
 
       var isListening = false;
       var unsubFunc;
@@ -1430,17 +1475,18 @@ define("morlock/core/stream",
 
     function interval(ms) {
       var outputStream = create(true);
-      var boundEmit = partial(emit, outputStream);
+      var boundEmit = emit(outputStream);
 
       /**
        * Lazily subscribes to a timeout event.
        */
       var attachListener = function attach_() {
+        var i = 0;
         var intervalId = setInterval(function() {
           if (outputStream.closed) {
             clearInterval(intervalId);
           } else {
-            apply(boundEmit, arguments);
+            boundEmit(i++);
           }
         }, ms);
       };
@@ -1452,7 +1498,7 @@ define("morlock/core/stream",
 
     function timeout(ms) {
       var outputStream = create(true);
-      var boundEmit = partial(emit, outputStream);
+      var boundEmit = partial(emit, outputStream, true);
 
       /**
        * Lazily subscribes to a timeout event.
@@ -1465,7 +1511,7 @@ define("morlock/core/stream",
 
     var createFromRAF = memoize(function createFromRAF_() {
       var rAFStream = create(true);
-      var boundEmit = partial(emit, rAFStream);
+      var boundEmit = emit(rAFStream);
 
       /**
        * Lazily subscribes to a raf event.
@@ -1485,7 +1531,7 @@ define("morlock/core/stream",
     function merge(/* streams */) {
       var streams = copyArray(arguments);
       var outputStream = create();
-      var boundEmit = partial(emit, outputStream);
+      var boundEmit = emit(outputStream);
       
       // var childStreams = {};
 
@@ -1517,7 +1563,7 @@ define("morlock/core/stream",
 
     var EMIT_KEY = ':e:';
 
-    function _duplicateStreamOnEmit(stream, f, args) {
+    function duplicateStreamOnEmit_(stream, f, args) {
       var outputStream = create();
       var boundEmit = partial(emit, outputStream);
       var boundArgs = mapArray(function(v) {
@@ -1534,34 +1580,34 @@ define("morlock/core/stream",
 
     function delay(ms, stream) {
       if (ms <= 0) { return stream; }
-      return _duplicateStreamOnEmit(stream, delayCall, [EMIT_KEY, ms]);
+      return duplicateStreamOnEmit_(stream, delayCall, [EMIT_KEY, ms]);
     }
 
     function throttle(ms, stream) {
       if (ms <= 0) { return stream; }
-      return _duplicateStreamOnEmit(stream, throttleCall, [EMIT_KEY, ms]);
+      return duplicateStreamOnEmit_(stream, throttleCall, [EMIT_KEY, ms]);
     }
 
     function debounce(ms, stream) {
       if (ms <= 0) { return stream; }
-      return _duplicateStreamOnEmit(stream, debounceCall, [EMIT_KEY, ms]);
+      return duplicateStreamOnEmit_(stream, debounceCall, [EMIT_KEY, ms]);
     }
 
     function map(f, stream) {
-      return _duplicateStreamOnEmit(stream, compose, [EMIT_KEY, f]);
+      return duplicateStreamOnEmit_(stream, compose, [EMIT_KEY, f]);
     }
 
     function filter(f, stream) {
-      return _duplicateStreamOnEmit(stream, when, [f, EMIT_KEY]);
+      return duplicateStreamOnEmit_(stream, when, [f, EMIT_KEY]);
     }
 
     function filterFirst(val, stream) {
-      return filter(compose(partial(equals, val), first), stream);
+      return filter(compose(equals(val), first), stream);
     }
 
     function skipDuplicates(stream) {
       var lastValue;
-      return filter(function(val) {
+      return filter(function checkDuplicate_(val) {
         if (equals(lastValue, val)) {
           return false;
         }
@@ -1572,12 +1618,11 @@ define("morlock/core/stream",
     }
 
     __exports__.skipDuplicates = skipDuplicates;function sample(sourceStream, sampleStream) {
-      return _duplicateStreamOnEmit(sampleStream,
+      return duplicateStreamOnEmit_(sampleStream,
         compose, [EMIT_KEY, partial(getValue, sourceStream)]);
     }
 
     __exports__.create = create;
-    __exports__.emit = emit;
     __exports__.getValue = getValue;
     __exports__.onValue = onValue;
     __exports__.offValue = offValue;
@@ -1603,7 +1648,6 @@ define("morlock/streams/resize-stream",
     var getOption = __dependency2__.getOption;
     var memoize = __dependency2__.memoize;
     var defer = __dependency2__.defer;
-    var partial = __dependency2__.partial;
 
     /**
      * Create a new Stream containing resize events.
@@ -1626,7 +1670,7 @@ define("morlock/streams/resize-stream",
         Stream.delay(orientationChangeDelayMs, orientationChangeStream)
       );
 
-      defer(partial(Stream.emit, resizedStream), 10);
+      defer(Stream.emit(resizedStream), 10);
 
       return Stream.skipDuplicates(Stream.map(windowDimensions_, resizedStream));
     });
@@ -2056,10 +2100,10 @@ define("morlock/core/dom",
     var memoize = __dependency1__.memoize;
     var isDefined = __dependency1__.isDefined;
     var mapObject = __dependency1__.mapObject;
-    var partial = __dependency1__.partial;
     var flip = __dependency1__.flip;
     var indexOf = __dependency1__.indexOf;
     var forEach = __dependency1__.forEach;
+    var autoCurry = __dependency1__.autoCurry;
     var CustomModernizr = __dependency2__["default"];
 
     /**
@@ -2147,12 +2191,12 @@ define("morlock/core/dom",
 
     __exports__.getRect = getRect;var cssPrefix = memoize(CustomModernizr.prefixed);
     __exports__.cssPrefix = cssPrefix;
-    function setStyle(elem, key, value) {
+    var setStyle = autoCurry(function setStyle_(elem, key, value) {
       elem.style[cssPrefix(key)] = value;
-    }
-
-    __exports__.setStyle = setStyle;function setStyles(elem, styles) {
-      mapObject(flip(partial(setStyle, elem)), styles);
+    });
+    __exports__.setStyle = setStyle;
+    function setStyles(elem, styles) {
+      mapObject(flip(setStyle(elem)), styles);
     }
 
     __exports__.setStyles = setStyles;function getStyle(elem, key) {
@@ -2199,30 +2243,30 @@ define("morlock/core/dom",
       return true;
     }
 
-    __exports__.isVisible = isVisible;var hasClass, addClass, removeClass;
+    __exports__.isVisible = isVisible;var hasClass_, addClass_, removeClass_;
 
     function getClasses(elem) {
       return elem.className.length > 0 ? elem.className.split(' ') : [];
     }
 
     __exports__.getClasses = getClasses;if (!isDefined(window.Element) || ('classList' in document.documentElement)) {
-      hasClass = function hasClassNative_(elem, className) {
+      hasClass_ = function hasClassNative_(elem, className) {
         return elem.classList.contains(className);
       };
 
-      addClass = function addClassNative_(elem, className) {
+      addClass_ = function addClassNative_(elem, className) {
         elem.classList.add(className);
       };
 
-      removeClass = function removeClassNative_(elem, className) {
+      removeClass_ = function removeClassNative_(elem, className) {
         elem.classList.remove(className);
       };
     } else {
-      hasClass = function hasClassPoly_(elem, className) {
+      hasClass_ = function hasClassPoly_(elem, className) {
         return indexOf(getClasses(elem), className) !== -1;
       };
 
-      addClass = function addClassPoly_(elem, className) {
+      addClass_ = function addClassPoly_(elem, className) {
         if (hasClass(elem)) { return; }
 
         var currentClasses = getClasses(elem);
@@ -2231,7 +2275,7 @@ define("morlock/core/dom",
         elem.className = currentClasses.join(' ');
       };
 
-      removeClass = function removeClassPoly_(elem, className) {
+      removeClass_ = function removeClassPoly_(elem, className) {
         if (!hasClass(elem)) { return; }
 
         var currentClasses = getClasses(elem);
@@ -2243,24 +2287,24 @@ define("morlock/core/dom",
       };
     }
 
-    function addClasses(elem, classes) {
-      forEach(partial(addClass, elem), classes);
-    }
-
-    __exports__.addClasses = addClasses;__exports__.hasClass = hasClass;
-    __exports__.addClass = addClass;
+    var hasClass = autoCurry(hasClass_);
+    __exports__.hasClass = hasClass;var addClass = autoCurry(addClass_);
+    __exports__.addClass = addClass;var removeClass = autoCurry(removeClass_);
     __exports__.removeClass = removeClass;
+    var addClasses = autoCurry(function addClasses_(elem, classes) {
+      forEach(addClass(elem), classes);
+    });
+    __exports__.addClasses = addClasses;
   });
 define("morlock/streams/breakpoint-stream", 
   ["morlock/core/util","morlock/core/dom","morlock/core/stream","morlock/streams/resize-stream","exports"],
   function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __exports__) {
     
     var objectVals = __dependency1__.objectVals;
-    var partial = __dependency1__.partial;
     var mapObject = __dependency1__.mapObject;
     var apply = __dependency1__.apply;
-    var push = __dependency1__.push;
     var getOption = __dependency1__.getOption;
+    var push = __dependency1__.push;
     var testMQ = __dependency2__.testMQ;
     var Stream = __dependency3__;
     var ResizeStream = __dependency4__;
@@ -2305,7 +2349,7 @@ define("morlock/streams/breakpoint-stream",
           }
         });
 
-        return Stream.map(partial(push, [key]), s);
+        return Stream.map(push([key]), s);
       }, breakpoints);
 
       return apply(Stream.merge, objectVals(breakpointStreams));
@@ -2344,7 +2388,6 @@ define("morlock/controllers/breakpoint-controller",
   function(__dependency1__, __dependency2__, __dependency3__, __exports__) {
     
     var objectKeys = __dependency1__.objectKeys;
-    var partial = __dependency1__.partial;
     var first = __dependency1__.first;
     var compose = __dependency1__.compose;
     var isTrue = __dependency1__.isTrue;
@@ -2379,7 +2422,7 @@ define("morlock/controllers/breakpoint-controller",
       }
 
       this.getActiveBreakpoints = function getActiveBreakpoints() {
-        var isActive = compose(isTrue, partial(get, activeBreakpoints));
+        var isActive = compose(isTrue, get(activeBreakpoints));
         return select(isActive, objectKeys(activeBreakpoints));
       };
 
@@ -2598,7 +2641,6 @@ define("morlock/controllers/element-visible-controller",
   ["morlock/core/util","morlock/core/stream","morlock/streams/element-tracker-stream","exports"],
   function(__dependency1__, __dependency2__, __dependency3__, __exports__) {
     
-    var partial = __dependency1__.partial;
     var equals = __dependency1__.equals;
     var Stream = __dependency2__;
     var ElementTrackerStream = __dependency3__;
@@ -2619,8 +2661,8 @@ define("morlock/controllers/element-visible-controller",
 
       var trackerStream = ElementTrackerStream.create(elem, options);
 
-      var enterStream = Stream.filter(partial(equals, 'enter'), trackerStream);
-      var exitStream = Stream.filter(partial(equals, 'exit'), trackerStream);
+      var enterStream = Stream.filter(equals('enter'), trackerStream);
+      var exitStream = Stream.filter(equals('exit'), trackerStream);
 
       function onOffStream(args, f) {
         var name = 'both';
@@ -2772,6 +2814,7 @@ define("morlock/controllers/sticky-element-controller",
   function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __dependency5__, __dependency6__, __dependency7__, __exports__) {
     
     var getOption = __dependency1__.getOption;
+    var autoCurry = __dependency1__.autoCurry;
     var partial = __dependency1__.partial;
     var getStyle = __dependency2__.getStyle;
     var setStyle = __dependency2__.setStyle;
@@ -2811,7 +2854,7 @@ define("morlock/controllers/sticky-element-controller",
 
       this.useTransform = CustomModernizr.csstransforms && getOption(options.useTransform, true);
 
-      Stream.onValue(ScrollStream.create(), partial(onScroll, this));
+      Stream.onValue(ScrollStream.create(), onScroll(this));
       Stream.onValue(
         Stream.debounce(64, ResizeStream.create()),
         partial(onResize, this)
@@ -2903,7 +2946,7 @@ define("morlock/controllers/sticky-element-controller",
       }
     }
 
-    function onScroll(stickyElement, scrollY) {
+    var onScroll = autoCurry(function onScroll_(stickyElement, scrollY) {
       if (!stickyElement.fixed) { return; }
 
       if (scrollY < 0) {
@@ -2930,13 +2973,13 @@ define("morlock/controllers/sticky-element-controller",
 
         stickyElement.currentTop = newTop;
       }
-    }
+    });
 
-    function onResize(stickyElement) {
+    var onResize = autoCurry(function onResize_(stickyElement) {
       resetPositions(stickyElement);
       setupPositions(stickyElement);
       onScroll(stickyElement, documentScrollY());
-    }
+    });
 
     function fix(stickyElement) {
       if (stickyElement.fixed) { return; }

@@ -8,6 +8,7 @@ import { debounce as debounceCall,
          delay as delayCall,
          map as mapArray,
          memoize, first, apply, compose, when, equals, unary, flippedCall, isDefined,
+         autoCurry,
          partial, once, copyArray, indexOf, rAF } from "morlock/core/util";
 
 // Internal tracking of how many streams have been created.
@@ -39,13 +40,13 @@ function create(trackSubscribers, buffer) {
   return new Stream(trackSubscribers, buffer);
 }
 
-function emit(stream, val) {
+export var emit = autoCurry(function emit_(stream, val) {
   if (stream.closed) { return; }
 
   mapArray(unary(partial(flippedCall, val)), stream.subscribers);
 
   pushBuffer(stream.values, val);
-}
+});
 
 function getValue(stream) {
   return lastBufferValue(stream.values);
@@ -115,7 +116,7 @@ export function onEmpty(stream, f) {
 
 function createFromEvents(target, eventName) {
   var outputStream = create(true);
-  var boundEmit = partial(emit, outputStream);
+  var boundEmit = emit(outputStream);
 
   var isListening = false;
   var unsubFunc;
@@ -156,17 +157,18 @@ function createFromEvents(target, eventName) {
 
 function interval(ms) {
   var outputStream = create(true);
-  var boundEmit = partial(emit, outputStream);
+  var boundEmit = emit(outputStream);
 
   /**
    * Lazily subscribes to a timeout event.
    */
   var attachListener = function attach_() {
+    var i = 0;
     var intervalId = setInterval(function() {
       if (outputStream.closed) {
         clearInterval(intervalId);
       } else {
-        apply(boundEmit, arguments);
+        boundEmit(i++);
       }
     }, ms);
   };
@@ -178,7 +180,7 @@ function interval(ms) {
 
 function timeout(ms) {
   var outputStream = create(true);
-  var boundEmit = partial(emit, outputStream);
+  var boundEmit = partial(emit, outputStream, true);
 
   /**
    * Lazily subscribes to a timeout event.
@@ -191,7 +193,7 @@ function timeout(ms) {
 
 var createFromRAF = memoize(function createFromRAF_() {
   var rAFStream = create(true);
-  var boundEmit = partial(emit, rAFStream);
+  var boundEmit = emit(rAFStream);
 
   /**
    * Lazily subscribes to a raf event.
@@ -211,7 +213,7 @@ var createFromRAF = memoize(function createFromRAF_() {
 function merge(/* streams */) {
   var streams = copyArray(arguments);
   var outputStream = create();
-  var boundEmit = partial(emit, outputStream);
+  var boundEmit = emit(outputStream);
   
   // var childStreams = {};
 
@@ -243,7 +245,7 @@ function merge(/* streams */) {
 
 var EMIT_KEY = ':e:';
 
-function _duplicateStreamOnEmit(stream, f, args) {
+function duplicateStreamOnEmit_(stream, f, args) {
   var outputStream = create();
   var boundEmit = partial(emit, outputStream);
   var boundArgs = mapArray(function(v) {
@@ -260,34 +262,34 @@ function _duplicateStreamOnEmit(stream, f, args) {
 
 function delay(ms, stream) {
   if (ms <= 0) { return stream; }
-  return _duplicateStreamOnEmit(stream, delayCall, [EMIT_KEY, ms]);
+  return duplicateStreamOnEmit_(stream, delayCall, [EMIT_KEY, ms]);
 }
 
 function throttle(ms, stream) {
   if (ms <= 0) { return stream; }
-  return _duplicateStreamOnEmit(stream, throttleCall, [EMIT_KEY, ms]);
+  return duplicateStreamOnEmit_(stream, throttleCall, [EMIT_KEY, ms]);
 }
 
 function debounce(ms, stream) {
   if (ms <= 0) { return stream; }
-  return _duplicateStreamOnEmit(stream, debounceCall, [EMIT_KEY, ms]);
+  return duplicateStreamOnEmit_(stream, debounceCall, [EMIT_KEY, ms]);
 }
 
 function map(f, stream) {
-  return _duplicateStreamOnEmit(stream, compose, [EMIT_KEY, f]);
+  return duplicateStreamOnEmit_(stream, compose, [EMIT_KEY, f]);
 }
 
 function filter(f, stream) {
-  return _duplicateStreamOnEmit(stream, when, [f, EMIT_KEY]);
+  return duplicateStreamOnEmit_(stream, when, [f, EMIT_KEY]);
 }
 
 function filterFirst(val, stream) {
-  return filter(compose(partial(equals, val), first), stream);
+  return filter(compose(equals(val), first), stream);
 }
 
 export function skipDuplicates(stream) {
   var lastValue;
-  return filter(function(val) {
+  return filter(function checkDuplicate_(val) {
     if (equals(lastValue, val)) {
       return false;
     }
@@ -298,10 +300,10 @@ export function skipDuplicates(stream) {
 }
 
 function sample(sourceStream, sampleStream) {
-  return _duplicateStreamOnEmit(sampleStream,
+  return duplicateStreamOnEmit_(sampleStream,
     compose, [EMIT_KEY, partial(getValue, sourceStream)]);
 }
 
-export { create, emit, getValue, onValue, offValue, onSubscription, createFromEvents,
+export { create, getValue, onValue, offValue, onSubscription, createFromEvents,
          timeout, createFromRAF, merge, delay, throttle, debounce, map,
          filter, filterFirst, sample, interval };

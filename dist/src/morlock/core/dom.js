@@ -5,10 +5,10 @@ define("morlock/core/dom",
     var memoize = __dependency1__.memoize;
     var isDefined = __dependency1__.isDefined;
     var mapObject = __dependency1__.mapObject;
-    var partial = __dependency1__.partial;
     var flip = __dependency1__.flip;
     var indexOf = __dependency1__.indexOf;
     var forEach = __dependency1__.forEach;
+    var autoCurry = __dependency1__.autoCurry;
     var CustomModernizr = __dependency2__["default"];
 
     /**
@@ -96,12 +96,12 @@ define("morlock/core/dom",
 
     __exports__.getRect = getRect;var cssPrefix = memoize(CustomModernizr.prefixed);
     __exports__.cssPrefix = cssPrefix;
-    function setStyle(elem, key, value) {
+    var setStyle = autoCurry(function setStyle_(elem, key, value) {
       elem.style[cssPrefix(key)] = value;
-    }
-
-    __exports__.setStyle = setStyle;function setStyles(elem, styles) {
-      mapObject(flip(partial(setStyle, elem)), styles);
+    });
+    __exports__.setStyle = setStyle;
+    function setStyles(elem, styles) {
+      mapObject(flip(setStyle(elem)), styles);
     }
 
     __exports__.setStyles = setStyles;function getStyle(elem, key) {
@@ -148,30 +148,30 @@ define("morlock/core/dom",
       return true;
     }
 
-    __exports__.isVisible = isVisible;var hasClass, addClass, removeClass;
+    __exports__.isVisible = isVisible;var hasClass_, addClass_, removeClass_;
 
     function getClasses(elem) {
       return elem.className.length > 0 ? elem.className.split(' ') : [];
     }
 
     __exports__.getClasses = getClasses;if (!isDefined(window.Element) || ('classList' in document.documentElement)) {
-      hasClass = function hasClassNative_(elem, className) {
+      hasClass_ = function hasClassNative_(elem, className) {
         return elem.classList.contains(className);
       };
 
-      addClass = function addClassNative_(elem, className) {
+      addClass_ = function addClassNative_(elem, className) {
         elem.classList.add(className);
       };
 
-      removeClass = function removeClassNative_(elem, className) {
+      removeClass_ = function removeClassNative_(elem, className) {
         elem.classList.remove(className);
       };
     } else {
-      hasClass = function hasClassPoly_(elem, className) {
+      hasClass_ = function hasClassPoly_(elem, className) {
         return indexOf(getClasses(elem), className) !== -1;
       };
 
-      addClass = function addClassPoly_(elem, className) {
+      addClass_ = function addClassPoly_(elem, className) {
         if (hasClass(elem)) { return; }
 
         var currentClasses = getClasses(elem);
@@ -180,7 +180,7 @@ define("morlock/core/dom",
         elem.className = currentClasses.join(' ');
       };
 
-      removeClass = function removeClassPoly_(elem, className) {
+      removeClass_ = function removeClassPoly_(elem, className) {
         if (!hasClass(elem)) { return; }
 
         var currentClasses = getClasses(elem);
@@ -192,11 +192,12 @@ define("morlock/core/dom",
       };
     }
 
-    function addClasses(elem, classes) {
-      forEach(partial(addClass, elem), classes);
-    }
-
-    __exports__.addClasses = addClasses;__exports__.hasClass = hasClass;
-    __exports__.addClass = addClass;
+    var hasClass = autoCurry(hasClass_);
+    __exports__.hasClass = hasClass;var addClass = autoCurry(addClass_);
+    __exports__.addClass = addClass;var removeClass = autoCurry(removeClass_);
     __exports__.removeClass = removeClass;
+    var addClasses = autoCurry(function addClasses_(elem, classes) {
+      forEach(addClass(elem), classes);
+    });
+    __exports__.addClasses = addClasses;
   });

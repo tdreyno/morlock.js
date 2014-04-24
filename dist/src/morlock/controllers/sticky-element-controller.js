@@ -3,6 +3,7 @@ define("morlock/controllers/sticky-element-controller",
   function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __dependency5__, __dependency6__, __dependency7__, __exports__) {
     "use strict";
     var getOption = __dependency1__.getOption;
+    var autoCurry = __dependency1__.autoCurry;
     var partial = __dependency1__.partial;
     var getStyle = __dependency2__.getStyle;
     var setStyle = __dependency2__.setStyle;
@@ -42,7 +43,7 @@ define("morlock/controllers/sticky-element-controller",
 
       this.useTransform = CustomModernizr.csstransforms && getOption(options.useTransform, true);
 
-      Stream.onValue(ScrollStream.create(), partial(onScroll, this));
+      Stream.onValue(ScrollStream.create(), onScroll(this));
       Stream.onValue(
         Stream.debounce(64, ResizeStream.create()),
         partial(onResize, this)
@@ -134,7 +135,7 @@ define("morlock/controllers/sticky-element-controller",
       }
     }
 
-    function onScroll(stickyElement, scrollY) {
+    var onScroll = autoCurry(function onScroll_(stickyElement, scrollY) {
       if (!stickyElement.fixed) { return; }
 
       if (scrollY < 0) {
@@ -161,13 +162,13 @@ define("morlock/controllers/sticky-element-controller",
 
         stickyElement.currentTop = newTop;
       }
-    }
+    });
 
-    function onResize(stickyElement) {
+    var onResize = autoCurry(function onResize_(stickyElement) {
       resetPositions(stickyElement);
       setupPositions(stickyElement);
       onScroll(stickyElement, documentScrollY());
-    }
+    });
 
     function fix(stickyElement) {
       if (stickyElement.fixed) { return; }

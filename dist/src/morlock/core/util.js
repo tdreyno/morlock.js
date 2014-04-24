@@ -35,7 +35,11 @@ define("morlock/core/util",
       return slice(arr, 0);
     }
 
-    /**
+    function concat(arr1, arr2) {
+      return arr1.concat(arr2);
+    }
+
+    __exports__.concat = concat;/**
      * Backwards compatible Array.prototype.indexOf
      * @param {array} list List of items.
      * @param {object} item Item to search for.
@@ -102,7 +106,7 @@ define("morlock/core/util",
 
         timeoutId = setTimeout(function() {
           timeoutId = null;
-          f.apply(null, lastArgs);
+          apply(f, lastArgs);
         }, delay);
       };
     }
@@ -127,7 +131,45 @@ define("morlock/core/util",
       };
     }
 
-    __exports__.memoize = memoize;/**
+    __exports__.memoize = memoize;function curry(fn) {
+      var args = rest(arguments);
+
+      return function curriedFunction_() {
+        return apply(fn, args.concat(copyArray(arguments)));
+      };
+    }
+
+    function autoCurry(fn, numArgs) {
+      numArgs || (numArgs = fn.length);
+
+      var f = function autoCurriedFunction_() {
+        if (arguments.length < numArgs) {
+          var newLength = numArgs - arguments.length;
+          if (newLength > 0) {
+            return autoCurry(
+              apply(curry, concat([fn], copyArray(arguments))),
+              newLength
+            );
+          } else {
+            return apply(curry, concat([fn], copyArray(arguments)));
+          }
+        } else {
+          return apply(fn, arguments);
+        }
+      };
+
+      f.curried = true;
+      
+      f.toString = function curriedToString_() {
+        return fn.toString();
+      };
+
+      f.arity = fn.length; // can't seem to set .length of f
+
+      return f;
+    }
+
+    __exports__.autoCurry = autoCurry;/**
      * Map a function over an object.
      * @param {object} obj The object.
      * @param {function} f The function.
@@ -218,9 +260,9 @@ define("morlock/core/util",
      * @param {String} key The key.
      * @return {object} Some result.
      */
-    function get(obj, key) {
+    var get = autoCurry(function get_(obj, key) {
       return obj[key];
-    }
+    });
 
     /**
      * Set a value on an object.
@@ -250,6 +292,8 @@ define("morlock/core/util",
       };
     }
 
+    var pluck = flip(get);
+    __exports__.pluck = pluck;
     function isEmpty(arr) {
       return !(arr && arr.length);
     }
@@ -263,7 +307,7 @@ define("morlock/core/util",
     }
 
     __exports__.getOption = getOption;function objectVals(obj) {
-      var getPropertyByName = partial(get, obj);
+      var getPropertyByName = get(obj);
       return map(getPropertyByName, objectKeys(obj));
     }
 
@@ -425,9 +469,9 @@ define("morlock/core/util",
       return hasOwnProperty.call(obj, key);
     }
 
-    function equals(a, b) {
+    var equals = autoCurry(function equals_(a, b) {
       return eq(a, b, [], []);
-    }
+    });
 
     function when(truth, f) {
       return function whenExecute_() {
@@ -513,35 +557,35 @@ define("morlock/core/util",
       return arr[arr.length - 1];
     }
 
-    function unshift(arr, v) {
+    var unshift = autoCurry(function unshift_(arr, v) {
       var arr2 = copyArray(arr);
       NATIVE_ARRAY_UNSHIFT.call(arr2, v);
       return arr2;
-    }
+    });
 
-    function shift(arr, v) {
+    function shift(arr) {
       var arr2 = copyArray(arr);
-      NATIVE_ARRAY_SHIFT.call(arr2, v);
+      NATIVE_ARRAY_SHIFT.call(arr2);
       return arr2;
     }
 
-    function push(arr, v) {
+    var push = autoCurry(function push_(arr, v) {
       var arr2 = copyArray(arr);
       NATIVE_ARRAY_PUSH.call(arr2, v);
       return arr2;
-    }
+    });
 
-    function pop(arr, v) {
+    function pop(arr) {
       var arr2 = copyArray(arr);
-      NATIVE_ARRAY_POP.call(arr2, v);
+      NATIVE_ARRAY_POP.call(arr2);
       return arr2;
     }
 
-    function sortBy(arr, f) {
+    var sortBy = autoCurry(function sortBy_(arr, f) {
       var arr2 = copyArray(arr);
       NATIVE_ARRAY_SORT.call(arr2, f);
       return arr2;
-    }
+    });
 
     function compose(/*fns*/) {
       var fns = arguments;
@@ -577,7 +621,7 @@ define("morlock/core/util",
       };
     }
 
-    var isTrue = partial(equals, true);
+    var isTrue = equals(true);
     __exports__.isTrue = isTrue;
     var rAF = (function() {
       var correctRAF = window.requestAnimationFrame;
