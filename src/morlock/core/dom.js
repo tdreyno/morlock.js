@@ -94,9 +94,30 @@ export function setStyles(elem, styles) {
   mapObject(flip(setStyle(elem)), styles);
 }
 
-export function getStyle(elem, key) {
-  return elem.style[cssPrefix(key)];
+function getComputedStyle(elem, key) {
+  var doc = (elem.nodeType == 9) ? elem : (elem.ownerDocument || elem.document);
+
+  if (doc.defaultView && doc.defaultView.getComputedStyle) {
+    var styles = doc.defaultView.getComputedStyle(elem, null);
+    if (styles) {
+      return styles[key] || styles.getPropertyValue(key) || '';
+    }
+  }
+
+  return '';
 }
+
+function getCascadedStyle(elem, key) {
+  return elem.currentStyle ? elem.currentStyle[key] : null;
+}
+
+export var getStyle = autoCurry(function getStyle_(elem, key) {
+  var prefixedKey = cssPrefix(key);
+
+  return getComputedStyle(elem, prefixedKey) ||
+         getCascadedStyle(elem, prefixedKey) ||
+         (elem.style && elem.style[prefixedKey]);
+});
 
 export function insertBefore(before, elem) {
   elem.parentNode.insertBefore(before, elem);

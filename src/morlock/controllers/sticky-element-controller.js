@@ -1,4 +1,4 @@
-import { getOption, autoCurry, partial } from "morlock/core/util";
+import { getOption, autoCurry, partial, forEach, call, functionBind } from "morlock/core/util";
 import { getStyle, setStyle, setStyles, addClass, removeClass, insertBefore,
          documentScrollY, detachElement } from "morlock/core/dom";
 module Stream from "morlock/core/stream";
@@ -28,17 +28,33 @@ function StickyElementController(elem, container, options) {
 
   this.zIndex = getOption(options.zIndex, 1000);
   this.marginTop = getOption(options.marginTop, 0);
+  this.marginBottom = getOption(options.marginBottom, 0);
 
   this.useTransform = CustomModernizr.csstransforms && getOption(options.useTransform, true);
 
-  Stream.onValue(ScrollStream.create(), onScroll(this));
-  Stream.onValue(
-    Stream.debounce(64, ResizeStream.create()),
-    partial(onResize, this)
-  );
+  this.subscribedListeners_ = [
+    Stream.onValue(ScrollStream.create(), onScroll(this)),
+    Stream.onValue(
+      Stream.debounce(64, ResizeStream.create()),
+      functionBind(this.onResize, this)
+    )
+  ];
 
   setupPositions(this);
 }
+
+StickyElementController.prototype.onResize = function() {
+  resetPositions(this);
+  setupPositions(this);
+  onScroll(this, documentScrollY());
+};
+
+StickyElementController.prototype.destroy = function() {
+  forEach(call, this.subscribedListeners_);
+  resetPositions(this);
+
+  this.spacer = null;
+};
 
 function resetPositions(stickyElement) {
   unfix(stickyElement);
@@ -58,7 +74,7 @@ function resetPositions(stickyElement) {
 
 function setupPositions(stickyElement) {
   var containerPosition = getStyle(stickyElement.container, 'position');
-  if (containerPosition.length === 0) {
+  if ((containerPosition.length === 0) || ('static' === containerPosition)) {
     setStyle(stickyElement.container, 'position', 'relative');
   }
 
@@ -76,7 +92,6 @@ function setupPositions(stickyElement) {
   var containerDimensions = stickyElement.container.getBoundingClientRect();
   stickyElement.containerTop = containerDimensions.top + currentScroll;
   stickyElement.containerHeight = containerDimensions.height;
-
   stickyElement.originalTop = stickyElement.elem.offsetTop;
 
   setStyles(stickyElement.elem, {
@@ -86,21 +101,23 @@ function setupPositions(stickyElement) {
     'width': stickyElement.elemWidth + 'px'
   });
 
-  addClass(stickyElement.spacer, 'stick-element-spacer');
+  if (stickyElement.originalPosition !== 'absolute') {
+    addClass(stickyElement.spacer, 'stick-element-spacer');
 
-  setStyles(stickyElement.spacer, {
-    // 'width': stickyElement.elemWidth + 'px',
-    'height': stickyElement.elemHeight + 'px',
-    'display': getStyle(stickyElement.elem, 'display'),
-    'float': getStyle(stickyElement.elem, 'float'),
-    'pointerEvents': 'none',
-    'visibility': 'hidden',
-    'opacity': 0,
-    'zIndex': -1
-  });
+    setStyles(stickyElement.spacer, {
+      // 'width': stickyElement.elemWidth + 'px',
+      'height': stickyElement.elemHeight + 'px',
+      'display': getStyle(stickyElement.elem, 'display'),
+      'float': getStyle(stickyElement.elem, 'float'),
+      'pointerEvents': 'none',
+      'visibility': 'hidden',
+      'opacity': 0,
+      'zIndex': -1
+    });
 
-  // Insert spacer into DOM
-  insertBefore(stickyElement.spacer, stickyElement.elem);
+    // Insert spacer into DOM
+    insertBefore(stickyElement.spacer, stickyElement.elem);
+  }
 
   var whenToStick = stickyElement.containerTop - stickyElement.marginTop;
   
@@ -131,7 +148,7 @@ var onScroll = autoCurry(function onScroll_(stickyElement, scrollY) {
   }
 
   var newTop = scrollY + stickyElement.marginTop - stickyElement.containerTop;
-  var maxTop = stickyElement.containerHeight - stickyElement.elemHeight;
+  var maxTop = stickyElement.containerHeight - stickyElement.elemHeight - stickyElement.marginBottom;
 
   if (stickyElement.useTransform) {
     maxTop -= stickyElement.originalTop;
@@ -139,7 +156,7 @@ var onScroll = autoCurry(function onScroll_(stickyElement, scrollY) {
     newTop += stickyElement.originalTop;
   }
 
-  newTop = Math.min(newTop, maxTop);
+  newTop = Math.max(0, Math.min(newTop, maxTop));
 
   if (stickyElement.currentTop !== newTop) {
     if (stickyElement.useTransform) {
@@ -150,12 +167,6 @@ var onScroll = autoCurry(function onScroll_(stickyElement, scrollY) {
 
     stickyElement.currentTop = newTop;
   }
-});
-
-var onResize = autoCurry(function onResize_(stickyElement) {
-  resetPositions(stickyElement);
-  setupPositions(stickyElement);
-  onScroll(stickyElement, documentScrollY());
 });
 
 function fix(stickyElement) {

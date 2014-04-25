@@ -24,7 +24,7 @@
     }
 
     .list {
-      width: 45%;
+      width: 30%;
       float: left;
       position: relative;
     }
@@ -59,6 +59,22 @@
       float: left;
       width: 80%;
     }
+
+    #tableview3 .row {
+      overflow: hidden;
+    }
+
+    #tableview3 .headline {
+      position: absolute;
+      font-size: 30px;
+      text-align: center;
+      text-transform: uppercase;
+    }
+
+    #tableview3 .items {
+      padding-left: 20%;
+      width: 80%;
+    }
   </style>
 </head>
 <body>
@@ -66,6 +82,7 @@
   <div class="lists">
     <div id="tableview1" class="list"></div>
     <div id="tableview2" class="list"></div>
+    <div id="tableview3" class="list"></div>
   </div>
 
   <script id="letter-template" type="text/html">
@@ -93,6 +110,7 @@
       var header = document.getElementById('header');
       var container1 = document.getElementById('tableview1');
       var container2 = document.getElementById('tableview2');
+      var container3 = document.getElementById('tableview3');
 
       var letters = 'abcdefghijklmnopqrstuvwxyz'.split('');
       var template = document.getElementById('letter-template').innerText;
@@ -103,9 +121,10 @@
 
       container1.innerHTML = html.join('');
       container2.innerHTML = html.join('');
+      container3.innerHTML = html.join('');
 
       var headerHeight = header.getBoundingClientRect().height;
-      new StickyElementController(header, document.body, { zIndex: 20000 });
+      headerStick = new StickyElementController(header, document.body, { zIndex: 20000 });
 
       morlock.Util.forEach(function(container) {
         morlock.Util.forEach(function(elem) {
@@ -115,6 +134,7 @@
 
       morlock.enableJQuery();
       $('#tableview2 .row').morlockStickyElement('.label', { marginTop: headerHeight });
+      $('#tableview3 .row').morlockStickyElement('.headline', { marginTop: headerHeight });
     }
 
     start();
