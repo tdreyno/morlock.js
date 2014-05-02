@@ -40,7 +40,7 @@ define("morlock/controllers/element-visible-controller",
             callback(val);
           }
         }
-      }
+      };
 
       var enterStream = Stream.filter(equals('enter'), trackerStream);
       Stream.onValue(enterStream, partial(this.trigger, 'enter'));

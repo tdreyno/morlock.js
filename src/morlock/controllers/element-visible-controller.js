@@ -35,7 +35,7 @@ function ElementVisibleController(elem, options) {
         callback(val);
       }
     }
-  }
+  };
 
   var enterStream = Stream.filter(equals('enter'), trackerStream);
   Stream.onValue(enterStream, partial(this.trigger, 'enter'));
