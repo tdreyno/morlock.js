@@ -12,8 +12,8 @@
     "frags",
     "src",
     "test",
-    "vendor",
-    "debug.html"
+    "demos",
+    "vendor"
   ],
   "keywords": [
     "responsive",

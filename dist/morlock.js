@@ -1682,13 +1682,85 @@ define("morlock/streams/resize-stream",
       ];
     }
   });
+define("morlock/core/emitter", 
+  ["morlock/core/util","exports"],
+  function(__dependency1__, __exports__) {
+    
+    var partial = __dependency1__.partial;
+    var indexOf = __dependency1__.indexOf;
+
+    function Emitter() {
+      if (!(this instanceof Emitter)) {
+        return new Emitter();
+      }
+
+      this.callbacks = {};
+      this.callbackScopes = {};
+    }
+
+    function on(emitter, eventName, callback, scope) {
+      if (!emitter.callbacks[eventName]) {
+        emitter.callbacks[eventName] = [];
+      }
+
+      if (!emitter.callbackScopes[eventName]) {
+        emitter.callbackScopes[eventName] = [];
+      }
+
+      if (indexOf(emitter.callbacks[eventName], callback) === -1) {
+        emitter.callbacks[eventName].push(callback);
+        emitter.callbackScopes[eventName].push(scope);
+      }
+    }
+
+    function off(emitter, eventName, callback) {
+      if (!callback) {
+        emitter.callbacks[eventName] = [];
+        emitter.callbackScopes[eventName] = [];
+        return;
+      }
+
+      var idx = indexOf(emitter.callbacks[eventName], callback);
+
+      if (idx !== -1) {
+        emitter.callbacks[eventName].splice(idx, 1);
+        emitter.callbackScopes[eventName].splice(idx, 1);
+      }
+    }
+
+    function trigger(emitter, eventName, options) {
+      if (!emitter.callbacks[eventName]) { return; }
+
+      for (var i = 0; i < emitter.callbacks[eventName].length; i++) {
+        if (emitter.callbackScopes[eventName][i]) {
+          emitter.callbacks[eventName][i].call(emitter.callbackScopes[eventName][i], options);
+        } else {
+          emitter.callbacks[eventName][i](options);
+        }
+      }
+    }
+
+    function mixin(object) {
+      var emitter = new Emitter();
+
+      object.on = partial(on, emitter);
+      object.off = partial(off, emitter);
+      object.trigger = partial(trigger, emitter);
+
+      return object;
+    }
+
+    __exports__.mixin = mixin;
+  });
 define("morlock/controllers/resize-controller", 
-  ["morlock/core/util","morlock/core/stream","morlock/streams/resize-stream","exports"],
-  function(__dependency1__, __dependency2__, __dependency3__, __exports__) {
+  ["morlock/core/util","morlock/core/stream","morlock/streams/resize-stream","morlock/core/emitter","exports"],
+  function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __exports__) {
     
     var getOption = __dependency1__.getOption;
+    var partial = __dependency1__.partial;
     var Stream = __dependency2__;
     var ResizeStream = __dependency3__;
+    var Emitter = __dependency4__;
 
     /**
      * Provides a familiar OO-style API for tracking resize events.
@@ -1702,48 +1774,24 @@ define("morlock/controllers/resize-controller",
         return new ResizeController(options);
       }
 
+      Emitter.mixin(this);
+
       options = options || {};
 
       var resizeStream = ResizeStream.create(options);
+      Stream.onValue(resizeStream, partial(this.trigger, 'resize'));
 
       var debounceMs = getOption(options.debounceMs, 200);
       var resizeEndStream = debounceMs <= 0 ? resizeStream : Stream.debounce(
         debounceMs,
         resizeStream
       );
+      Stream.onValue(resizeEndStream, partial(this.trigger, 'resizeEnd'));
 
-      function onOffStream(args, f) {
-        var name = args[0];
-        var cb = args[1];
-
-        var filteredStream;
-        if (name === 'resizeEnd') {
-          filteredStream = resizeEndStream;
-        } else if (name === 'resize') {
-          filteredStream = resizeStream;
-        }
-
-        if (filteredStream) {
-          f(filteredStream, cb);
-        }
-      }
-
-      return {
-        on: function on(/* name, cb */) {
-          onOffStream(arguments, Stream.onValue);
-
-          return this;
-        },
-
-        off: function(/* name, cb */) {
-          onOffStream(arguments, Stream.offValue);
-
-          return this;
-        },
-
-        destroy: function() {
-          Stream.close(resizeStream);
-        }
+      this.destroy = function() {
+        Stream.close(resizeStream);
+        this.off('resize');
+        this.off('resizeEnd');
       };
     }
 
@@ -2405,17 +2453,17 @@ define("morlock/streams/breakpoint-stream",
     }
   });
 define("morlock/controllers/breakpoint-controller", 
-  ["morlock/core/util","morlock/core/stream","morlock/streams/breakpoint-stream","exports"],
-  function(__dependency1__, __dependency2__, __dependency3__, __exports__) {
+  ["morlock/core/util","morlock/core/stream","morlock/streams/breakpoint-stream","morlock/core/emitter","exports"],
+  function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __exports__) {
     
     var objectKeys = __dependency1__.objectKeys;
-    var first = __dependency1__.first;
     var compose = __dependency1__.compose;
     var isTrue = __dependency1__.isTrue;
     var select = __dependency1__.select;
     var get = __dependency1__.get;
     var Stream = __dependency2__;
     var BreakpointStream = __dependency3__;
+    var Emitter = __dependency4__;
 
     /**
      * Provides a familiar OO-style API for tracking breakpoint events.
@@ -2429,6 +2477,8 @@ define("morlock/controllers/breakpoint-controller",
         return new BreakpointController(options);
       }
 
+      Emitter.mixin(this);
+
       var breakpointStream = BreakpointStream.create(options.breakpoints, {
         throttleMs: options.throttleMs,
         debounceMs: options.debounceMs
@@ -2436,58 +2486,19 @@ define("morlock/controllers/breakpoint-controller",
 
       var activeBreakpoints = {};
 
-      if (breakpointStream) {
-        Stream.onValue(breakpointStream, function(e) {
-          activeBreakpoints[e[0]] = e[1];
-        });
-      }
+      var self = this;
+      Stream.onValue(breakpointStream, function(e) {
+        activeBreakpoints[e[0]] = e[1];
+
+        var namedState = e[1] ? 'enter' : 'exit';
+        self.trigger('breakpoint', [e[0], namedState]);
+        self.trigger('breakpoint:' + e[0], [e[0], namedState]);
+      });
 
       this.getActiveBreakpoints = function getActiveBreakpoints() {
         var isActive = compose(isTrue, get(activeBreakpoints));
         return select(isActive, objectKeys(activeBreakpoints));
       };
-
-      function onOffStream(args, f) {
-        var eventType = args[0];
-        var cb = args[1];
-
-        var filteredStream;
-
-        if (eventType.match(/^breakpoint/)) {
-          var parts = eventType.split(':');
-
-          if (parts.length > 1) {
-            filteredStream = Stream.filterFirst(parts[1], breakpointStream);
-          } else {
-            filteredStream = breakpointStream;
-          }
-
-          filteredStream = Stream.map(mapToNamedEvents_, filteredStream);
-        }
-
-        if (filteredStream) {
-          f(filteredStream, cb);
-        }
-      }
-
-      this.on = function on(/* name, cb */) {
-        onOffStream(arguments, Stream.onValue);
-
-        return this;
-      };
-
-      this.off = function(/* name, cb */) {
-        onOffStream(arguments, Stream.offValue);
-
-        return this;
-      };
-    }
-
-    var ENTER = 'enter';
-    var EXIT = 'exit';
-
-    function mapToNamedEvents_(v) {
-      return [first(v), v[1] ? ENTER : EXIT];
     }
 
     __exports__["default"] = BreakpointController;
@@ -2542,12 +2553,14 @@ define("morlock/streams/scroll-stream",
     __exports__.create = create;
   });
 define("morlock/controllers/scroll-controller", 
-  ["morlock/core/util","morlock/core/stream","morlock/streams/scroll-stream","exports"],
-  function(__dependency1__, __dependency2__, __dependency3__, __exports__) {
+  ["morlock/core/util","morlock/core/stream","morlock/streams/scroll-stream","morlock/core/emitter","exports"],
+  function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __exports__) {
     
     var getOption = __dependency1__.getOption;
+    var partial = __dependency1__.partial;
     var Stream = __dependency2__;
     var ScrollStream = __dependency3__;
+    var Emitter = __dependency4__;
 
     /**
      * Provides a familiar OO-style API for tracking scroll events.
@@ -2562,45 +2575,18 @@ define("morlock/controllers/scroll-controller",
         return new ScrollController(options);
       }
 
+      Emitter.mixin(this);
+
       options = options || {};
 
       var scrollStream = ScrollStream.create();
+      Stream.onValue(scrollStream, partial(this.trigger, 'scroll'));
 
-      var debounceMs = getOption(options.debounceMs, 200);
       var scrollEndStream = Stream.debounce(
-        debounceMs,
+        getOption(options.debounceMs, 200),
         scrollStream
       );
-
-      function onOffStream(args, f) {
-        var name = args[0];
-        var cb = args[1];
-
-        var filteredStream;
-        if (name === 'scrollEnd') {
-          filteredStream = scrollEndStream;
-        } else if (name === 'scroll') {
-          filteredStream = scrollStream;
-        }
-
-        if (filteredStream) {
-          f(filteredStream, cb);
-        }
-      }
-
-      return {
-        on: function on(/* name, cb */) {
-          onOffStream(arguments, Stream.onValue);
-
-          return this;
-        },
-
-        off: function(/* name, cb */) {
-          onOffStream(arguments, Stream.offValue);
-
-          return this;
-        }
-      };
+      Stream.onValue(scrollEndStream, partial(this.trigger, 'scrollEnd'));
     }
 
     __exports__["default"] = ScrollController;
@@ -2659,12 +2645,14 @@ define("morlock/streams/element-tracker-stream",
     __exports__.create = create;
   });
 define("morlock/controllers/element-visible-controller", 
-  ["morlock/core/util","morlock/core/stream","morlock/streams/element-tracker-stream","exports"],
-  function(__dependency1__, __dependency2__, __dependency3__, __exports__) {
+  ["morlock/core/util","morlock/core/stream","morlock/streams/element-tracker-stream","morlock/core/emitter","exports"],
+  function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __exports__) {
     
     var equals = __dependency1__.equals;
+    var partial = __dependency1__.partial;
     var Stream = __dependency2__;
     var ElementTrackerStream = __dependency3__;
+    var Emitter = __dependency4__;
 
     /**
      * Provides a familiar OO-style API for tracking element position.
@@ -2680,52 +2668,31 @@ define("morlock/controllers/element-visible-controller",
         return new ElementVisibleController(elem, options);
       }
 
+      Emitter.mixin(this);
+
       var trackerStream = ElementTrackerStream.create(elem, options);
+      Stream.onValue(trackerStream, partial(this.trigger, 'both'));
 
-      var enterStream = Stream.filter(equals('enter'), trackerStream);
-      var exitStream = Stream.filter(equals('exit'), trackerStream);
-
-      function onOffStream(args, f) {
-        var name = 'both';
-        var cb;
-
-        if (args.length === 1) {
-          cb = args[0];
-        } else {
-          name = args[0];
-          cb = args[1];
-        }
-
-        var filteredStream;
-        if (name === 'both') {
-          filteredStream = trackerStream;
-        } else if (name === 'enter') {
-          filteredStream = enterStream;
-        } else if (name === 'exit') {
-          filteredStream = exitStream;
-        }
-
-        f(filteredStream, cb);
+      // Auto trigger if the last value on the stream is what we're looking for.
+      var oldOn = this.on;
+      this.on = function wrappedOn(eventName, callback, scope) {
+        oldOn.apply(this, arguments);
         
         var val = Stream.getValue(trackerStream);
-        if ((f === Stream.onValue) && (val === name)) {
-          Stream.emit(filteredStream, val);
+        if (val === eventName) {
+          if (scope) {
+            callback.call(scope, val);
+          } else {
+            callback(val);
+          }
         }
       }
 
-      return {
-        on: function on(/* name, cb */) {
-          onOffStream(arguments, Stream.onValue);
+      var enterStream = Stream.filter(equals('enter'), trackerStream);
+      Stream.onValue(enterStream, partial(this.trigger, 'enter'));
 
-          return this;
-        },
-
-        off: function(/* name, cb */) {
-          onOffStream(arguments, Stream.offValue);
-
-          return this;
-        }
-      };
+      var exitStream = Stream.filter(equals('exit'), trackerStream);
+      Stream.onValue(exitStream, partial(this.trigger, 'exit'));
     }
 
     __exports__["default"] = ElementVisibleController;
@@ -2767,11 +2734,13 @@ define("morlock/streams/scroll-tracker-stream",
     __exports__.create = create;
   });
 define("morlock/controllers/scroll-position-controller", 
-  ["morlock/core/stream","morlock/streams/scroll-tracker-stream","exports"],
-  function(__dependency1__, __dependency2__, __exports__) {
+  ["morlock/core/util","morlock/core/stream","morlock/streams/scroll-tracker-stream","morlock/core/emitter","exports"],
+  function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __exports__) {
     
-    var Stream = __dependency1__;
-    var ScrollTrackerStream = __dependency2__;
+    var partial = __dependency1__.partial;
+    var Stream = __dependency2__;
+    var ScrollTrackerStream = __dependency3__;
+    var Emitter = __dependency4__;
 
     /**
      * Provides a familiar OO-style API for tracking scroll position.
@@ -2786,46 +2755,16 @@ define("morlock/controllers/scroll-position-controller",
         return new ScrollPositionController(targetScrollY);
       }
 
+      Emitter.mixin(this);
+
       var trackerStream = ScrollTrackerStream.create(targetScrollY);
+      Stream.onValue(trackerStream, partial(this.trigger, 'both'));
+
       var beforeStream = Stream.filterFirst('before', trackerStream);
+      Stream.onValue(beforeStream, partial(this.trigger, 'before'));
+
       var afterStream = Stream.filterFirst('after', trackerStream);
-
-      function onOffStream(args, f) {
-        var name = 'both';
-        var cb;
-
-        if (args.length === 1) {
-          cb = args[0];
-        } else {
-          name = args[0];
-          cb = args[1];
-        }
-
-        var filteredStream;
-        if (name === 'both') {
-          filteredStream = trackerStream;
-        } else if (name === 'before') {
-          filteredStream = beforeStream;
-        } else if (name === 'after') {
-          filteredStream = afterStream;
-        }
-
-        f(filteredStream, cb);
-      }
-
-      return {
-        on: function on(/* name, cb */) {
-          onOffStream(arguments, Stream.onValue);
-
-          return this;
-        },
-
-        off: function(/* name, cb */) {
-          onOffStream(arguments, Stream.offValue);
-
-          return this;
-        }
-      };
+      Stream.onValue(afterStream, partial(this.trigger, 'after'));
     }
 
     __exports__["default"] = ScrollPositionController;

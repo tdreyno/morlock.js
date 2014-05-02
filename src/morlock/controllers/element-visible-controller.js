@@ -1,6 +1,7 @@
-import { equals } from "morlock/core/util";
+import { equals, partial } from "morlock/core/util";
 module Stream from "morlock/core/stream";
 module ElementTrackerStream from "morlock/streams/element-tracker-stream";
+module Emitter from "morlock/core/emitter";
 
 /**
  * Provides a familiar OO-style API for tracking element position.
@@ -16,52 +17,31 @@ function ElementVisibleController(elem, options) {
     return new ElementVisibleController(elem, options);
   }
 
+  Emitter.mixin(this);
+
   var trackerStream = ElementTrackerStream.create(elem, options);
+  Stream.onValue(trackerStream, partial(this.trigger, 'both'));
 
-  var enterStream = Stream.filter(equals('enter'), trackerStream);
-  var exitStream = Stream.filter(equals('exit'), trackerStream);
-
-  function onOffStream(args, f) {
-    var name = 'both';
-    var cb;
-
-    if (args.length === 1) {
-      cb = args[0];
-    } else {
-      name = args[0];
-      cb = args[1];
-    }
-
-    var filteredStream;
-    if (name === 'both') {
-      filteredStream = trackerStream;
-    } else if (name === 'enter') {
-      filteredStream = enterStream;
-    } else if (name === 'exit') {
-      filteredStream = exitStream;
-    }
-
-    f(filteredStream, cb);
+  // Auto trigger if the last value on the stream is what we're looking for.
+  var oldOn = this.on;
+  this.on = function wrappedOn(eventName, callback, scope) {
+    oldOn.apply(this, arguments);
     
     var val = Stream.getValue(trackerStream);
-    if ((f === Stream.onValue) && (val === name)) {
-      Stream.emit(filteredStream, val);
+    if (val === eventName) {
+      if (scope) {
+        callback.call(scope, val);
+      } else {
+        callback(val);
+      }
     }
   }
 
-  return {
-    on: function on(/* name, cb */) {
-      onOffStream(arguments, Stream.onValue);
+  var enterStream = Stream.filter(equals('enter'), trackerStream);
+  Stream.onValue(enterStream, partial(this.trigger, 'enter'));
 
-      return this;
-    },
-
-    off: function(/* name, cb */) {
-      onOffStream(arguments, Stream.offValue);
-
-      return this;
-    }
-  };
+  var exitStream = Stream.filter(equals('exit'), trackerStream);
+  Stream.onValue(exitStream, partial(this.trigger, 'exit'));
 }
 
 export default = ElementVisibleController;

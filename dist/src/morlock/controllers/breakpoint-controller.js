@@ -1,15 +1,15 @@
 define("morlock/controllers/breakpoint-controller", 
-  ["morlock/core/util","morlock/core/stream","morlock/streams/breakpoint-stream","exports"],
-  function(__dependency1__, __dependency2__, __dependency3__, __exports__) {
+  ["morlock/core/util","morlock/core/stream","morlock/streams/breakpoint-stream","morlock/core/emitter","exports"],
+  function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __exports__) {
     "use strict";
     var objectKeys = __dependency1__.objectKeys;
-    var first = __dependency1__.first;
     var compose = __dependency1__.compose;
     var isTrue = __dependency1__.isTrue;
     var select = __dependency1__.select;
     var get = __dependency1__.get;
     var Stream = __dependency2__;
     var BreakpointStream = __dependency3__;
+    var Emitter = __dependency4__;
 
     /**
      * Provides a familiar OO-style API for tracking breakpoint events.
@@ -23,6 +23,8 @@ define("morlock/controllers/breakpoint-controller",
         return new BreakpointController(options);
       }
 
+      Emitter.mixin(this);
+
       var breakpointStream = BreakpointStream.create(options.breakpoints, {
         throttleMs: options.throttleMs,
         debounceMs: options.debounceMs
@@ -30,58 +32,19 @@ define("morlock/controllers/breakpoint-controller",
 
       var activeBreakpoints = {};
 
-      if (breakpointStream) {
-        Stream.onValue(breakpointStream, function(e) {
-          activeBreakpoints[e[0]] = e[1];
-        });
-      }
+      var self = this;
+      Stream.onValue(breakpointStream, function(e) {
+        activeBreakpoints[e[0]] = e[1];
+
+        var namedState = e[1] ? 'enter' : 'exit';
+        self.trigger('breakpoint', [e[0], namedState]);
+        self.trigger('breakpoint:' + e[0], [e[0], namedState]);
+      });
 
       this.getActiveBreakpoints = function getActiveBreakpoints() {
         var isActive = compose(isTrue, get(activeBreakpoints));
         return select(isActive, objectKeys(activeBreakpoints));
       };
-
-      function onOffStream(args, f) {
-        var eventType = args[0];
-        var cb = args[1];
-
-        var filteredStream;
-
-        if (eventType.match(/^breakpoint/)) {
-          var parts = eventType.split(':');
-
-          if (parts.length > 1) {
-            filteredStream = Stream.filterFirst(parts[1], breakpointStream);
-          } else {
-            filteredStream = breakpointStream;
-          }
-
-          filteredStream = Stream.map(mapToNamedEvents_, filteredStream);
-        }
-
-        if (filteredStream) {
-          f(filteredStream, cb);
-        }
-      }
-
-      this.on = function on(/* name, cb */) {
-        onOffStream(arguments, Stream.onValue);
-
-        return this;
-      };
-
-      this.off = function(/* name, cb */) {
-        onOffStream(arguments, Stream.offValue);
-
-        return this;
-      };
-    }
-
-    var ENTER = 'enter';
-    var EXIT = 'exit';
-
-    function mapToNamedEvents_(v) {
-      return [first(v), v[1] ? ENTER : EXIT];
     }
 
     __exports__["default"] = BreakpointController;

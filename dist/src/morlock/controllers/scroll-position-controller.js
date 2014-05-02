@@ -1,9 +1,11 @@
 define("morlock/controllers/scroll-position-controller", 
-  ["morlock/core/stream","morlock/streams/scroll-tracker-stream","exports"],
-  function(__dependency1__, __dependency2__, __exports__) {
+  ["morlock/core/util","morlock/core/stream","morlock/streams/scroll-tracker-stream","morlock/core/emitter","exports"],
+  function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __exports__) {
     "use strict";
-    var Stream = __dependency1__;
-    var ScrollTrackerStream = __dependency2__;
+    var partial = __dependency1__.partial;
+    var Stream = __dependency2__;
+    var ScrollTrackerStream = __dependency3__;
+    var Emitter = __dependency4__;
 
     /**
      * Provides a familiar OO-style API for tracking scroll position.
@@ -18,46 +20,16 @@ define("morlock/controllers/scroll-position-controller",
         return new ScrollPositionController(targetScrollY);
       }
 
+      Emitter.mixin(this);
+
       var trackerStream = ScrollTrackerStream.create(targetScrollY);
+      Stream.onValue(trackerStream, partial(this.trigger, 'both'));
+
       var beforeStream = Stream.filterFirst('before', trackerStream);
+      Stream.onValue(beforeStream, partial(this.trigger, 'before'));
+
       var afterStream = Stream.filterFirst('after', trackerStream);
-
-      function onOffStream(args, f) {
-        var name = 'both';
-        var cb;
-
-        if (args.length === 1) {
-          cb = args[0];
-        } else {
-          name = args[0];
-          cb = args[1];
-        }
-
-        var filteredStream;
-        if (name === 'both') {
-          filteredStream = trackerStream;
-        } else if (name === 'before') {
-          filteredStream = beforeStream;
-        } else if (name === 'after') {
-          filteredStream = afterStream;
-        }
-
-        f(filteredStream, cb);
-      }
-
-      return {
-        on: function on(/* name, cb */) {
-          onOffStream(arguments, Stream.onValue);
-
-          return this;
-        },
-
-        off: function(/* name, cb */) {
-          onOffStream(arguments, Stream.offValue);
-
-          return this;
-        }
-      };
+      Stream.onValue(afterStream, partial(this.trigger, 'after'));
     }
 
     __exports__["default"] = ScrollPositionController;

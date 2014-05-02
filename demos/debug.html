@@ -99,7 +99,9 @@
         var onAfter = function() {
           console.log('ONOFF: after 200');
         };
-        var observer = (new ScrollPositionController(200)).on('before', onBefore).on('after', onAfter);
+        var observer = new ScrollPositionController(200);
+        observer.on('before', onBefore);
+        observer.on('after', onAfter);
 
         // rc.on('resize', function() {
         //   observer.off('before', onBefore).off('after', onAfter);

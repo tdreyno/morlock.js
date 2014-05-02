@@ -1,6 +1,7 @@
-import { getOption } from "morlock/core/util";
+import { getOption, partial } from "morlock/core/util";
 module Stream from "morlock/core/stream";
 module ScrollStream from "morlock/streams/scroll-stream";
+module Emitter from "morlock/core/emitter";
 
 /**
  * Provides a familiar OO-style API for tracking scroll events.
@@ -15,45 +16,18 @@ function ScrollController(options) {
     return new ScrollController(options);
   }
 
+  Emitter.mixin(this);
+
   options = options || {};
 
   var scrollStream = ScrollStream.create();
+  Stream.onValue(scrollStream, partial(this.trigger, 'scroll'));
 
-  var debounceMs = getOption(options.debounceMs, 200);
   var scrollEndStream = Stream.debounce(
-    debounceMs,
+    getOption(options.debounceMs, 200),
     scrollStream
   );
-
-  function onOffStream(args, f) {
-    var name = args[0];
-    var cb = args[1];
-
-    var filteredStream;
-    if (name === 'scrollEnd') {
-      filteredStream = scrollEndStream;
-    } else if (name === 'scroll') {
-      filteredStream = scrollStream;
-    }
-
-    if (filteredStream) {
-      f(filteredStream, cb);
-    }
-  }
-
-  return {
-    on: function on(/* name, cb */) {
-      onOffStream(arguments, Stream.onValue);
-
-      return this;
-    },
-
-    off: function(/* name, cb */) {
-      onOffStream(arguments, Stream.offValue);
-
-      return this;
-    }
-  };
+  Stream.onValue(scrollEndStream, partial(this.trigger, 'scrollEnd'));
 }
 
 export default = ScrollController;

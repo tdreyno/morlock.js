@@ -1,6 +1,7 @@
-import { getOption } from "morlock/core/util";
+import { getOption, partial } from "morlock/core/util";
 module Stream from "morlock/core/stream";
 module ResizeStream from "morlock/streams/resize-stream";
+module Emitter from "morlock/core/emitter";
 
 /**
  * Provides a familiar OO-style API for tracking resize events.
@@ -14,48 +15,24 @@ function ResizeController(options) {
     return new ResizeController(options);
   }
 
+  Emitter.mixin(this);
+
   options = options || {};
 
   var resizeStream = ResizeStream.create(options);
+  Stream.onValue(resizeStream, partial(this.trigger, 'resize'));
 
   var debounceMs = getOption(options.debounceMs, 200);
   var resizeEndStream = debounceMs <= 0 ? resizeStream : Stream.debounce(
     debounceMs,
     resizeStream
   );
+  Stream.onValue(resizeEndStream, partial(this.trigger, 'resizeEnd'));
 
-  function onOffStream(args, f) {
-    var name = args[0];
-    var cb = args[1];
-
-    var filteredStream;
-    if (name === 'resizeEnd') {
-      filteredStream = resizeEndStream;
-    } else if (name === 'resize') {
-      filteredStream = resizeStream;
-    }
-
-    if (filteredStream) {
-      f(filteredStream, cb);
-    }
-  }
-
-  return {
-    on: function on(/* name, cb */) {
-      onOffStream(arguments, Stream.onValue);
-
-      return this;
-    },
-
-    off: function(/* name, cb */) {
-      onOffStream(arguments, Stream.offValue);
-
-      return this;
-    },
-
-    destroy: function() {
-      Stream.close(resizeStream);
-    }
+  this.destroy = function() {
+    Stream.close(resizeStream);
+    this.off('resize');
+    this.off('resizeEnd');
   };
 }
 

@@ -1,10 +1,12 @@
 define("morlock/controllers/scroll-controller", 
-  ["morlock/core/util","morlock/core/stream","morlock/streams/scroll-stream","exports"],
-  function(__dependency1__, __dependency2__, __dependency3__, __exports__) {
+  ["morlock/core/util","morlock/core/stream","morlock/streams/scroll-stream","morlock/core/emitter","exports"],
+  function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __exports__) {
     "use strict";
     var getOption = __dependency1__.getOption;
+    var partial = __dependency1__.partial;
     var Stream = __dependency2__;
     var ScrollStream = __dependency3__;
+    var Emitter = __dependency4__;
 
     /**
      * Provides a familiar OO-style API for tracking scroll events.
@@ -19,45 +21,18 @@ define("morlock/controllers/scroll-controller",
         return new ScrollController(options);
       }
 
+      Emitter.mixin(this);
+
       options = options || {};
 
       var scrollStream = ScrollStream.create();
+      Stream.onValue(scrollStream, partial(this.trigger, 'scroll'));
 
-      var debounceMs = getOption(options.debounceMs, 200);
       var scrollEndStream = Stream.debounce(
-        debounceMs,
+        getOption(options.debounceMs, 200),
         scrollStream
       );
-
-      function onOffStream(args, f) {
-        var name = args[0];
-        var cb = args[1];
-
-        var filteredStream;
-        if (name === 'scrollEnd') {
-          filteredStream = scrollEndStream;
-        } else if (name === 'scroll') {
-          filteredStream = scrollStream;
-        }
-
-        if (filteredStream) {
-          f(filteredStream, cb);
-        }
-      }
-
-      return {
-        on: function on(/* name, cb */) {
-          onOffStream(arguments, Stream.onValue);
-
-          return this;
-        },
-
-        off: function(/* name, cb */) {
-          onOffStream(arguments, Stream.offValue);
-
-          return this;
-        }
-      };
+      Stream.onValue(scrollEndStream, partial(this.trigger, 'scrollEnd'));
     }
 
     __exports__["default"] = ScrollController;
