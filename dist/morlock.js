@@ -2633,6 +2633,7 @@ define("morlock/controllers/element-visible-controller",
         top: 0
       };
 
+      this.recalculateOffsets();
       setTimeout(functionBind(this.recalculateOffsets, this), 100);
     }
 

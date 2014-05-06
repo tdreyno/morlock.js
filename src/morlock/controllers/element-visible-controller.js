@@ -49,6 +49,7 @@ function ElementVisibleController(elem, options) {
     top: 0
   };
 
+  this.recalculateOffsets();
   setTimeout(functionBind(this.recalculateOffsets, this), 100);
 }
 
