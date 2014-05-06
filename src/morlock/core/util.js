@@ -266,9 +266,9 @@ var get = autoCurry(function get_(obj, key) {
  * @param {String} key The key.
  * @param {String} v The value.
  */
-function set(obj, key, v) {
+var set = autoCurry(function set_(obj, key, v) {
   obj[key] = v;
-}
+});
 
 // function invoke(fName/*, args */) {
 //   var args = rest(arguments);

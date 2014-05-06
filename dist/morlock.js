@@ -716,9 +716,9 @@ define("morlock/core/util",
      * @param {String} key The key.
      * @param {String} v The value.
      */
-    function set(obj, key, v) {
+    var set = autoCurry(function set_(obj, key, v) {
       obj[key] = v;
-    }
+    });
 
     // function invoke(fName/*, args */) {
     //   var args = rest(arguments);
@@ -2203,11 +2203,8 @@ define("morlock/core/dom",
      * Calculate the rectangle of the element with an optional buffer.
      * @param {Element} elem The element.
      * @param {number} buffer An extra padding.
-     * @param {number} currentScrollY The known scrollY value.
      */
-    function getRect(elem, buffer, currentScrollY) {
-      buffer = typeof buffer == 'number' && buffer || 0;
-
+    function getRect(elem) {
       if (elem && !elem.nodeType) {
         elem = elem[0];
       }
@@ -2218,23 +2215,10 @@ define("morlock/core/dom",
       
       var bounds = elem.getBoundingClientRect();
 
-      if (!isDefined(currentScrollY)) {
-        currentScrollY = documentScrollY();
-      }
-
-      var topWithCeiling = (currentScrollY < 0) ? bounds.top + currentScrollY : bounds.top;
-      
-      var rect = {
-        right: bounds.right + buffer,
-        left: bounds.left - buffer,
-        bottom: bounds.bottom + buffer,
-        top: topWithCeiling - buffer
+      return {
+        height: bounds.bottom - bounds.top,
+        top: bounds.top
       };
-
-      rect.width = rect.right - rect.left;
-      rect.height = rect.bottom - rect.top;
-
-      return rect;
     }
 
     __exports__.getRect = getRect;var cssPrefix = memoize(CustomModernizr.prefixed);
@@ -2591,68 +2575,19 @@ define("morlock/controllers/scroll-controller",
 
     __exports__["default"] = ScrollController;
   });
-define("morlock/streams/element-tracker-stream", 
-  ["morlock/core/util","morlock/core/dom","morlock/core/stream","morlock/streams/scroll-stream","morlock/streams/resize-stream","exports"],
-  function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __dependency5__, __exports__) {
+define("morlock/controllers/element-visible-controller", 
+  ["morlock/core/util","morlock/core/dom","morlock/core/stream","morlock/core/emitter","morlock/controllers/scroll-controller","morlock/streams/resize-stream","exports"],
+  function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __dependency5__, __dependency6__, __exports__) {
     
     var getOption = __dependency1__.getOption;
+    var functionBind = __dependency1__.functionBind;
     var getRect = __dependency2__.getRect;
     var getViewportHeight = __dependency2__.getViewportHeight;
+    var documentScrollY = __dependency2__.documentScrollY;
     var Stream = __dependency3__;
-    var ScrollStream = __dependency4__;
-    var ResizeStream = __dependency5__;
-
-    /**
-     * Create a new Stream containing events which fire when an element has
-     * entered or exited the viewport.
-     * @param {Element} element The element we are tracking.
-     * @param {object} options Key/value options
-     * @return {Stream} The resulting stream.
-     */
-    function create(element, resizeStream, options) {
-      var trackerStream = Stream.create();
-      var viewportHeight;
-      var isVisible = false;
-
-      options = options || {};
-      var buffer = getOption(options.buffer, 0);
-
-      function updateViewport() {
-        viewportHeight = getViewportHeight();
-        didUpdateViewport();
-      }
-      
-      function didUpdateViewport(currentScrollY) {
-        var r = getRect(element, buffer, currentScrollY);
-        var inY = !!r && r.bottom >= 0 && r.top < viewportHeight;
-
-        if (isVisible && !inY) {
-          isVisible = false;
-          Stream.emit(trackerStream, 'exit');
-        } else if (!isVisible && inY) {
-          isVisible = true;
-          Stream.emit(trackerStream, 'enter');
-        }
-      }
-
-      Stream.onValue(ScrollStream.create(), didUpdateViewport);
-      Stream.onValue(ResizeStream.create(), updateViewport);
-      updateViewport();
-
-      return trackerStream;
-    }
-
-    __exports__.create = create;
-  });
-define("morlock/controllers/element-visible-controller", 
-  ["morlock/core/util","morlock/core/stream","morlock/streams/element-tracker-stream","morlock/core/emitter","exports"],
-  function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __exports__) {
-    
-    var equals = __dependency1__.equals;
-    var partial = __dependency1__.partial;
-    var Stream = __dependency2__;
-    var ElementTrackerStream = __dependency3__;
     var Emitter = __dependency4__;
+    var ScrollController = __dependency5__["default"];
+    var ResizeStream = __dependency6__;
 
     /**
      * Provides a familiar OO-style API for tracking element position.
@@ -2670,30 +2605,97 @@ define("morlock/controllers/element-visible-controller",
 
       Emitter.mixin(this);
 
-      var trackerStream = ElementTrackerStream.create(elem, options);
-      Stream.onValue(trackerStream, partial(this.trigger, 'both'));
+      options = options || {};
+
+      this.elem = elem;
+      this.buffer = getOption(options.buffer, 0);
+      this.isVisible = false;
+      this.rect = null;
 
       // Auto trigger if the last value on the stream is what we're looking for.
       var oldOn = this.on;
       this.on = function wrappedOn(eventName, callback, scope) {
         oldOn.apply(this, arguments);
         
-        var val = Stream.getValue(trackerStream);
-        if (val === eventName) {
-          if (scope) {
-            callback.call(scope, val);
-          } else {
-            callback(val);
-          }
+        if (('enter' === eventName) && this.isVisible) {
+          scope ? callback.call(scope) : callback();
         }
       };
 
-      var enterStream = Stream.filter(equals('enter'), trackerStream);
-      Stream.onValue(enterStream, partial(this.trigger, 'enter'));
+      var sc = new ScrollController();
+      sc.on('scroll', this.didScroll, this);
+      sc.on('scrollEnd', this.recalculatePosition, this);
 
-      var exitStream = Stream.filter(equals('exit'), trackerStream);
-      Stream.onValue(exitStream, partial(this.trigger, 'exit'));
+      Stream.onValue(ResizeStream.create(), functionBind(this.didResize, this));
+      
+      this.viewportRect = {
+        height: window.innerHeight,
+        top: 0
+      };
+
+      setTimeout(functionBind(this.recalculateOffsets, this), 100);
     }
+
+    ElementVisibleController.prototype.didResize = function() {
+      this.recalculateOffsets();
+    };
+
+    ElementVisibleController.prototype.didScroll = function() {
+      this.update();
+    };
+
+    ElementVisibleController.prototype.recalculateOffsets = function() {
+      this.viewportRect.height = getViewportHeight();
+      this.recalculatePosition();
+      this.update();
+    };
+
+    ElementVisibleController.prototype.recalculatePosition = function(currentScrollY) {
+      currentScrollY || (currentScrollY = documentScrollY());
+
+      this.rect = getRect(this.elem);
+      this.rect.top += currentScrollY;
+
+      this.rect.top -= this.buffer;
+      this.rect.height += (this.buffer * 2);
+    };
+
+    ElementVisibleController.prototype.update = function(currentScrollY) {
+      currentScrollY || (currentScrollY = documentScrollY());
+
+      this.viewportRect.top = currentScrollY;
+
+      var inY = this.intersects(this.viewportRect, this.rect);
+
+      if (this.isVisible && !inY) {
+        this.isVisible = false;
+        this.didExit();
+      } else if (!this.isVisible && inY) {
+        this.isVisible = true;
+        this.didEnter();
+      }
+    };
+
+    ElementVisibleController.prototype.intersects = function(a, b) {
+      // var aRight = a.left + a.width;
+      // var bRight = b.left + b.width;
+      var aBottom = a.top + a.height;
+      var bBottom = b.top + b.height;
+      return (/*a.left <= aBottom &&
+              b.left <= aRight &&*/
+              a.top <= bBottom &&
+              b.top <= aBottom);
+    };
+
+    ElementVisibleController.prototype.didEnter = function() {
+      this.trigger('enter');
+      this.trigger('both');
+    };
+
+    ElementVisibleController.prototype.didExit = function() {
+      this.trigger('exit');
+      this.trigger('both');
+    };
 
     __exports__["default"] = ElementVisibleController;
   });
@@ -2981,19 +2983,18 @@ define("morlock/controllers/sticky-element-controller",
     __exports__["default"] = StickyElementController;
   });
 define("morlock/core/responsive-image", 
-  ["morlock/core/util","morlock/core/dom","morlock/controllers/element-visible-controller","vendor/modernizr","exports"],
-  function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __exports__) {
+  ["morlock/core/util","morlock/core/dom","morlock/controllers/element-visible-controller","exports"],
+  function(__dependency1__, __dependency2__, __dependency3__, __exports__) {
     
     var map = __dependency1__.map;
     var mapObject = __dependency1__.mapObject;
-    var partial = __dependency1__.partial;
     var sortBy = __dependency1__.sortBy;
     var parseInteger = __dependency1__.parseInteger;
     var set = __dependency1__.set;
     var flip = __dependency1__.flip;
     var testMQ = __dependency2__.testMQ;
+    var setStyle = __dependency2__.setStyle;
     var ElementVisibleController = __dependency3__["default"];
-    var CustomModernizr = __dependency4__["default"];
 
     /**
      * Ghetto Record implementation.
@@ -3018,7 +3019,7 @@ define("morlock/core/responsive-image",
     function create(imageMap) {
       var image = new ResponsiveImage();
 
-      mapObject(flip(partial(set, image)), imageMap);
+      mapObject(flip(set(image)), imageMap);
 
       if (image.knownDimensions && image.preserveAspectRatio) {
         applyAspectRatioPadding(image);
@@ -3069,7 +3070,8 @@ define("morlock/core/responsive-image",
      * @param {ResponsiveImage} image The image data.
      */
     function applyAspectRatioPadding(image) {
-      image.element.style.paddingBottom = ((image.knownDimensions[1] / image.knownDimensions[0]) * 100.0) + '%';
+      var ratioPadding = (image.knownDimensions[1] / image.knownDimensions[0]) * 100.0;
+      setStyle(image.element, 'paddingBottom', ratioPadding + '%');
     }
 
     /**
@@ -3177,12 +3179,10 @@ define("morlock/core/responsive-image",
      * @param {Element} img Image element.
      */
     function setDivTag(image, img) {
-      image.element.style.backgroundImage = 'url(' + img.src + ')';
+      var setElemStyle = setStyle(image.element);
+      setElemStyle('backgroundImage', 'url(' + img.src + ')');
 
       if (image.preserveAspectRatio) {
-        var sizeVar = CustomModernizr.prefixed('backgroundSize');
-        image.element.style[sizeVar] = 'cover';
-
         var w, h;
 
         if (image.knownDimensions) {
@@ -3193,11 +3193,13 @@ define("morlock/core/responsive-image",
           h = img.height;
         }
 
+        setElemStyle('backgroundSize', 'cover');
+
         if (image.isFlexible) {
-          image.element.style.paddingBottom = ((h / w) * 100.0) + '%';
+          setElemStyle('paddingBottom', ((h / w) * 100.0) + '%');
         } else {
-          image.element.style.width = w + 'px';
-          image.element.style.height = h + 'px';
+          setElemStyle('width', w + 'px');
+          setElemStyle('height', h + 'px');
         }
       }
     }

@@ -1,7 +1,6 @@
-import { map, mapObject, partial, sortBy, parseInteger, set, flip } from "morlock/core/util";
-import { testMQ } from "morlock/core/dom";
+import { map, mapObject, sortBy, parseInteger, set, flip } from "morlock/core/util";
+import { testMQ, setStyle } from "morlock/core/dom";
 import ElementVisibleController from "morlock/controllers/element-visible-controller";
-import CustomModernizr from "vendor/modernizr";
 
 /**
  * Ghetto Record implementation.
@@ -26,7 +25,7 @@ function ResponsiveImage() {
 function create(imageMap) {
   var image = new ResponsiveImage();
 
-  mapObject(flip(partial(set, image)), imageMap);
+  mapObject(flip(set(image)), imageMap);
 
   if (image.knownDimensions && image.preserveAspectRatio) {
     applyAspectRatioPadding(image);
@@ -77,7 +76,8 @@ function createFromElement(element) {
  * @param {ResponsiveImage} image The image data.
  */
 function applyAspectRatioPadding(image) {
-  image.element.style.paddingBottom = ((image.knownDimensions[1] / image.knownDimensions[0]) * 100.0) + '%';
+  var ratioPadding = (image.knownDimensions[1] / image.knownDimensions[0]) * 100.0;
+  setStyle(image.element, 'paddingBottom', ratioPadding + '%');
 }
 
 /**
@@ -185,12 +185,10 @@ function setImageTag(image, img) {
  * @param {Element} img Image element.
  */
 function setDivTag(image, img) {
-  image.element.style.backgroundImage = 'url(' + img.src + ')';
+  var setElemStyle = setStyle(image.element);
+  setElemStyle('backgroundImage', 'url(' + img.src + ')');
 
   if (image.preserveAspectRatio) {
-    var sizeVar = CustomModernizr.prefixed('backgroundSize');
-    image.element.style[sizeVar] = 'cover';
-
     var w, h;
 
     if (image.knownDimensions) {
@@ -201,11 +199,13 @@ function setDivTag(image, img) {
       h = img.height;
     }
 
+    setElemStyle('backgroundSize', 'cover');
+
     if (image.isFlexible) {
-      image.element.style.paddingBottom = ((h / w) * 100.0) + '%';
+      setElemStyle('paddingBottom', ((h / w) * 100.0) + '%');
     } else {
-      image.element.style.width = w + 'px';
-      image.element.style.height = h + 'px';
+      setElemStyle('width', w + 'px');
+      setElemStyle('height', h + 'px');
     }
   }
 }

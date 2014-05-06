@@ -1,17 +1,16 @@
 define("morlock/core/responsive-image", 
-  ["morlock/core/util","morlock/core/dom","morlock/controllers/element-visible-controller","vendor/modernizr","exports"],
-  function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __exports__) {
+  ["morlock/core/util","morlock/core/dom","morlock/controllers/element-visible-controller","exports"],
+  function(__dependency1__, __dependency2__, __dependency3__, __exports__) {
     "use strict";
     var map = __dependency1__.map;
     var mapObject = __dependency1__.mapObject;
-    var partial = __dependency1__.partial;
     var sortBy = __dependency1__.sortBy;
     var parseInteger = __dependency1__.parseInteger;
     var set = __dependency1__.set;
     var flip = __dependency1__.flip;
     var testMQ = __dependency2__.testMQ;
+    var setStyle = __dependency2__.setStyle;
     var ElementVisibleController = __dependency3__["default"];
-    var CustomModernizr = __dependency4__["default"];
 
     /**
      * Ghetto Record implementation.
@@ -36,7 +35,7 @@ define("morlock/core/responsive-image",
     function create(imageMap) {
       var image = new ResponsiveImage();
 
-      mapObject(flip(partial(set, image)), imageMap);
+      mapObject(flip(set(image)), imageMap);
 
       if (image.knownDimensions && image.preserveAspectRatio) {
         applyAspectRatioPadding(image);
@@ -87,7 +86,8 @@ define("morlock/core/responsive-image",
      * @param {ResponsiveImage} image The image data.
      */
     function applyAspectRatioPadding(image) {
-      image.element.style.paddingBottom = ((image.knownDimensions[1] / image.knownDimensions[0]) * 100.0) + '%';
+      var ratioPadding = (image.knownDimensions[1] / image.knownDimensions[0]) * 100.0;
+      setStyle(image.element, 'paddingBottom', ratioPadding + '%');
     }
 
     /**
@@ -195,12 +195,10 @@ define("morlock/core/responsive-image",
      * @param {Element} img Image element.
      */
     function setDivTag(image, img) {
-      image.element.style.backgroundImage = 'url(' + img.src + ')';
+      var setElemStyle = setStyle(image.element);
+      setElemStyle('backgroundImage', 'url(' + img.src + ')');
 
       if (image.preserveAspectRatio) {
-        var sizeVar = CustomModernizr.prefixed('backgroundSize');
-        image.element.style[sizeVar] = 'cover';
-
         var w, h;
 
         if (image.knownDimensions) {
@@ -211,11 +209,13 @@ define("morlock/core/responsive-image",
           h = img.height;
         }
 
+        setElemStyle('backgroundSize', 'cover');
+
         if (image.isFlexible) {
-          image.element.style.paddingBottom = ((h / w) * 100.0) + '%';
+          setElemStyle('paddingBottom', ((h / w) * 100.0) + '%');
         } else {
-          image.element.style.width = w + 'px';
-          image.element.style.height = h + 'px';
+          setElemStyle('width', w + 'px');
+          setElemStyle('height', h + 'px');
         }
       }
     }

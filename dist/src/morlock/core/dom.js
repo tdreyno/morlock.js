@@ -60,11 +60,8 @@ define("morlock/core/dom",
      * Calculate the rectangle of the element with an optional buffer.
      * @param {Element} elem The element.
      * @param {number} buffer An extra padding.
-     * @param {number} currentScrollY The known scrollY value.
      */
-    function getRect(elem, buffer, currentScrollY) {
-      buffer = typeof buffer == 'number' && buffer || 0;
-
+    function getRect(elem) {
       if (elem && !elem.nodeType) {
         elem = elem[0];
       }
@@ -75,23 +72,10 @@ define("morlock/core/dom",
       
       var bounds = elem.getBoundingClientRect();
 
-      if (!isDefined(currentScrollY)) {
-        currentScrollY = documentScrollY();
-      }
-
-      var topWithCeiling = (currentScrollY < 0) ? bounds.top + currentScrollY : bounds.top;
-      
-      var rect = {
-        right: bounds.right + buffer,
-        left: bounds.left - buffer,
-        bottom: bounds.bottom + buffer,
-        top: topWithCeiling - buffer
+      return {
+        height: bounds.bottom - bounds.top,
+        top: bounds.top
       };
-
-      rect.width = rect.right - rect.left;
-      rect.height = rect.bottom - rect.top;
-
-      return rect;
     }
 
     __exports__.getRect = getRect;var cssPrefix = memoize(CustomModernizr.prefixed);
