@@ -3135,7 +3135,7 @@ define("morlock/core/responsive-image",
         return;
       }
 
-      imageMap.observer.recalculateOffsets();
+      image.observer.recalculateOffsets();
     }
 
     __exports__.recalculateOffsets = recalculateOffsets;/**
