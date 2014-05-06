@@ -1,4 +1,4 @@
-import { map, mapObject, sortBy, parseInteger, set, flip, getOption } from "morlock/core/util";
+import { map, mapObject, sortBy, parseInteger, set, flip, getOption, functionBind } from "morlock/core/util";
 import { testMQ, setStyle } from "morlock/core/dom";
 import ElementVisibleController from "morlock/controllers/element-visible-controller";
 
@@ -33,9 +33,10 @@ function create(imageMap) {
   }
 
   if (imageMap.lazyLoad) {
-    var observer = new ElementVisibleController(imageMap.element);
-    observer.on('enter', function onEnter_() {
-      observer.off('enter', onEnter_);
+    imageMap.observer = new ElementVisibleController(imageMap.element);
+
+    imageMap.observer.on('enter', function onEnter_() {
+      imageMap.observer.off('enter', onEnter_);
 
       image.lazyLoad = false;
       update(image, true);
@@ -130,6 +131,14 @@ function update(image) {
     image.currentBreakpoint = foundBreakpoint;
     loadImageForBreakpoint(image, image.currentBreakpoint);
   }
+}
+
+export function recalculateOffsets(image) {
+  if (!image.lazyLoad) {
+    return;
+  }
+
+  imageMap.observer.recalculateOffsets();
 }
 
 /**

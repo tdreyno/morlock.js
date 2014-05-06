@@ -9,6 +9,7 @@ define("morlock/core/responsive-image",
     var set = __dependency1__.set;
     var flip = __dependency1__.flip;
     var getOption = __dependency1__.getOption;
+    var functionBind = __dependency1__.functionBind;
     var testMQ = __dependency2__.testMQ;
     var setStyle = __dependency2__.setStyle;
     var ElementVisibleController = __dependency3__["default"];
@@ -44,9 +45,10 @@ define("morlock/core/responsive-image",
       }
 
       if (imageMap.lazyLoad) {
-        var observer = new ElementVisibleController(imageMap.element);
-        observer.on('enter', function onEnter_() {
-          observer.off('enter', onEnter_);
+        imageMap.observer = new ElementVisibleController(imageMap.element);
+
+        imageMap.observer.on('enter', function onEnter_() {
+          imageMap.observer.off('enter', onEnter_);
 
           image.lazyLoad = false;
           update(image, true);
@@ -143,7 +145,15 @@ define("morlock/core/responsive-image",
       }
     }
 
-    /**
+    function recalculateOffsets(image) {
+      if (!image.lazyLoad) {
+        return;
+      }
+
+      imageMap.observer.recalculateOffsets();
+    }
+
+    __exports__.recalculateOffsets = recalculateOffsets;/**
      * Load the requested image.
      * @param {ResponsiveImage} image The ResponsiveImage instance.
      * @param {String} s Filename.
