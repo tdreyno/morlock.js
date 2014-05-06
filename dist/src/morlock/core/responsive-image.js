@@ -9,7 +9,6 @@ define("morlock/core/responsive-image",
     var set = __dependency1__.set;
     var flip = __dependency1__.flip;
     var getOption = __dependency1__.getOption;
-    var functionBind = __dependency1__.functionBind;
     var testMQ = __dependency2__.testMQ;
     var setStyle = __dependency2__.setStyle;
     var ElementVisibleController = __dependency3__["default"];

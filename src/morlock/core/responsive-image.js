@@ -1,4 +1,4 @@
-import { map, mapObject, sortBy, parseInteger, set, flip, getOption, functionBind } from "morlock/core/util";
+import { map, mapObject, sortBy, parseInteger, set, flip, getOption } from "morlock/core/util";
 import { testMQ, setStyle } from "morlock/core/dom";
 import ElementVisibleController from "morlock/controllers/element-visible-controller";
 
