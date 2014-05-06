@@ -138,7 +138,7 @@ export function recalculateOffsets(image) {
     return;
   }
 
-  imageMap.observer.recalculateOffsets();
+  image.observer.recalculateOffsets();
 }
 
 /**
