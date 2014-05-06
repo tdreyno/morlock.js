@@ -1,4 +1,4 @@
-import { map, mapObject, sortBy, parseInteger, set, flip } from "morlock/core/util";
+import { map, mapObject, sortBy, parseInteger, set, flip, getOption } from "morlock/core/util";
 import { testMQ, setStyle } from "morlock/core/dom";
 import ElementVisibleController from "morlock/controllers/element-visible-controller";
 
@@ -24,6 +24,7 @@ function ResponsiveImage() {
 
 function create(imageMap) {
   var image = new ResponsiveImage();
+  image.getPath = getOption(imageMap.getPath, getPath);
 
   mapObject(flip(set(image)), imageMap);
 
@@ -44,8 +45,8 @@ function create(imageMap) {
   return image;
 }
 
-function createFromElement(element) {
-  var imageMap = {};
+function createFromElement(element, imageMap) {
+  imageMap || (imageMap = {});
   imageMap.element = element;
   imageMap.src = element.getAttribute('data-src');
 
@@ -143,20 +144,19 @@ function loadImageForBreakpoint(image, s) {
     setImage(image, alreadyLoaded);
   } else {
     var img = new Image();
-    var path = getPath(image, s);
-    
     img.onload = function() {
       image.loadedSizes[s] = img;
       setImage(image, img);
     };
 
+    // If requesting retina fails
     img.onerror = function() {
       if (image.hasRetina) {
-        img.src = path.replace('@2x', '');
+        img.src = image.getPath(image, s, false);
       }
     };
 
-    img.src = path;
+    img.src = image.getPath(image, s, image.hasRetina);
   }
 }
 
@@ -221,16 +221,18 @@ function setDivTag(image, img) {
 /**
  * Get the path for the image given the current breakpoints and
  * browser features.
+ * @param {ResponsiveImage} image The image data.
  * @param {String} s Requested path.
+ * @param {boolean} wantsRetina If we should look for retina.
  * @return {String} The resulting path.
  */
-function getPath(image, s) {
+function getPath(image, s, wantsRetina) {
   if (s === 0) { return image.src; }
 
   var parts = image.src.split('.');
   var ext = parts.pop();
 
-  return parts.join('.') + '-' + s + (image.hasRetina ? '@2x' : '') + '.' + ext;
+  return parts.join('.') + '-' + s + (wantsRetina ? '@2x' : '') + '.' + ext;
 }
 
 export { create, createFromElement, update };

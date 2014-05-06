@@ -2992,6 +2992,7 @@ define("morlock/core/responsive-image",
     var parseInteger = __dependency1__.parseInteger;
     var set = __dependency1__.set;
     var flip = __dependency1__.flip;
+    var getOption = __dependency1__.getOption;
     var testMQ = __dependency2__.testMQ;
     var setStyle = __dependency2__.setStyle;
     var ElementVisibleController = __dependency3__["default"];
@@ -3018,6 +3019,7 @@ define("morlock/core/responsive-image",
 
     function create(imageMap) {
       var image = new ResponsiveImage();
+      image.getPath = getOption(imageMap.getPath, getPath);
 
       mapObject(flip(set(image)), imageMap);
 
@@ -3038,8 +3040,8 @@ define("morlock/core/responsive-image",
       return image;
     }
 
-    function createFromElement(element) {
-      var imageMap = {};
+    function createFromElement(element, imageMap) {
+      imageMap || (imageMap = {});
       imageMap.element = element;
       imageMap.src = element.getAttribute('data-src');
 
@@ -3142,7 +3144,14 @@ define("morlock/core/responsive-image",
           setImage(image, img);
         };
 
-        img.src = getPath(image, s);
+        // If requesting retina fails
+        img.onerror = function() {
+          if (image.hasRetina) {
+            img.src = image.getPath(image, s, false);
+          }
+        };
+
+        img.src = image.getPath(image, s, image.hasRetina);
       }
     }
 
@@ -3207,16 +3216,18 @@ define("morlock/core/responsive-image",
     /**
      * Get the path for the image given the current breakpoints and
      * browser features.
+     * @param {ResponsiveImage} image The image data.
      * @param {String} s Requested path.
+     * @param {boolean} wantsRetina If we should look for retina.
      * @return {String} The resulting path.
      */
-    function getPath(image, s) {
+    function getPath(image, s, wantsRetina) {
       if (s === 0) { return image.src; }
 
       var parts = image.src.split('.');
       var ext = parts.pop();
 
-      return parts.join('.') + '-' + s + (image.hasRetina ? '@2x' : '') + '.' + ext;
+      return parts.join('.') + '-' + s + (wantsRetina ? '@2x' : '') + '.' + ext;
     }
 
     __exports__.create = create;
