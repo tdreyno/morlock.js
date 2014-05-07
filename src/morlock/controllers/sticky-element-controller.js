@@ -68,7 +68,8 @@ function resetPositions(stickyElement) {
     'width': '',
     'position': stickyElement.originalPosition,
     'left': '',
-    'top': stickyElement.originalOffsetTop
+    'top': stickyElement.originalOffsetTop,
+    'transform': stickyElement.originalTransform
   });
 }
 
@@ -81,6 +82,7 @@ function setupPositions(stickyElement) {
   stickyElement.originalZIndex = getStyle(stickyElement.elem, 'zIndex');
   stickyElement.originalPosition = getStyle(stickyElement.elem, 'position');
   stickyElement.originalOffsetTop = getStyle(stickyElement.elem, 'top');
+  stickyElement.originalTransform = getStyle(stickyElement.elem, 'transform');
 
   // Slow, avoid
   var dimensions = stickyElement.elem.getBoundingClientRect();
@@ -120,7 +122,7 @@ function setupPositions(stickyElement) {
   }
 
   var whenToStick = stickyElement.containerTop - stickyElement.marginTop;
-  
+
   stickyElement.onBeforeHandler_ || (stickyElement.onBeforeHandler_ = partial(unfix, stickyElement));
   stickyElement.onAfterHandler_ || (stickyElement.onAfterHandler_ = partial(fix, stickyElement));
 
