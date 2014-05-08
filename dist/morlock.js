@@ -2859,6 +2859,10 @@ define("morlock/controllers/sticky-element-controller",
         'left': '',
         'top': stickyElement.originalOffsetTop
       });
+
+      if (stickyElement.useTransform) {
+        setStyle(stickyElement.elem, 'transform', stickyElement.originalTransform);
+      }
     }
 
     function setupPositions(stickyElement) {
@@ -2870,6 +2874,10 @@ define("morlock/controllers/sticky-element-controller",
       stickyElement.originalZIndex = getStyle(stickyElement.elem, 'zIndex');
       stickyElement.originalPosition = getStyle(stickyElement.elem, 'position');
       stickyElement.originalOffsetTop = getStyle(stickyElement.elem, 'top');
+
+      if (stickyElement.useTransform) {
+        stickyElement.originalTransform = getStyle(stickyElement.elem, 'transform');
+      }
 
       // Slow, avoid
       var dimensions = stickyElement.elem.getBoundingClientRect();
