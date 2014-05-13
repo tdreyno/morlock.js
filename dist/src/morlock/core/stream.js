@@ -59,7 +59,11 @@ define("morlock/core/stream",
     var emit = autoCurry(function emit_(stream, val) {
       if (stream.closed) { return; }
 
-      mapArray(unary(partial(flippedCall, val)), stream.subscribers);
+      if (stream.subscribers) {
+        for (var i = 0; i < stream.subscribers.length; i++) {
+          stream.subscribers[i](val);
+        }
+      }
 
       pushBuffer(stream.values, val);
     });

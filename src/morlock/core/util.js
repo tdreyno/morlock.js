@@ -75,13 +75,13 @@ function throttle(f, delay) {
       timeoutId = null;
       previous = now;
 
-      apply(f, args);
+      f.apply(null, args);
     } else if (!timeoutId) {
       timeoutId = setTimeout(function() {
         previous = +(new Date());
         timeoutId = null;
 
-        apply(f, args);
+        f.apply(null, args);
       }, remaining);
     }
   };
@@ -102,7 +102,7 @@ function debounce(f, delay) {
 
     timeoutId = setTimeout(function() {
       timeoutId = null;
-      apply(f, lastArgs);
+      f.apply(null, lastArgs);
     }, delay);
   };
 }
@@ -131,7 +131,7 @@ function curry(fn) {
   var args = rest(arguments);
 
   return function curriedFunction_() {
-    return apply(fn, args.concat(copyArray(arguments)));
+    return fn.apply(null, args.concat(copyArray(arguments)));
   };
 }
 
@@ -143,14 +143,14 @@ export function autoCurry(fn, numArgs) {
       var newLength = numArgs - arguments.length;
       if (newLength > 0) {
         return autoCurry(
-          apply(curry, concat([fn], copyArray(arguments))),
+          curry.apply(null, concat([fn], copyArray(arguments))),
           newLength
         );
       } else {
-        return apply(curry, concat([fn], copyArray(arguments)));
+        return curry.apply(null, concat([fn], copyArray(arguments)));
       }
     } else {
-      return apply(fn, arguments);
+      return fn.apply(null, arguments);
     }
   };
 
@@ -270,13 +270,6 @@ var set = autoCurry(function set_(obj, key, v) {
   obj[key] = v;
 });
 
-// function invoke(fName/*, args */) {
-//   var args = rest(arguments);
-//   return function(obj) {
-//     return obj[fName].apply(obj, args);
-//   };
-// }
-
 /**
  * Reverse the order of arguments.
  * @param {function} f The original function.
@@ -284,7 +277,7 @@ var set = autoCurry(function set_(obj, key, v) {
  */
 function flip(f) {
   return function flippedFunction_() {
-    return apply(f, NATIVE_ARRAY_REVERSE.call(arguments));
+    return f.apply(null, NATIVE_ARRAY_REVERSE.call(arguments));
   };
 }
 
@@ -474,11 +467,11 @@ function when(truth, f) {
     var whatIsTruth = truth; // Do not mutate original var :(
 
     if ('function' === typeof truth) {
-      whatIsTruth = apply(truth, arguments);
+      whatIsTruth = truth.apply(null, arguments);
     }
 
     if (whatIsTruth) {
-      return apply(f, arguments);
+      return f.apply(null, arguments);
     }
   };
 }
@@ -536,7 +529,7 @@ function rest(arr, fromStart) {
 }
 
 function call(f /*, args */) {
-  return apply(f, rest(arguments));
+  return f.apply(null, rest(arguments));
 }
 
 export var flippedCall = flip(call);
@@ -602,7 +595,7 @@ function once(f /*, args*/) {
   return function onceExecute_() {
     if (!hasRun) {
       hasRun = true;
-      return apply(f, args);
+      return f.apply(null, args);
     }
   };
 }

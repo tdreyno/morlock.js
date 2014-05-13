@@ -64,8 +64,8 @@ define("morlock/controllers/element-visible-controller",
       this.recalculateOffsets();
     };
 
-    ElementVisibleController.prototype.didScroll = function() {
-      this.update();
+    ElementVisibleController.prototype.didScroll = function(currentScrollY) {
+      this.update(currentScrollY);
     };
 
     ElementVisibleController.prototype.recalculateOffsets = function() {

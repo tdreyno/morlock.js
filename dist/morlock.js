@@ -525,13 +525,13 @@ define("morlock/core/util",
           timeoutId = null;
           previous = now;
 
-          apply(f, args);
+          f.apply(null, args);
         } else if (!timeoutId) {
           timeoutId = setTimeout(function() {
             previous = +(new Date());
             timeoutId = null;
 
-            apply(f, args);
+            f.apply(null, args);
           }, remaining);
         }
       };
@@ -552,7 +552,7 @@ define("morlock/core/util",
 
         timeoutId = setTimeout(function() {
           timeoutId = null;
-          apply(f, lastArgs);
+          f.apply(null, lastArgs);
         }, delay);
       };
     }
@@ -581,7 +581,7 @@ define("morlock/core/util",
       var args = rest(arguments);
 
       return function curriedFunction_() {
-        return apply(fn, args.concat(copyArray(arguments)));
+        return fn.apply(null, args.concat(copyArray(arguments)));
       };
     }
 
@@ -593,14 +593,14 @@ define("morlock/core/util",
           var newLength = numArgs - arguments.length;
           if (newLength > 0) {
             return autoCurry(
-              apply(curry, concat([fn], copyArray(arguments))),
+              curry.apply(null, concat([fn], copyArray(arguments))),
               newLength
             );
           } else {
-            return apply(curry, concat([fn], copyArray(arguments)));
+            return curry.apply(null, concat([fn], copyArray(arguments)));
           }
         } else {
-          return apply(fn, arguments);
+          return fn.apply(null, arguments);
         }
       };
 
@@ -720,13 +720,6 @@ define("morlock/core/util",
       obj[key] = v;
     });
 
-    // function invoke(fName/*, args */) {
-    //   var args = rest(arguments);
-    //   return function(obj) {
-    //     return obj[fName].apply(obj, args);
-    //   };
-    // }
-
     /**
      * Reverse the order of arguments.
      * @param {function} f The original function.
@@ -734,7 +727,7 @@ define("morlock/core/util",
      */
     function flip(f) {
       return function flippedFunction_() {
-        return apply(f, NATIVE_ARRAY_REVERSE.call(arguments));
+        return f.apply(null, NATIVE_ARRAY_REVERSE.call(arguments));
       };
     }
 
@@ -924,11 +917,11 @@ define("morlock/core/util",
         var whatIsTruth = truth; // Do not mutate original var :(
 
         if ('function' === typeof truth) {
-          whatIsTruth = apply(truth, arguments);
+          whatIsTruth = truth.apply(null, arguments);
         }
 
         if (whatIsTruth) {
-          return apply(f, arguments);
+          return f.apply(null, arguments);
         }
       };
     }
@@ -986,7 +979,7 @@ define("morlock/core/util",
     }
 
     function call(f /*, args */) {
-      return apply(f, rest(arguments));
+      return f.apply(null, rest(arguments));
     }
 
     var flippedCall = flip(call);
@@ -1052,7 +1045,7 @@ define("morlock/core/util",
       return function onceExecute_() {
         if (!hasRun) {
           hasRun = true;
-          return apply(f, args);
+          return f.apply(null, args);
         }
       };
     }
@@ -1361,7 +1354,11 @@ define("morlock/core/stream",
     var emit = autoCurry(function emit_(stream, val) {
       if (stream.closed) { return; }
 
-      mapArray(unary(partial(flippedCall, val)), stream.subscribers);
+      if (stream.subscribers) {
+        for (var i = 0; i < stream.subscribers.length; i++) {
+          stream.subscribers[i](val);
+        }
+      }
 
       pushBuffer(stream.values, val);
     });
@@ -2641,8 +2638,8 @@ define("morlock/controllers/element-visible-controller",
       this.recalculateOffsets();
     };
 
-    ElementVisibleController.prototype.didScroll = function() {
-      this.update();
+    ElementVisibleController.prototype.didScroll = function(currentScrollY) {
+      this.update(currentScrollY);
     };
 
     ElementVisibleController.prototype.recalculateOffsets = function() {
