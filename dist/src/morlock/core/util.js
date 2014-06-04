@@ -295,8 +295,14 @@ define("morlock/core/util",
       return 'undefined' !== typeof val;
     }
 
-    __exports__.isDefined = isDefined;function getOption(val, defaultValue) {
-      return isDefined(val) ? val : defaultValue;
+    __exports__.isDefined = isDefined;function getOption(val, defaultValue, exec) {
+      if (isDefined(val)) {
+        return val;
+      } else if (exec) {
+        return defaultValue();
+      } else {
+        return defaultValue;
+      }
     }
 
     __exports__.getOption = getOption;function objectVals(obj) {

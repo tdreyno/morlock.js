@@ -80,10 +80,13 @@ define("morlock/controllers/sticky-element-controller",
 
       setStyles(stickyElement.elem, {
         'zIndex': stickyElement.originalZIndex,
-        'width': '',
+        'width': stickyElement.originalWidth,
+        'height': stickyElement.originalHeight,
         'position': stickyElement.originalPosition,
         'left': '',
-        'top': stickyElement.originalOffsetTop
+        'top': stickyElement.originalOffsetTop,
+        'overflow': stickyElement.originalOverflow,
+        'display': stickyElement.originalDisplay
       });
 
       if (stickyElement.useTransform) {
@@ -100,6 +103,10 @@ define("morlock/controllers/sticky-element-controller",
       stickyElement.originalZIndex = getStyle(stickyElement.elem, 'zIndex');
       stickyElement.originalPosition = getStyle(stickyElement.elem, 'position');
       stickyElement.originalOffsetTop = getStyle(stickyElement.elem, 'top');
+      stickyElement.originalWidth = getStyle(stickyElement.elem, 'width');
+      stickyElement.originalHeight = getStyle(stickyElement.elem, 'height');
+      stickyElement.originalDisplay = getStyle(stickyElement.elem, 'display');
+      stickyElement.originalOverflow = getStyle(stickyElement.elem, 'overflow');
 
       if (stickyElement.useTransform) {
         stickyElement.originalTransform = getStyle(stickyElement.elem, 'transform');
@@ -121,7 +128,10 @@ define("morlock/controllers/sticky-element-controller",
         'position': 'absolute',
         'top': stickyElement.originalTop + 'px',
         'left': stickyElement.elem.offsetLeft + 'px',
-        'width': stickyElement.elemWidth + 'px'
+        'width': stickyElement.elemWidth + 'px',
+        'height': stickyElement.elemHeight + 'px',
+        'overflow': 'hidden',
+        'display': 'block'
       });
 
       if (stickyElement.originalPosition !== 'absolute') {
@@ -183,7 +193,7 @@ define("morlock/controllers/sticky-element-controller",
 
       if (stickyElement.currentTop !== newTop) {
         if (stickyElement.useTransform) {
-          setStyle(stickyElement.elem, 'transform', 'translateY(' + newTop + 'px)');
+          setStyle(stickyElement.elem, 'transform', 'translate3d(0, ' + newTop + 'px, 0)');
         } else {
           setStyle(stickyElement.elem, 'top', newTop + 'px');
         }

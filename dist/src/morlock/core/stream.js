@@ -220,8 +220,8 @@ define("morlock/core/stream",
        */
       function sendEvent(t) {
         if (!rAFStream.closed) {
-          boundEmit(t);
           rAF(sendEvent);
+          boundEmit(t);
         }
       }
 

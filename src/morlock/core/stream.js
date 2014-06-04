@@ -204,8 +204,8 @@ var createFromRAF = memoize(function createFromRAF_() {
    */
   function sendEvent(t) {
     if (!rAFStream.closed) {
-      boundEmit(t);
       rAF(sendEvent);
+      boundEmit(t);
     }
   }
 

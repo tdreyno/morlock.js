@@ -74,7 +74,9 @@ define("morlock/core/dom",
 
       return {
         height: bounds.bottom - bounds.top,
-        top: bounds.top
+        width: bounds.right - bounds.left,
+        top: bounds.top,
+        left: bounds.left
       };
     }
 

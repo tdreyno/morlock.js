@@ -17,7 +17,7 @@
   <div style="height: 1000px;"></div>
   <div id="hi" style="height: 500px; background: red;"></div>
   <div style="height: 5000px;"></div>
-  <div class="js-responsive-image" data-src="../test/img/experience.jpg" data-hasRetina="true" data-breakpoints="320,768,1024" data-lazyload="true" data-preserveAspectRatio="true" data-knownDimensions="768x512"></div>
+  <img class="js-responsive-image" data-src="../test/img/experience.jpg" data-hasRetina="true" data-breakpoints="320,768,1024" data-lazyload="true" data-knownDimensions="768x512" width="100%">
   <script src="../dist/morlock.js"></script>
   <script>
     function start() {
@@ -54,6 +54,10 @@
       for (var i = 0; i < elems.length; i++) {
         responsiveImages.push(ResponsiveImage.createFromElement(elems[i]));
       }
+
+      responsiveImages[0].on('load', function(img) {
+        console.log('loaded responsive image', img);
+      });
 
       bc.on('breakpoint', function(e) {
         console.log('breakpoint', e);
