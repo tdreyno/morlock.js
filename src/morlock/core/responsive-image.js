@@ -33,11 +33,13 @@ function create(imageMap) {
     applyAspectRatioPadding(image);
   }
 
-  if (imageMap.lazyLoad) {
-    imageMap.observer = new ElementVisibleController(imageMap.element);
+  if (image.lazyLoad) {
+    image.observer = new ElementVisibleController(image.element);
 
-    imageMap.observer.on('enter', function onEnter_() {
-      imageMap.observer.off('enter', onEnter_);
+    image.observer.on('enter', function onEnter_() {
+      if (!image.checkIfVisible(image)) { return; }
+
+      image.observer.off('enter', onEnter_);
 
       image.lazyLoad = false;
       update(image);
@@ -64,7 +66,10 @@ function createFromElement(elem, options) {
     lazyLoad: getOption(options.lazyLoad, elem.getAttribute('data-lazyload') === 'true'),
     isFlexible: getOption(options.isFlexible, elem.getAttribute('data-isFlexible') !== 'false'),
     hasRetina: getOption(options.hasRetina, (elem.getAttribute('data-hasRetina') === 'true') && (window.devicePixelRatio > 1.5)),
-    preserveAspectRatio: getOption(options.preserveAspectRatio, elem.getAttribute('data-preserveAspectRatio') === 'true')
+    preserveAspectRatio: getOption(options.preserveAspectRatio, elem.getAttribute('data-preserveAspectRatio') === 'true'),
+    checkIfVisible: getOption(options.checkIfVisible, function(img) {
+      return true;
+    })
   };
 
   imageMap.knownDimensions = getOption(options.knownDimensions, function() {
@@ -147,7 +152,7 @@ function update(image) {
   }
 }
 
-export function recalculateOffsets(image) {
+export function checkVisibility(image) {
   if (!image.lazyLoad) {
     return;
   }
@@ -260,4 +265,4 @@ function getPath(image, s, wantsRetina) {
   return parts.join('.') + '-' + s + (wantsRetina ? '@2x' : '') + '.' + ext;
 }
 
-export { create, createFromElement, update };
+export { create, createFromElement, update, checkVisibility };

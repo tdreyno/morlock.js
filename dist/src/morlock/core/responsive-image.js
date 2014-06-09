@@ -45,11 +45,13 @@ define("morlock/core/responsive-image",
         applyAspectRatioPadding(image);
       }
 
-      if (imageMap.lazyLoad) {
-        imageMap.observer = new ElementVisibleController(imageMap.element);
+      if (image.lazyLoad) {
+        image.observer = new ElementVisibleController(image.element);
 
-        imageMap.observer.on('enter', function onEnter_() {
-          imageMap.observer.off('enter', onEnter_);
+        image.observer.on('enter', function onEnter_() {
+          if (!image.checkIfVisible(image)) { return; }
+
+          image.observer.off('enter', onEnter_);
 
           image.lazyLoad = false;
           update(image);
@@ -76,7 +78,10 @@ define("morlock/core/responsive-image",
         lazyLoad: getOption(options.lazyLoad, elem.getAttribute('data-lazyload') === 'true'),
         isFlexible: getOption(options.isFlexible, elem.getAttribute('data-isFlexible') !== 'false'),
         hasRetina: getOption(options.hasRetina, (elem.getAttribute('data-hasRetina') === 'true') && (window.devicePixelRatio > 1.5)),
-        preserveAspectRatio: getOption(options.preserveAspectRatio, elem.getAttribute('data-preserveAspectRatio') === 'true')
+        preserveAspectRatio: getOption(options.preserveAspectRatio, elem.getAttribute('data-preserveAspectRatio') === 'true'),
+        checkIfVisible: getOption(options.checkIfVisible, function(img) {
+          return true;
+        })
       };
 
       imageMap.knownDimensions = getOption(options.knownDimensions, function() {
@@ -159,7 +164,7 @@ define("morlock/core/responsive-image",
       }
     }
 
-    function recalculateOffsets(image) {
+    function checkVisibility(image) {
       if (!image.lazyLoad) {
         return;
       }
@@ -167,7 +172,7 @@ define("morlock/core/responsive-image",
       image.observer.recalculateOffsets();
     }
 
-    __exports__.recalculateOffsets = recalculateOffsets;/**
+    __exports__.checkVisibility = checkVisibility;/**
      * Load the requested image.
      * @param {ResponsiveImage} image The ResponsiveImage instance.
      * @param {String} s Filename.
@@ -275,4 +280,5 @@ define("morlock/core/responsive-image",
     __exports__.create = create;
     __exports__.createFromElement = createFromElement;
     __exports__.update = update;
+    __exports__.checkVisibility = checkVisibility;
   });

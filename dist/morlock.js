@@ -2653,7 +2653,7 @@ define("morlock/controllers/element-visible-controller",
     ElementVisibleController.prototype.recalculateOffsets = function() {
       this.viewportRect.height = getViewportHeight();
       this.recalculatePosition();
-      this.update();
+      this.update(null, true);
     };
 
     ElementVisibleController.prototype.recalculatePosition = function(currentScrollY) {
@@ -2666,17 +2666,20 @@ define("morlock/controllers/element-visible-controller",
       this.rect.height += (this.buffer * 2);
     };
 
-    ElementVisibleController.prototype.update = function(currentScrollY) {
+    ElementVisibleController.prototype.update = function(currentScrollY, ignoreCurrentVisibility) {
       currentScrollY || (currentScrollY = documentScrollY());
 
       this.viewportRect.top = currentScrollY;
 
       var inY = this.intersects(this.viewportRect, this.rect);
 
-      if (this.isVisible && !inY) {
+      var isVisible = ignoreCurrentVisibility ? true : this.isVisible;
+      var isNotVisible = ignoreCurrentVisibility ? true : !this.isVisible;
+
+      if (isVisible && !inY) {
         this.isVisible = false;
         this.didExit();
-      } else if (!this.isVisible && inY) {
+      } else if (isNotVisible && inY) {
         this.isVisible = true;
         this.didEnter();
       }
@@ -3053,11 +3056,13 @@ define("morlock/core/responsive-image",
         applyAspectRatioPadding(image);
       }
 
-      if (imageMap.lazyLoad) {
-        imageMap.observer = new ElementVisibleController(imageMap.element);
+      if (image.lazyLoad) {
+        image.observer = new ElementVisibleController(image.element);
 
-        imageMap.observer.on('enter', function onEnter_() {
-          imageMap.observer.off('enter', onEnter_);
+        image.observer.on('enter', function onEnter_() {
+          if (!image.checkIfVisible(image)) { return; }
+
+          image.observer.off('enter', onEnter_);
 
           image.lazyLoad = false;
           update(image);
@@ -3084,7 +3089,10 @@ define("morlock/core/responsive-image",
         lazyLoad: getOption(options.lazyLoad, elem.getAttribute('data-lazyload') === 'true'),
         isFlexible: getOption(options.isFlexible, elem.getAttribute('data-isFlexible') !== 'false'),
         hasRetina: getOption(options.hasRetina, (elem.getAttribute('data-hasRetina') === 'true') && (window.devicePixelRatio > 1.5)),
-        preserveAspectRatio: getOption(options.preserveAspectRatio, elem.getAttribute('data-preserveAspectRatio') === 'true')
+        preserveAspectRatio: getOption(options.preserveAspectRatio, elem.getAttribute('data-preserveAspectRatio') === 'true'),
+        checkIfVisible: getOption(options.checkIfVisible, function(img) {
+          return true;
+        })
       };
 
       imageMap.knownDimensions = getOption(options.knownDimensions, function() {
@@ -3167,7 +3175,7 @@ define("morlock/core/responsive-image",
       }
     }
 
-    function recalculateOffsets(image) {
+    function checkVisibility(image) {
       if (!image.lazyLoad) {
         return;
       }
@@ -3175,7 +3183,7 @@ define("morlock/core/responsive-image",
       image.observer.recalculateOffsets();
     }
 
-    __exports__.recalculateOffsets = recalculateOffsets;/**
+    __exports__.checkVisibility = checkVisibility;/**
      * Load the requested image.
      * @param {ResponsiveImage} image The ResponsiveImage instance.
      * @param {String} s Filename.
@@ -3283,6 +3291,7 @@ define("morlock/core/responsive-image",
     __exports__.create = create;
     __exports__.createFromElement = createFromElement;
     __exports__.update = update;
+    __exports__.checkVisibility = checkVisibility;
   });
 define("morlock/api", 
   ["morlock/controllers/resize-controller","morlock/controllers/breakpoint-controller","morlock/controllers/scroll-controller","morlock/controllers/element-visible-controller","morlock/controllers/scroll-position-controller","morlock/controllers/sticky-element-controller","morlock/core/util","morlock/core/events","morlock/core/buffer","morlock/core/stream","exports"],
