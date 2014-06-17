@@ -1,6 +1,6 @@
 {
   "name": "morlock",
-  "version": "0.1.6",
+  "version": "0.2.0",
   "description": "Low level libraries for responsive & interactive websites",
   "main": "dist/morlock.js",
   "dependencies": {},
