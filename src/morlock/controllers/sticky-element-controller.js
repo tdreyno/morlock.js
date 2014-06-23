@@ -26,6 +26,7 @@ function StickyElementController(elem, container, options) {
 
   options || (options = {});
 
+  this.positionType = getOption(options.positionType, 'absolute');
   this.zIndex = getOption(options.zIndex, 1000);
   this.marginTop = getOption(options.marginTop, 0);
   this.marginBottom = getOption(options.marginBottom, 0);
@@ -177,10 +178,14 @@ var onScroll = autoCurry(function onScroll_(stickyElement, scrollY) {
   newTop = Math.max(0, Math.min(newTop, maxTop));
 
   if (stickyElement.currentTop !== newTop) {
-    if (stickyElement.useTransform) {
-      setStyle(stickyElement.elem, 'transform', 'translate3d(0, ' + newTop + 'px, 0)');
+
+    if (stickyElement.positionType === 'fixed') {
     } else {
-      setStyle(stickyElement.elem, 'top', newTop + 'px');
+      if (stickyElement.useTransform) {
+        setStyle(stickyElement.elem, 'transform', 'translate3d(0, ' + newTop + 'px, 0)');
+      } else {
+        setStyle(stickyElement.elem, 'top', newTop + 'px');
+      }
     }
 
     stickyElement.currentTop = newTop;
@@ -192,6 +197,7 @@ function fix(stickyElement) {
 
   addClass(stickyElement.elem, 'fixed');
   setStyles(stickyElement.elem, {
+    'position': stickyElement.positionType,
     'zIndex': stickyElement.zIndex
   });
 
@@ -203,6 +209,7 @@ function unfix(stickyElement) {
 
   removeClass(stickyElement.elem, 'fixed');
   setStyles(stickyElement.elem, {
+    'position': 'absolute',
     'zIndex': stickyElement.originalZIndex,
     'top': stickyElement.originalTop
   });

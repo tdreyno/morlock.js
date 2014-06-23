@@ -2823,6 +2823,7 @@ define("morlock/controllers/sticky-element-controller",
 
       options || (options = {});
 
+      this.positionType = getOption(options.positionType, 'absolute');
       this.zIndex = getOption(options.zIndex, 1000);
       this.marginTop = getOption(options.marginTop, 0);
       this.marginBottom = getOption(options.marginBottom, 0);
@@ -2974,10 +2975,14 @@ define("morlock/controllers/sticky-element-controller",
       newTop = Math.max(0, Math.min(newTop, maxTop));
 
       if (stickyElement.currentTop !== newTop) {
-        if (stickyElement.useTransform) {
-          setStyle(stickyElement.elem, 'transform', 'translate3d(0, ' + newTop + 'px, 0)');
+
+        if (stickyElement.positionType === 'fixed') {
         } else {
-          setStyle(stickyElement.elem, 'top', newTop + 'px');
+          if (stickyElement.useTransform) {
+            setStyle(stickyElement.elem, 'transform', 'translate3d(0, ' + newTop + 'px, 0)');
+          } else {
+            setStyle(stickyElement.elem, 'top', newTop + 'px');
+          }
         }
 
         stickyElement.currentTop = newTop;
@@ -2989,6 +2994,7 @@ define("morlock/controllers/sticky-element-controller",
 
       addClass(stickyElement.elem, 'fixed');
       setStyles(stickyElement.elem, {
+        'position': stickyElement.positionType,
         'zIndex': stickyElement.zIndex
       });
 
@@ -3000,6 +3006,7 @@ define("morlock/controllers/sticky-element-controller",
 
       removeClass(stickyElement.elem, 'fixed');
       setStyles(stickyElement.elem, {
+        'position': 'absolute',
         'zIndex': stickyElement.originalZIndex,
         'top': stickyElement.originalTop
       });
