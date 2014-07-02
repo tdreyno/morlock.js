@@ -1,4 +1,5 @@
-import { getOption, autoCurry, partial, forEach, call, functionBind } from "morlock/core/util";
+import { getOption, autoCurry, partial, forEach, call,
+         functionBind, isFunction } from "morlock/core/util";
 import { getStyle, setStyle, setStyles, addClass, removeClass, insertBefore,
          documentScrollY, detachElement } from "morlock/core/dom";
 module Stream from "morlock/core/stream";
@@ -138,7 +139,7 @@ function setupPositions(stickyElement) {
     insertBefore(stickyElement.spacer, stickyElement.elem);
   }
 
-  var whenToStick = stickyElement.containerTop - stickyElement.marginTop;
+  var whenToStick = stickyElement.containerTop - evaluateOption(stickyElement, stickyElement.marginTop);
   
   stickyElement.onBeforeHandler_ || (stickyElement.onBeforeHandler_ = partial(unfix, stickyElement));
   stickyElement.onAfterHandler_ || (stickyElement.onAfterHandler_ = partial(fix, stickyElement));
@@ -166,8 +167,8 @@ var onScroll = autoCurry(function onScroll_(stickyElement, scrollY) {
     scrollY = 0;
   }
 
-  var newTop = scrollY + stickyElement.marginTop - stickyElement.containerTop;
-  var maxTop = stickyElement.containerHeight - stickyElement.elemHeight - stickyElement.marginBottom;
+  var newTop = scrollY + evaluateOption(stickyElement, stickyElement.marginTop) - stickyElement.containerTop;
+  var maxTop = stickyElement.containerHeight - stickyElement.elemHeight - evaluateOption(stickyElement, stickyElement.marginBottom);
 
   if (stickyElement.useTransform) {
     maxTop -= stickyElement.originalTop;
@@ -215,6 +216,14 @@ function unfix(stickyElement) {
   });
 
   stickyElement.fixed = false;
+}
+
+function evaluateOption(stickyElement, option) {
+  if (isFunction(option)) {
+    return option(stickyElement);
+  } else {
+    return option;
+  }
 }
 
 export default = StickyElementController;

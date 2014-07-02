@@ -464,7 +464,7 @@ define("morlock/core/util",
       return typeof obj === 'function';
     }
 
-    function has(obj, key) {
+    __exports__.isFunction = isFunction;function has(obj, key) {
       return hasOwnProperty.call(obj, key);
     }
 

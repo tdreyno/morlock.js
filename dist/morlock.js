@@ -910,7 +910,7 @@ define("morlock/core/util",
       return typeof obj === 'function';
     }
 
-    function has(obj, key) {
+    __exports__.isFunction = isFunction;function has(obj, key) {
       return hasOwnProperty.call(obj, key);
     }
 
@@ -2790,6 +2790,7 @@ define("morlock/controllers/sticky-element-controller",
     var forEach = __dependency1__.forEach;
     var call = __dependency1__.call;
     var functionBind = __dependency1__.functionBind;
+    var isFunction = __dependency1__.isFunction;
     var getStyle = __dependency2__.getStyle;
     var setStyle = __dependency2__.setStyle;
     var setStyles = __dependency2__.setStyles;
@@ -2935,7 +2936,7 @@ define("morlock/controllers/sticky-element-controller",
         insertBefore(stickyElement.spacer, stickyElement.elem);
       }
 
-      var whenToStick = stickyElement.containerTop - stickyElement.marginTop;
+      var whenToStick = stickyElement.containerTop - evaluateOption(stickyElement, stickyElement.marginTop);
       
       stickyElement.onBeforeHandler_ || (stickyElement.onBeforeHandler_ = partial(unfix, stickyElement));
       stickyElement.onAfterHandler_ || (stickyElement.onAfterHandler_ = partial(fix, stickyElement));
@@ -2963,8 +2964,8 @@ define("morlock/controllers/sticky-element-controller",
         scrollY = 0;
       }
 
-      var newTop = scrollY + stickyElement.marginTop - stickyElement.containerTop;
-      var maxTop = stickyElement.containerHeight - stickyElement.elemHeight - stickyElement.marginBottom;
+      var newTop = scrollY + evaluateOption(stickyElement, stickyElement.marginTop) - stickyElement.containerTop;
+      var maxTop = stickyElement.containerHeight - stickyElement.elemHeight - evaluateOption(stickyElement, stickyElement.marginBottom);
 
       if (stickyElement.useTransform) {
         maxTop -= stickyElement.originalTop;
@@ -3012,6 +3013,14 @@ define("morlock/controllers/sticky-element-controller",
       });
 
       stickyElement.fixed = false;
+    }
+
+    function evaluateOption(stickyElement, option) {
+      if (isFunction(option)) {
+        return option(stickyElement);
+      } else {
+        return option;
+      }
     }
 
     __exports__["default"] = StickyElementController;

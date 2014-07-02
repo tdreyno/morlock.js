@@ -456,7 +456,7 @@ function eq(a, b, aStack, bStack) {
   return result;
 }
 
-function isFunction(obj) {
+export function isFunction(obj) {
   return typeof obj === 'function';
 }
 
