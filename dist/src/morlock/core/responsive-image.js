@@ -1,6 +1,6 @@
 define("morlock/core/responsive-image", 
-  ["morlock/core/util","morlock/core/dom","morlock/controllers/element-visible-controller","morlock/core/emitter","exports"],
-  function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __exports__) {
+  ["morlock/core/util","morlock/core/dom","morlock/controllers/resize-controller","morlock/controllers/element-visible-controller","morlock/core/emitter","exports"],
+  function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __dependency5__, __exports__) {
     "use strict";
     var map = __dependency1__.map;
     var mapObject = __dependency1__.mapObject;
@@ -12,8 +12,9 @@ define("morlock/core/responsive-image",
     var partial = __dependency1__.partial;
     var setStyle = __dependency2__.setStyle;
     var getRect = __dependency2__.getRect;
-    var ElementVisibleController = __dependency3__["default"];
-    var Emitter = __dependency4__;
+    var ResizeController = __dependency3__["default"];
+    var ElementVisibleController = __dependency4__["default"];
+    var Emitter = __dependency5__;
 
     /**
      * Ghetto Record implementation.
@@ -79,7 +80,7 @@ define("morlock/core/responsive-image",
         isFlexible: getOption(options.isFlexible, elem.getAttribute('data-isFlexible') !== 'false'),
         hasRetina: getOption(options.hasRetina, (elem.getAttribute('data-hasRetina') === 'true') && (window.devicePixelRatio > 1.5)),
         preserveAspectRatio: getOption(options.preserveAspectRatio, elem.getAttribute('data-preserveAspectRatio') === 'true'),
-        checkIfVisible: getOption(options.checkIfVisible, function(img) {
+        checkIfVisible: getOption(options.checkIfVisible, function() {
           return true;
         })
       };

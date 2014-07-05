@@ -58,6 +58,7 @@ define("morlock/controllers/sticky-element-controller",
       ];
 
       setupPositions(this);
+      onScroll(this, documentScrollY());
     }
 
     StickyElementController.prototype.onResize = function() {
@@ -81,18 +82,18 @@ define("morlock/controllers/sticky-element-controller",
       detachElement(stickyElement.spacer);
 
       setStyles(stickyElement.elem, {
-        'zIndex': stickyElement.originalZIndex,
-        'width': stickyElement.originalWidth,
-        'height': stickyElement.originalHeight,
-        'position': stickyElement.originalPosition,
+        'zIndex': '',
+        'width': '',
+        'height': '',
+        'position': '',
         'left': '',
-        'top': stickyElement.originalOffsetTop,
-        'overflow': stickyElement.originalOverflow,
-        'display': stickyElement.originalDisplay
+        'top': '',
+        // 'overflow': '',
+        'display': ''
       });
 
       if (stickyElement.useTransform) {
-        setStyle(stickyElement.elem, 'transform', stickyElement.originalTransform);
+        setStyle(stickyElement.elem, 'transform', '');
       }
     }
 
@@ -108,7 +109,7 @@ define("morlock/controllers/sticky-element-controller",
       stickyElement.originalWidth = getStyle(stickyElement.elem, 'width');
       stickyElement.originalHeight = getStyle(stickyElement.elem, 'height');
       stickyElement.originalDisplay = getStyle(stickyElement.elem, 'display');
-      stickyElement.originalOverflow = getStyle(stickyElement.elem, 'overflow');
+      // stickyElement.originalOverflow = getStyle(stickyElement.elem, 'overflow');
 
       if (stickyElement.useTransform) {
         stickyElement.originalTransform = getStyle(stickyElement.elem, 'transform');
@@ -132,7 +133,7 @@ define("morlock/controllers/sticky-element-controller",
         'left': stickyElement.elem.offsetLeft + 'px',
         'width': stickyElement.elemWidth + 'px',
         'height': stickyElement.elemHeight + 'px',
-        'overflow': 'hidden',
+        // 'overflow': 'hidden',
         'display': 'block'
       });
 
@@ -195,8 +196,7 @@ define("morlock/controllers/sticky-element-controller",
 
       if (stickyElement.currentTop !== newTop) {
 
-        if (stickyElement.positionType === 'fixed') {
-        } else {
+        if (stickyElement.positionType !== 'fixed') {
           if (stickyElement.useTransform) {
             setStyle(stickyElement.elem, 'transform', 'translate3d(0, ' + newTop + 'px, 0)');
           } else {

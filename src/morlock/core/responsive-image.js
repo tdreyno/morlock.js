@@ -1,5 +1,6 @@
 import { map, mapObject, sortBy, parseInteger, set, flip, getOption, partial } from "morlock/core/util";
 import { setStyle, getRect } from "morlock/core/dom";
+import ResizeController from "morlock/controllers/resize-controller";
 import ElementVisibleController from "morlock/controllers/element-visible-controller";
 module Emitter from "morlock/core/emitter";
 
@@ -67,7 +68,7 @@ function createFromElement(elem, options) {
     isFlexible: getOption(options.isFlexible, elem.getAttribute('data-isFlexible') !== 'false'),
     hasRetina: getOption(options.hasRetina, (elem.getAttribute('data-hasRetina') === 'true') && (window.devicePixelRatio > 1.5)),
     preserveAspectRatio: getOption(options.preserveAspectRatio, elem.getAttribute('data-preserveAspectRatio') === 'true'),
-    checkIfVisible: getOption(options.checkIfVisible, function(img) {
+    checkIfVisible: getOption(options.checkIfVisible, function() {
       return true;
     })
   };
