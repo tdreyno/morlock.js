@@ -1,6 +1,7 @@
 import morlock from "morlock/api";
 import BreakpointController from "morlock/controllers/breakpoint-controller";
 import StickyElementController from "morlock/controllers/sticky-element-controller";
+module ResponsiveImage from "morlock/core/responsive-image";
 
 export function defineJQueryPlugins($) {
   $.fn.morlockResize = function(options) {

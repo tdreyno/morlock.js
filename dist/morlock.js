@@ -3443,12 +3443,13 @@ define("morlock/api",
     __exports__["default"] = morlock;
   });
 define("morlock/jquery", 
-  ["morlock/api","morlock/controllers/breakpoint-controller","morlock/controllers/sticky-element-controller","exports"],
-  function(__dependency1__, __dependency2__, __dependency3__, __exports__) {
+  ["morlock/api","morlock/controllers/breakpoint-controller","morlock/controllers/sticky-element-controller","morlock/core/responsive-image","exports"],
+  function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __exports__) {
     
     var morlock = __dependency1__["default"];
     var BreakpointController = __dependency2__["default"];
     var StickyElementController = __dependency3__["default"];
+    var ResponsiveImage = __dependency4__;
 
     function defineJQueryPlugins($) {
       $.fn.morlockResize = function(options) {
