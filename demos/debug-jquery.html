@@ -13,7 +13,7 @@
   </style>
 </head>
 <body>
-  <img class="js-responsive-image" data-src="test/img/experience.jpg" data-hasRetina="true" data-breakpoints="320,768,1024" width="100%">
+  <img class="js-responsive-image" data-src="../test/img/experience.jpg" data-hasRetina="true" data-breakpoints="320,768,1024" width="100%">
   <div style="height: 1000px;"></div>
   <div id="hi" style="height: 500px; background: red;"></div>
   <div style="height: 5000px;"></div>
@@ -40,11 +40,10 @@
       }
     });
 
-    // var responsiveImages = [];
-    // var elems = document.getElementsByClassName('js-responsive-image');
-    // for (var i = 0; i < elems.length; i++) {
-    //   responsiveImages.push(ResponsiveImage.createFromElement(elems[i]));
-    // }
+    var elems = document.getElementsByClassName('js-responsive-image');
+    $('.js-responsive-image').morlockResponsiveImage().on('load', function(img) {
+      console.log('loaded responsive image', img);
+    });
 
     $(window).on('morlockBreakpoint', function(e, b) {
       console.log('breakpoint', b);

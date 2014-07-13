@@ -99,6 +99,16 @@ define("morlock/jquery",
           });
         });
       };
+
+      $.fn.morlockResponsiveImage = function(options) {
+        return $(this).each(function() {
+          var container = this;
+          $(this).data(
+            'morlockResponsiveImageController',
+            ResponsiveImage.createFromElement(this, options)
+          );
+        });
+      };
     }
     __exports__.defineJQueryPlugins = defineJQueryPlugins;
   });
