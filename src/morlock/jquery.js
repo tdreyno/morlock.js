@@ -100,9 +100,16 @@ export function defineJQueryPlugins($) {
   $.fn.morlockResponsiveImage = function(options) {
     return $(this).each(function() {
       var container = this;
-      $(this).data(
+      var $this = $(this);
+
+      var controller = ResponsiveImage.createFromElement(this, options);
+      controller.on('load', function(img) {
+        $this.trigger('morlockResponsiveImageLoaded', img);
+      });
+
+      $this.data(
         'morlockResponsiveImageController',
-        ResponsiveImage.createFromElement(this, options)
+        controller
       );
     });
   };

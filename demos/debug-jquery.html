@@ -41,7 +41,7 @@
     });
 
     var elems = document.getElementsByClassName('js-responsive-image');
-    $('.js-responsive-image').morlockResponsiveImage().on('load', function(img) {
+    $('.js-responsive-image').morlockResponsiveImage().on('morlockResponsiveImageLoaded', function(img) {
       console.log('loaded responsive image', img);
     });
 
