@@ -50,11 +50,8 @@ export function documentScrollY() {
  * Calculate the rectangle of the element with an optional buffer.
  * @param {Element} elem The element.
  * @param {number} buffer An extra padding.
- * @param {number} currentScrollY The known scrollY value.
  */
-export function getRect(elem, buffer, currentScrollY) {
-  buffer = typeof buffer == 'number' && buffer || 0;
-
+export function getRect(elem) {
   if (elem && !elem.nodeType) {
     elem = elem[0];
   }
@@ -65,23 +62,12 @@ export function getRect(elem, buffer, currentScrollY) {
   
   var bounds = elem.getBoundingClientRect();
 
-  if (!isDefined(currentScrollY)) {
-    currentScrollY = documentScrollY();
-  }
-
-  var topWithCeiling = (currentScrollY < 0) ? bounds.top + currentScrollY : bounds.top;
-  
-  var rect = {
-    right: bounds.right + buffer,
-    left: bounds.left - buffer,
-    bottom: bounds.bottom + buffer,
-    top: topWithCeiling - buffer
+  return {
+    height: bounds.bottom - bounds.top,
+    width: bounds.right - bounds.left,
+    top: bounds.top,
+    left: bounds.left
   };
-
-  rect.width = rect.right - rect.left;
-  rect.height = rect.bottom - rect.top;
-
-  return rect;
 }
 
 export var cssPrefix = memoize(CustomModernizr.prefixed);

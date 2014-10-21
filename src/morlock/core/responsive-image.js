@@ -1,7 +1,8 @@
-import { map, mapObject, partial, sortBy, parseInteger, set, flip } from "morlock/core/util";
-import { testMQ } from "morlock/core/dom";
+import { map, mapObject, sortBy, parseInteger, set, flip, getOption, partial } from "morlock/core/util";
+import { setStyle, getRect } from "morlock/core/dom";
+import ResizeController from "morlock/controllers/resize-controller";
 import ElementVisibleController from "morlock/controllers/element-visible-controller";
-import CustomModernizr from "vendor/modernizr";
+module Emitter from "morlock/core/emitter";
 
 /**
  * Ghetto Record implementation.
@@ -25,45 +26,64 @@ function ResponsiveImage() {
 
 function create(imageMap) {
   var image = new ResponsiveImage();
+  image.getPath = getOption(imageMap.getPath, getPath);
 
-  mapObject(flip(partial(set, image)), imageMap);
+  mapObject(flip(set(image)), imageMap);
 
   if (image.knownDimensions && image.preserveAspectRatio) {
     applyAspectRatioPadding(image);
   }
 
-  if (imageMap.lazyLoad) {
-    var observer = new ElementVisibleController(imageMap.element);
-    observer.on('enter', function onEnter_() {
-      observer.off('enter', onEnter_);
+  if (image.lazyLoad) {
+    image.observer = new ElementVisibleController(image.element);
+
+    image.observer.on('enter', function onEnter_() {
+      if (!image.checkIfVisible(image)) { return; }
+
+      image.observer.off('enter', onEnter_);
 
       image.lazyLoad = false;
-      update(image, true);
+      update(image);
     });
   }
+
+  var controller = new ResizeController({
+    debounceMs: getOption(imageMap.debounceMs, 200)
+  });
+
+  controller.on('resizeEnd', partial(update, image));
+
+  Emitter.mixin(image);
 
   return image;
 }
 
-function createFromElement(element) {
-  var imageMap = {};
-  imageMap.element = element;
-  imageMap.src = element.getAttribute('data-src');
+function createFromElement(elem, options) {
+  options || (options = {});
 
-  imageMap.lazyLoad = element.getAttribute('data-lazyload') === 'true';
-  imageMap.isFlexible = element.getAttribute('data-isFlexible') !== 'false';
-  imageMap.hasRetina = (element.getAttribute('data-hasRetina') === 'true') && (window.devicePixelRatio > 1.5);
-  imageMap.preserveAspectRatio = element.getAttribute('data-preserveAspectRatio') === 'true';
+  var imageMap = {
+    element: elem,
+    src: getOption(options.src, elem.getAttribute('data-src')),
+    lazyLoad: getOption(options.lazyLoad, elem.getAttribute('data-lazyload') === 'true'),
+    isFlexible: getOption(options.isFlexible, elem.getAttribute('data-isFlexible') !== 'false'),
+    hasRetina: getOption(options.hasRetina, (elem.getAttribute('data-hasRetina') === 'true') && (window.devicePixelRatio > 1.5)),
+    preserveAspectRatio: getOption(options.preserveAspectRatio, elem.getAttribute('data-preserveAspectRatio') === 'true'),
+    checkIfVisible: getOption(options.checkIfVisible, function() {
+      return true;
+    })
+  };
 
-  var dimensionsString = element.getAttribute('data-knownDimensions');
-  if (dimensionsString && (dimensionsString !== 'false')) {
-    imageMap.knownDimensions = [
-      parseInteger(dimensionsString.split('x')[0]),
-      parseInteger(dimensionsString.split('x')[1])
-    ];
-  }
+  imageMap.knownDimensions = getOption(options.knownDimensions, function() {
+    var dimensionsString = elem.getAttribute('data-knownDimensions');
+    if (dimensionsString && (dimensionsString !== 'false')) {
+      return [
+        parseInteger(dimensionsString.split('x')[0]),
+        parseInteger(dimensionsString.split('x')[1])
+      ];
+    }
+  }, true);
 
-  imageMap.knownSizes = getBreakpointSizes(imageMap.element);
+  imageMap.knownSizes = getBreakpointSizes(elem);
 
   if (imageMap.knownDimensions && imageMap.preserveAspectRatio) {
     applyAspectRatioPadding(imageMap);
@@ -77,7 +97,8 @@ function createFromElement(element) {
  * @param {ResponsiveImage} image The image data.
  */
 function applyAspectRatioPadding(image) {
-  image.element.style.paddingBottom = ((image.knownDimensions[1] / image.knownDimensions[0]) * 100.0) + '%';
+  var ratioPadding = (image.knownDimensions[1] / image.knownDimensions[0]) * 100.0;
+  setStyle(image.element, 'paddingBottom', ratioPadding + '%');
 }
 
 /**
@@ -109,26 +130,35 @@ function update(image) {
     return;
   }
 
+  var rect = getRect(image.element);
   var foundBreakpoint;
 
   for (var i = 0; i < image.knownSizes.length; i++) {
     var s = image.knownSizes[i];
-    var mq = 'only screen and (max-width: ' + s + 'px)';
-    if (i === 0) {
-      mq = 'only screen';
-    }
 
-    if (testMQ(mq)) {
+    if (rect.width <= s) {
       foundBreakpoint = s;
     } else {
       break;
     }
   }
 
+  if (!foundBreakpoint) {
+    foundBreakpoint = image.knownSizes[0];
+  }
+
   if (foundBreakpoint !== image.currentBreakpoint) {
     image.currentBreakpoint = foundBreakpoint;
     loadImageForBreakpoint(image, image.currentBreakpoint);
   }
+}
+
+export function checkVisibility(image) {
+  if (!image.lazyLoad) {
+    return;
+  }
+
+  image.observer.recalculateOffsets();
 }
 
 /**
@@ -143,22 +173,22 @@ function loadImageForBreakpoint(image, s) {
     setImage(image, alreadyLoaded);
   } else {
     var img = new Image();
-    var path = getPath(image, s);
 
     img.onload = function() {
       image.loadedSizes[s] = img;
       setImage(image, img);
     };
 
+    // If requesting retina fails
     img.onerror = function() {
       if (image.hasRetina) {
-        img.src = path.replace('@2x', '');
+        img.src = image.getPath(image, s, false);
       } else {
         image.trigger('error', img);
       }
     };
 
-    img.src = path;
+    img.src = image.getPath(image, s, image.hasRetina);
   }
 }
 
@@ -174,6 +204,8 @@ function setImage(image, img) {
       image.element.className += ' loaded';
     }, 100);
   }
+
+  image.trigger('load', img);
 
   if (image.element.tagName.toLowerCase() === 'img') {
     return setImageTag(image, img);
@@ -195,12 +227,10 @@ function setImageTag(image, img) {
  * @param {Element} img Image element.
  */
 function setDivTag(image, img) {
-  image.element.style.backgroundImage = 'url(' + img.src + ')';
+  var setElemStyle = setStyle(image.element);
+  setElemStyle('backgroundImage', 'url(' + img.src + ')');
 
   if (image.preserveAspectRatio) {
-    var sizeVar = CustomModernizr.prefixed('backgroundSize');
-    image.element.style[sizeVar] = 'cover';
-
     var w, h;
 
     if (image.knownDimensions) {
@@ -211,11 +241,13 @@ function setDivTag(image, img) {
       h = img.height;
     }
 
+    setElemStyle('backgroundSize', 'cover');
+
     if (image.isFlexible) {
-      image.element.style.paddingBottom = ((h / w) * 100.0) + '%';
+      setElemStyle('paddingBottom', ((h / w) * 100.0) + '%');
     } else {
-      image.element.style.width = w + 'px';
-      image.element.style.height = h + 'px';
+      setElemStyle('width', w + 'px');
+      setElemStyle('height', h + 'px');
     }
   }
 }
@@ -223,16 +255,18 @@ function setDivTag(image, img) {
 /**
  * Get the path for the image given the current breakpoints and
  * browser features.
+ * @param {ResponsiveImage} image The image data.
  * @param {String} s Requested path.
+ * @param {boolean} wantsRetina If we should look for retina.
  * @return {String} The resulting path.
  */
-function getPath(image, s) {
+function getPath(image, s, wantsRetina) {
   if (s === 0) { return image.src; }
 
   var parts = image.src.split('.');
   var ext = parts.pop();
 
-  return parts.join('.') + '-' + s + (image.hasRetina ? '@2x' : '') + '.' + ext;
+  return parts.join('.') + '-' + s + (wantsRetina ? '@2x' : '') + '.' + ext;
 }
 
-export { create, createFromElement, update };
+export { create, createFromElement, update, checkVisibility };

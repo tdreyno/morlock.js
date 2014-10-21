@@ -124,7 +124,12 @@
       container3.innerHTML = html.join('');
 
       var headerHeight = header.getBoundingClientRect().height;
-      headerStick = new StickyElementController(header, document.body, { zIndex: 20000 });
+      headerStick = new StickyElementController(header, document.body, {
+        zIndex: 20000,
+        marginBottom: function() {
+          return $(document.body).height() - 500;
+        }
+      });
 
       morlock.Util.forEach(function(container) {
         morlock.Util.forEach(function(elem) {

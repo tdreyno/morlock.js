@@ -1,10 +1,11 @@
 define("morlock/jquery", 
-  ["morlock/api","morlock/controllers/breakpoint-controller","morlock/controllers/sticky-element-controller","exports"],
-  function(__dependency1__, __dependency2__, __dependency3__, __exports__) {
+  ["morlock/api","morlock/controllers/breakpoint-controller","morlock/controllers/sticky-element-controller","morlock/core/responsive-image","exports"],
+  function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __exports__) {
     "use strict";
     var morlock = __dependency1__["default"];
     var BreakpointController = __dependency2__["default"];
     var StickyElementController = __dependency3__["default"];
+    var ResponsiveImage = __dependency4__;
 
     function defineJQueryPlugins($) {
       $.fn.morlockResize = function(options) {
@@ -97,6 +98,23 @@ define("morlock/jquery",
               new StickyElementController(this, container, options)
             );
           });
+        });
+      };
+
+      $.fn.morlockResponsiveImage = function(options) {
+        return $(this).each(function() {
+          var container = this;
+          var $this = $(this);
+
+          var controller = ResponsiveImage.createFromElement(this, options);
+          controller.on('load', function(img) {
+            $this.trigger('morlockResponsiveImageLoaded', img);
+          });
+
+          $this.data(
+            'morlockResponsiveImageController',
+            controller
+          );
         });
       };
     }

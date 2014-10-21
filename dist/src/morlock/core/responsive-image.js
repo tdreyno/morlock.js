@@ -1,17 +1,20 @@
 define("morlock/core/responsive-image", 
-  ["morlock/core/util","morlock/core/dom","morlock/controllers/element-visible-controller","vendor/modernizr","exports"],
-  function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __exports__) {
+  ["morlock/core/util","morlock/core/dom","morlock/controllers/resize-controller","morlock/controllers/element-visible-controller","morlock/core/emitter","exports"],
+  function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __dependency5__, __exports__) {
     "use strict";
     var map = __dependency1__.map;
     var mapObject = __dependency1__.mapObject;
-    var partial = __dependency1__.partial;
     var sortBy = __dependency1__.sortBy;
     var parseInteger = __dependency1__.parseInteger;
     var set = __dependency1__.set;
     var flip = __dependency1__.flip;
-    var testMQ = __dependency2__.testMQ;
-    var ElementVisibleController = __dependency3__["default"];
-    var CustomModernizr = __dependency4__["default"];
+    var getOption = __dependency1__.getOption;
+    var partial = __dependency1__.partial;
+    var setStyle = __dependency2__.setStyle;
+    var getRect = __dependency2__.getRect;
+    var ResizeController = __dependency3__["default"];
+    var ElementVisibleController = __dependency4__["default"];
+    var Emitter = __dependency5__;
 
     /**
      * Ghetto Record implementation.
@@ -35,45 +38,64 @@ define("morlock/core/responsive-image",
 
     function create(imageMap) {
       var image = new ResponsiveImage();
+      image.getPath = getOption(imageMap.getPath, getPath);
 
-      mapObject(flip(partial(set, image)), imageMap);
+      mapObject(flip(set(image)), imageMap);
 
       if (image.knownDimensions && image.preserveAspectRatio) {
         applyAspectRatioPadding(image);
       }
 
-      if (imageMap.lazyLoad) {
-        var observer = new ElementVisibleController(imageMap.element);
-        observer.on('enter', function onEnter_() {
-          observer.off('enter', onEnter_);
+      if (image.lazyLoad) {
+        image.observer = new ElementVisibleController(image.element);
+
+        image.observer.on('enter', function onEnter_() {
+          if (!image.checkIfVisible(image)) { return; }
+
+          image.observer.off('enter', onEnter_);
 
           image.lazyLoad = false;
-          update(image, true);
+          update(image);
         });
       }
+
+      var controller = new ResizeController({
+        debounceMs: getOption(imageMap.debounceMs, 200)
+      });
+
+      controller.on('resizeEnd', partial(update, image));
+
+      Emitter.mixin(image);
 
       return image;
     }
 
-    function createFromElement(element) {
-      var imageMap = {};
-      imageMap.element = element;
-      imageMap.src = element.getAttribute('data-src');
+    function createFromElement(elem, options) {
+      options || (options = {});
 
-      imageMap.lazyLoad = element.getAttribute('data-lazyload') === 'true';
-      imageMap.isFlexible = element.getAttribute('data-isFlexible') !== 'false';
-      imageMap.hasRetina = (element.getAttribute('data-hasRetina') === 'true') && (window.devicePixelRatio > 1.5);
-      imageMap.preserveAspectRatio = element.getAttribute('data-preserveAspectRatio') === 'true';
+      var imageMap = {
+        element: elem,
+        src: getOption(options.src, elem.getAttribute('data-src')),
+        lazyLoad: getOption(options.lazyLoad, elem.getAttribute('data-lazyload') === 'true'),
+        isFlexible: getOption(options.isFlexible, elem.getAttribute('data-isFlexible') !== 'false'),
+        hasRetina: getOption(options.hasRetina, (elem.getAttribute('data-hasRetina') === 'true') && (window.devicePixelRatio > 1.5)),
+        preserveAspectRatio: getOption(options.preserveAspectRatio, elem.getAttribute('data-preserveAspectRatio') === 'true'),
+        checkIfVisible: getOption(options.checkIfVisible, function() {
+          return true;
+        })
+      };
 
-      var dimensionsString = element.getAttribute('data-knownDimensions');
-      if (dimensionsString && (dimensionsString !== 'false')) {
-        imageMap.knownDimensions = [
-          parseInteger(dimensionsString.split('x')[0]),
-          parseInteger(dimensionsString.split('x')[1])
-        ];
-      }
+      imageMap.knownDimensions = getOption(options.knownDimensions, function() {
+        var dimensionsString = elem.getAttribute('data-knownDimensions');
+        if (dimensionsString && (dimensionsString !== 'false')) {
+          return [
+            parseInteger(dimensionsString.split('x')[0]),
+            parseInteger(dimensionsString.split('x')[1])
+          ];
+        }
+      }, true);
 
-      imageMap.knownSizes = getBreakpointSizes(imageMap.element);
+      imageMap.knownSizes = getBreakpointSizes(elem);
 
       if (imageMap.knownDimensions && imageMap.preserveAspectRatio) {
         applyAspectRatioPadding(imageMap);
@@ -87,7 +109,8 @@ define("morlock/core/responsive-image",
      * @param {ResponsiveImage} image The image data.
      */
     function applyAspectRatioPadding(image) {
-      image.element.style.paddingBottom = ((image.knownDimensions[1] / image.knownDimensions[0]) * 100.0) + '%';
+      var ratioPadding = (image.knownDimensions[1] / image.knownDimensions[0]) * 100.0;
+      setStyle(image.element, 'paddingBottom', ratioPadding + '%');
     }
 
     /**
@@ -119,20 +142,21 @@ define("morlock/core/responsive-image",
         return;
       }
 
+      var rect = getRect(image.element);
       var foundBreakpoint;
 
       for (var i = 0; i < image.knownSizes.length; i++) {
         var s = image.knownSizes[i];
-        var mq = 'only screen and (max-width: ' + s + 'px)';
-        if (i === 0) {
-          mq = 'only screen';
-        }
 
-        if (testMQ(mq)) {
+        if (rect.width <= s) {
           foundBreakpoint = s;
         } else {
           break;
         }
+      }
+
+      if (!foundBreakpoint) {
+        foundBreakpoint = image.knownSizes[0];
       }
 
       if (foundBreakpoint !== image.currentBreakpoint) {
@@ -141,7 +165,15 @@ define("morlock/core/responsive-image",
       }
     }
 
-    /**
+    function checkVisibility(image) {
+      if (!image.lazyLoad) {
+        return;
+      }
+
+      image.observer.recalculateOffsets();
+    }
+
+    __exports__.checkVisibility = checkVisibility;/**
      * Load the requested image.
      * @param {ResponsiveImage} image The ResponsiveImage instance.
      * @param {String} s Filename.
@@ -153,22 +185,22 @@ define("morlock/core/responsive-image",
         setImage(image, alreadyLoaded);
       } else {
         var img = new Image();
-        var path = getPath(image, s);
 
         img.onload = function() {
           image.loadedSizes[s] = img;
           setImage(image, img);
         };
 
+        // If requesting retina fails
         img.onerror = function() {
           if (image.hasRetina) {
-            img.src = path.replace('@2x', '');
+            img.src = image.getPath(image, s, false);
           } else {
             image.trigger('error', img);
           }
         };
 
-        img.src = path;
+        img.src = image.getPath(image, s, image.hasRetina);
       }
     }
 
@@ -184,6 +216,8 @@ define("morlock/core/responsive-image",
           image.element.className += ' loaded';
         }, 100);
       }
+
+      image.trigger('load', img);
 
       if (image.element.tagName.toLowerCase() === 'img') {
         return setImageTag(image, img);
@@ -205,12 +239,10 @@ define("morlock/core/responsive-image",
      * @param {Element} img Image element.
      */
     function setDivTag(image, img) {
-      image.element.style.backgroundImage = 'url(' + img.src + ')';
+      var setElemStyle = setStyle(image.element);
+      setElemStyle('backgroundImage', 'url(' + img.src + ')');
 
       if (image.preserveAspectRatio) {
-        var sizeVar = CustomModernizr.prefixed('backgroundSize');
-        image.element.style[sizeVar] = 'cover';
-
         var w, h;
 
         if (image.knownDimensions) {
@@ -221,11 +253,13 @@ define("morlock/core/responsive-image",
           h = img.height;
         }
 
+        setElemStyle('backgroundSize', 'cover');
+
         if (image.isFlexible) {
-          image.element.style.paddingBottom = ((h / w) * 100.0) + '%';
+          setElemStyle('paddingBottom', ((h / w) * 100.0) + '%');
         } else {
-          image.element.style.width = w + 'px';
-          image.element.style.height = h + 'px';
+          setElemStyle('width', w + 'px');
+          setElemStyle('height', h + 'px');
         }
       }
     }
@@ -233,19 +267,22 @@ define("morlock/core/responsive-image",
     /**
      * Get the path for the image given the current breakpoints and
      * browser features.
+     * @param {ResponsiveImage} image The image data.
      * @param {String} s Requested path.
+     * @param {boolean} wantsRetina If we should look for retina.
      * @return {String} The resulting path.
      */
-    function getPath(image, s) {
+    function getPath(image, s, wantsRetina) {
       if (s === 0) { return image.src; }
 
       var parts = image.src.split('.');
       var ext = parts.pop();
 
-      return parts.join('.') + '-' + s + (image.hasRetina ? '@2x' : '') + '.' + ext;
+      return parts.join('.') + '-' + s + (wantsRetina ? '@2x' : '') + '.' + ext;
     }
 
     __exports__.create = create;
     __exports__.createFromElement = createFromElement;
     __exports__.update = update;
+    __exports__.checkVisibility = checkVisibility;
   });

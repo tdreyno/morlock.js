@@ -525,13 +525,13 @@ define("morlock/core/util",
           timeoutId = null;
           previous = now;
 
-          apply(f, args);
+          f.apply(null, args);
         } else if (!timeoutId) {
           timeoutId = setTimeout(function() {
             previous = +(new Date());
             timeoutId = null;
 
-            apply(f, args);
+            f.apply(null, args);
           }, remaining);
         }
       };
@@ -552,7 +552,7 @@ define("morlock/core/util",
 
         timeoutId = setTimeout(function() {
           timeoutId = null;
-          apply(f, lastArgs);
+          f.apply(null, lastArgs);
         }, delay);
       };
     }
@@ -581,7 +581,7 @@ define("morlock/core/util",
       var args = rest(arguments);
 
       return function curriedFunction_() {
-        return apply(fn, args.concat(copyArray(arguments)));
+        return fn.apply(null, args.concat(copyArray(arguments)));
       };
     }
 
@@ -593,14 +593,14 @@ define("morlock/core/util",
           var newLength = numArgs - arguments.length;
           if (newLength > 0) {
             return autoCurry(
-              apply(curry, concat([fn], copyArray(arguments))),
+              curry.apply(null, concat([fn], copyArray(arguments))),
               newLength
             );
           } else {
-            return apply(curry, concat([fn], copyArray(arguments)));
+            return curry.apply(null, concat([fn], copyArray(arguments)));
           }
         } else {
-          return apply(fn, arguments);
+          return fn.apply(null, arguments);
         }
       };
 
@@ -716,16 +716,9 @@ define("morlock/core/util",
      * @param {String} key The key.
      * @param {String} v The value.
      */
-    function set(obj, key, v) {
+    var set = autoCurry(function set_(obj, key, v) {
       obj[key] = v;
-    }
-
-    // function invoke(fName/*, args */) {
-    //   var args = rest(arguments);
-    //   return function(obj) {
-    //     return obj[fName].apply(obj, args);
-    //   };
-    // }
+    });
 
     /**
      * Reverse the order of arguments.
@@ -734,7 +727,7 @@ define("morlock/core/util",
      */
     function flip(f) {
       return function flippedFunction_() {
-        return apply(f, NATIVE_ARRAY_REVERSE.call(arguments));
+        return f.apply(null, NATIVE_ARRAY_REVERSE.call(arguments));
       };
     }
 
@@ -748,8 +741,14 @@ define("morlock/core/util",
       return 'undefined' !== typeof val;
     }
 
-    __exports__.isDefined = isDefined;function getOption(val, defaultValue) {
-      return isDefined(val) ? val : defaultValue;
+    __exports__.isDefined = isDefined;function getOption(val, defaultValue, exec) {
+      if (isDefined(val)) {
+        return val;
+      } else if (exec) {
+        return defaultValue();
+      } else {
+        return defaultValue;
+      }
     }
 
     __exports__.getOption = getOption;function objectVals(obj) {
@@ -911,7 +910,7 @@ define("morlock/core/util",
       return typeof obj === 'function';
     }
 
-    function has(obj, key) {
+    __exports__.isFunction = isFunction;function has(obj, key) {
       return hasOwnProperty.call(obj, key);
     }
 
@@ -924,11 +923,11 @@ define("morlock/core/util",
         var whatIsTruth = truth; // Do not mutate original var :(
 
         if ('function' === typeof truth) {
-          whatIsTruth = apply(truth, arguments);
+          whatIsTruth = truth.apply(null, arguments);
         }
 
         if (whatIsTruth) {
-          return apply(f, arguments);
+          return f.apply(null, arguments);
         }
       };
     }
@@ -986,7 +985,7 @@ define("morlock/core/util",
     }
 
     function call(f /*, args */) {
-      return apply(f, rest(arguments));
+      return f.apply(null, rest(arguments));
     }
 
     var flippedCall = flip(call);
@@ -1052,7 +1051,7 @@ define("morlock/core/util",
       return function onceExecute_() {
         if (!hasRun) {
           hasRun = true;
-          return apply(f, args);
+          return f.apply(null, args);
         }
       };
     }
@@ -1361,7 +1360,11 @@ define("morlock/core/stream",
     var emit = autoCurry(function emit_(stream, val) {
       if (stream.closed) { return; }
 
-      mapArray(unary(partial(flippedCall, val)), stream.subscribers);
+      if (stream.subscribers) {
+        for (var i = 0; i < stream.subscribers.length; i++) {
+          stream.subscribers[i](val);
+        }
+      }
 
       pushBuffer(stream.values, val);
     });
@@ -1518,8 +1521,8 @@ define("morlock/core/stream",
        */
       function sendEvent(t) {
         if (!rAFStream.closed) {
-          boundEmit(t);
           rAF(sendEvent);
+          boundEmit(t);
         }
       }
 
@@ -2203,11 +2206,8 @@ define("morlock/core/dom",
      * Calculate the rectangle of the element with an optional buffer.
      * @param {Element} elem The element.
      * @param {number} buffer An extra padding.
-     * @param {number} currentScrollY The known scrollY value.
      */
-    function getRect(elem, buffer, currentScrollY) {
-      buffer = typeof buffer == 'number' && buffer || 0;
-
+    function getRect(elem) {
       if (elem && !elem.nodeType) {
         elem = elem[0];
       }
@@ -2218,23 +2218,12 @@ define("morlock/core/dom",
       
       var bounds = elem.getBoundingClientRect();
 
-      if (!isDefined(currentScrollY)) {
-        currentScrollY = documentScrollY();
-      }
-
-      var topWithCeiling = (currentScrollY < 0) ? bounds.top + currentScrollY : bounds.top;
-      
-      var rect = {
-        right: bounds.right + buffer,
-        left: bounds.left - buffer,
-        bottom: bounds.bottom + buffer,
-        top: topWithCeiling - buffer
+      return {
+        height: bounds.bottom - bounds.top,
+        width: bounds.right - bounds.left,
+        top: bounds.top,
+        left: bounds.left
       };
-
-      rect.width = rect.right - rect.left;
-      rect.height = rect.bottom - rect.top;
-
-      return rect;
     }
 
     __exports__.getRect = getRect;var cssPrefix = memoize(CustomModernizr.prefixed);
@@ -2591,68 +2580,19 @@ define("morlock/controllers/scroll-controller",
 
     __exports__["default"] = ScrollController;
   });
-define("morlock/streams/element-tracker-stream", 
-  ["morlock/core/util","morlock/core/dom","morlock/core/stream","morlock/streams/scroll-stream","morlock/streams/resize-stream","exports"],
-  function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __dependency5__, __exports__) {
+define("morlock/controllers/element-visible-controller", 
+  ["morlock/core/util","morlock/core/dom","morlock/core/stream","morlock/core/emitter","morlock/controllers/scroll-controller","morlock/streams/resize-stream","exports"],
+  function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __dependency5__, __dependency6__, __exports__) {
     
     var getOption = __dependency1__.getOption;
+    var functionBind = __dependency1__.functionBind;
     var getRect = __dependency2__.getRect;
     var getViewportHeight = __dependency2__.getViewportHeight;
+    var documentScrollY = __dependency2__.documentScrollY;
     var Stream = __dependency3__;
-    var ScrollStream = __dependency4__;
-    var ResizeStream = __dependency5__;
-
-    /**
-     * Create a new Stream containing events which fire when an element has
-     * entered or exited the viewport.
-     * @param {Element} element The element we are tracking.
-     * @param {object} options Key/value options
-     * @return {Stream} The resulting stream.
-     */
-    function create(element, resizeStream, options) {
-      var trackerStream = Stream.create();
-      var viewportHeight;
-      var isVisible = false;
-
-      options = options || {};
-      var buffer = getOption(options.buffer, 0);
-
-      function updateViewport() {
-        viewportHeight = getViewportHeight();
-        didUpdateViewport();
-      }
-      
-      function didUpdateViewport(currentScrollY) {
-        var r = getRect(element, buffer, currentScrollY);
-        var inY = !!r && r.bottom >= 0 && r.top < viewportHeight;
-
-        if (isVisible && !inY) {
-          isVisible = false;
-          Stream.emit(trackerStream, 'exit');
-        } else if (!isVisible && inY) {
-          isVisible = true;
-          Stream.emit(trackerStream, 'enter');
-        }
-      }
-
-      Stream.onValue(ScrollStream.create(), didUpdateViewport);
-      Stream.onValue(ResizeStream.create(), updateViewport);
-      updateViewport();
-
-      return trackerStream;
-    }
-
-    __exports__.create = create;
-  });
-define("morlock/controllers/element-visible-controller", 
-  ["morlock/core/util","morlock/core/stream","morlock/streams/element-tracker-stream","morlock/core/emitter","exports"],
-  function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __exports__) {
-    
-    var equals = __dependency1__.equals;
-    var partial = __dependency1__.partial;
-    var Stream = __dependency2__;
-    var ElementTrackerStream = __dependency3__;
     var Emitter = __dependency4__;
+    var ScrollController = __dependency5__["default"];
+    var ResizeStream = __dependency6__;
 
     /**
      * Provides a familiar OO-style API for tracking element position.
@@ -2670,30 +2610,101 @@ define("morlock/controllers/element-visible-controller",
 
       Emitter.mixin(this);
 
-      var trackerStream = ElementTrackerStream.create(elem, options);
-      Stream.onValue(trackerStream, partial(this.trigger, 'both'));
+      options = options || {};
+
+      this.elem = elem;
+      this.buffer = getOption(options.buffer, 0);
+      this.isVisible = false;
+      this.rect = null;
 
       // Auto trigger if the last value on the stream is what we're looking for.
       var oldOn = this.on;
       this.on = function wrappedOn(eventName, callback, scope) {
         oldOn.apply(this, arguments);
         
-        var val = Stream.getValue(trackerStream);
-        if (val === eventName) {
-          if (scope) {
-            callback.call(scope, val);
-          } else {
-            callback(val);
-          }
+        if (('enter' === eventName) && this.isVisible) {
+          scope ? callback.call(scope) : callback();
         }
       };
 
-      var enterStream = Stream.filter(equals('enter'), trackerStream);
-      Stream.onValue(enterStream, partial(this.trigger, 'enter'));
+      var sc = new ScrollController();
+      sc.on('scroll', this.didScroll, this);
+      sc.on('scrollEnd', this.recalculatePosition, this);
 
-      var exitStream = Stream.filter(equals('exit'), trackerStream);
-      Stream.onValue(exitStream, partial(this.trigger, 'exit'));
+      Stream.onValue(ResizeStream.create(), functionBind(this.didResize, this));
+      
+      this.viewportRect = {
+        height: window.innerHeight,
+        top: 0
+      };
+
+      this.recalculateOffsets();
+      setTimeout(functionBind(this.recalculateOffsets, this), 100);
     }
+
+    ElementVisibleController.prototype.didResize = function() {
+      this.recalculateOffsets();
+    };
+
+    ElementVisibleController.prototype.didScroll = function(currentScrollY) {
+      this.update(currentScrollY);
+    };
+
+    ElementVisibleController.prototype.recalculateOffsets = function() {
+      this.viewportRect.height = getViewportHeight();
+      this.recalculatePosition();
+      this.update(null, true);
+    };
+
+    ElementVisibleController.prototype.recalculatePosition = function(currentScrollY) {
+      currentScrollY || (currentScrollY = documentScrollY());
+
+      this.rect = getRect(this.elem);
+      this.rect.top += currentScrollY;
+
+      this.rect.top -= this.buffer;
+      this.rect.height += (this.buffer * 2);
+    };
+
+    ElementVisibleController.prototype.update = function(currentScrollY, ignoreCurrentVisibility) {
+      currentScrollY || (currentScrollY = documentScrollY());
+
+      this.viewportRect.top = currentScrollY;
+
+      var inY = this.intersects(this.viewportRect, this.rect);
+
+      var isVisible = ignoreCurrentVisibility ? true : this.isVisible;
+      var isNotVisible = ignoreCurrentVisibility ? true : !this.isVisible;
+
+      if (isVisible && !inY) {
+        this.isVisible = false;
+        this.didExit();
+      } else if (isNotVisible && inY) {
+        this.isVisible = true;
+        this.didEnter();
+      }
+    };
+
+    ElementVisibleController.prototype.intersects = function(a, b) {
+      // var aRight = a.left + a.width;
+      // var bRight = b.left + b.width;
+      var aBottom = a.top + a.height;
+      var bBottom = b.top + b.height;
+      return (/*a.left <= aBottom &&
+              b.left <= aRight &&*/
+              a.top <= bBottom &&
+              b.top <= aBottom);
+    };
+
+    ElementVisibleController.prototype.didEnter = function() {
+      this.trigger('enter');
+      this.trigger('both');
+    };
+
+    ElementVisibleController.prototype.didExit = function() {
+      this.trigger('exit');
+      this.trigger('both');
+    };
 
     __exports__["default"] = ElementVisibleController;
   });
@@ -2779,6 +2790,7 @@ define("morlock/controllers/sticky-element-controller",
     var forEach = __dependency1__.forEach;
     var call = __dependency1__.call;
     var functionBind = __dependency1__.functionBind;
+    var isFunction = __dependency1__.isFunction;
     var getStyle = __dependency2__.getStyle;
     var setStyle = __dependency2__.setStyle;
     var setStyles = __dependency2__.setStyles;
@@ -2812,6 +2824,7 @@ define("morlock/controllers/sticky-element-controller",
 
       options || (options = {});
 
+      this.positionType = getOption(options.positionType, 'absolute');
       this.zIndex = getOption(options.zIndex, 1000);
       this.marginTop = getOption(options.marginTop, 0);
       this.marginBottom = getOption(options.marginBottom, 0);
@@ -2827,6 +2840,7 @@ define("morlock/controllers/sticky-element-controller",
       ];
 
       setupPositions(this);
+      onScroll(this, documentScrollY());
     }
 
     StickyElementController.prototype.onResize = function() {
@@ -2850,12 +2864,19 @@ define("morlock/controllers/sticky-element-controller",
       detachElement(stickyElement.spacer);
 
       setStyles(stickyElement.elem, {
-        'zIndex': stickyElement.originalZIndex,
+        'zIndex': '',
         'width': '',
-        'position': stickyElement.originalPosition,
+        'height': '',
+        'position': '',
         'left': '',
-        'top': stickyElement.originalOffsetTop
+        'top': '',
+        // 'overflow': '',
+        'display': ''
       });
+
+      if (stickyElement.useTransform) {
+        setStyle(stickyElement.elem, 'transform', '');
+      }
     }
 
     function setupPositions(stickyElement) {
@@ -2867,6 +2888,14 @@ define("morlock/controllers/sticky-element-controller",
       stickyElement.originalZIndex = getStyle(stickyElement.elem, 'zIndex');
       stickyElement.originalPosition = getStyle(stickyElement.elem, 'position');
       stickyElement.originalOffsetTop = getStyle(stickyElement.elem, 'top');
+      stickyElement.originalWidth = getStyle(stickyElement.elem, 'width');
+      stickyElement.originalHeight = getStyle(stickyElement.elem, 'height');
+      stickyElement.originalDisplay = getStyle(stickyElement.elem, 'display');
+      // stickyElement.originalOverflow = getStyle(stickyElement.elem, 'overflow');
+
+      if (stickyElement.useTransform) {
+        stickyElement.originalTransform = getStyle(stickyElement.elem, 'transform');
+      }
 
       // Slow, avoid
       var dimensions = stickyElement.elem.getBoundingClientRect();
@@ -2884,7 +2913,10 @@ define("morlock/controllers/sticky-element-controller",
         'position': 'absolute',
         'top': stickyElement.originalTop + 'px',
         'left': stickyElement.elem.offsetLeft + 'px',
-        'width': stickyElement.elemWidth + 'px'
+        'width': stickyElement.elemWidth + 'px',
+        'height': stickyElement.elemHeight + 'px',
+        // 'overflow': 'hidden',
+        'display': 'block'
       });
 
       if (stickyElement.originalPosition !== 'absolute') {
@@ -2905,7 +2937,7 @@ define("morlock/controllers/sticky-element-controller",
         insertBefore(stickyElement.spacer, stickyElement.elem);
       }
 
-      var whenToStick = stickyElement.containerTop - stickyElement.marginTop;
+      var whenToStick = stickyElement.containerTop - evaluateOption(stickyElement, stickyElement.marginTop);
       
       stickyElement.onBeforeHandler_ || (stickyElement.onBeforeHandler_ = partial(unfix, stickyElement));
       stickyElement.onAfterHandler_ || (stickyElement.onAfterHandler_ = partial(fix, stickyElement));
@@ -2933,8 +2965,8 @@ define("morlock/controllers/sticky-element-controller",
         scrollY = 0;
       }
 
-      var newTop = scrollY + stickyElement.marginTop - stickyElement.containerTop;
-      var maxTop = stickyElement.containerHeight - stickyElement.elemHeight - stickyElement.marginBottom;
+      var newTop = scrollY + evaluateOption(stickyElement, stickyElement.marginTop) - stickyElement.containerTop;
+      var maxTop = stickyElement.containerHeight - stickyElement.elemHeight - evaluateOption(stickyElement, stickyElement.marginBottom);
 
       if (stickyElement.useTransform) {
         maxTop -= stickyElement.originalTop;
@@ -2945,10 +2977,13 @@ define("morlock/controllers/sticky-element-controller",
       newTop = Math.max(0, Math.min(newTop, maxTop));
 
       if (stickyElement.currentTop !== newTop) {
-        if (stickyElement.useTransform) {
-          setStyle(stickyElement.elem, 'transform', 'translateY(' + newTop + 'px)');
-        } else {
-          setStyle(stickyElement.elem, 'top', newTop + 'px');
+
+        if (stickyElement.positionType !== 'fixed') {
+          if (stickyElement.useTransform) {
+            setStyle(stickyElement.elem, 'transform', 'translate3d(0, ' + newTop + 'px, 0)');
+          } else {
+            setStyle(stickyElement.elem, 'top', newTop + 'px');
+          }
         }
 
         stickyElement.currentTop = newTop;
@@ -2960,6 +2995,7 @@ define("morlock/controllers/sticky-element-controller",
 
       addClass(stickyElement.elem, 'fixed');
       setStyles(stickyElement.elem, {
+        'position': stickyElement.positionType,
         'zIndex': stickyElement.zIndex
       });
 
@@ -2971,6 +3007,7 @@ define("morlock/controllers/sticky-element-controller",
 
       removeClass(stickyElement.elem, 'fixed');
       setStyles(stickyElement.elem, {
+        'position': 'absolute',
         'zIndex': stickyElement.originalZIndex,
         'top': stickyElement.originalTop
       });
@@ -2978,22 +3015,33 @@ define("morlock/controllers/sticky-element-controller",
       stickyElement.fixed = false;
     }
 
+    function evaluateOption(stickyElement, option) {
+      if (isFunction(option)) {
+        return option(stickyElement);
+      } else {
+        return option;
+      }
+    }
+
     __exports__["default"] = StickyElementController;
   });
 define("morlock/core/responsive-image", 
-  ["morlock/core/util","morlock/core/dom","morlock/controllers/element-visible-controller","vendor/modernizr","exports"],
-  function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __exports__) {
+  ["morlock/core/util","morlock/core/dom","morlock/controllers/resize-controller","morlock/controllers/element-visible-controller","morlock/core/emitter","exports"],
+  function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __dependency5__, __exports__) {
     
     var map = __dependency1__.map;
     var mapObject = __dependency1__.mapObject;
-    var partial = __dependency1__.partial;
     var sortBy = __dependency1__.sortBy;
     var parseInteger = __dependency1__.parseInteger;
     var set = __dependency1__.set;
     var flip = __dependency1__.flip;
-    var testMQ = __dependency2__.testMQ;
-    var ElementVisibleController = __dependency3__["default"];
-    var CustomModernizr = __dependency4__["default"];
+    var getOption = __dependency1__.getOption;
+    var partial = __dependency1__.partial;
+    var setStyle = __dependency2__.setStyle;
+    var getRect = __dependency2__.getRect;
+    var ResizeController = __dependency3__["default"];
+    var ElementVisibleController = __dependency4__["default"];
+    var Emitter = __dependency5__;
 
     /**
      * Ghetto Record implementation.
@@ -3017,45 +3065,64 @@ define("morlock/core/responsive-image",
 
     function create(imageMap) {
       var image = new ResponsiveImage();
+      image.getPath = getOption(imageMap.getPath, getPath);
 
-      mapObject(flip(partial(set, image)), imageMap);
+      mapObject(flip(set(image)), imageMap);
 
       if (image.knownDimensions && image.preserveAspectRatio) {
         applyAspectRatioPadding(image);
       }
 
-      if (imageMap.lazyLoad) {
-        var observer = new ElementVisibleController(imageMap.element);
-        observer.on('enter', function onEnter_() {
-          observer.off('enter', onEnter_);
+      if (image.lazyLoad) {
+        image.observer = new ElementVisibleController(image.element);
+
+        image.observer.on('enter', function onEnter_() {
+          if (!image.checkIfVisible(image)) { return; }
+
+          image.observer.off('enter', onEnter_);
 
           image.lazyLoad = false;
-          update(image, true);
+          update(image);
         });
       }
+
+      var controller = new ResizeController({
+        debounceMs: getOption(imageMap.debounceMs, 200)
+      });
+
+      controller.on('resizeEnd', partial(update, image));
+
+      Emitter.mixin(image);
 
       return image;
     }
 
-    function createFromElement(element) {
-      var imageMap = {};
-      imageMap.element = element;
-      imageMap.src = element.getAttribute('data-src');
+    function createFromElement(elem, options) {
+      options || (options = {});
 
-      imageMap.lazyLoad = element.getAttribute('data-lazyload') === 'true';
-      imageMap.isFlexible = element.getAttribute('data-isFlexible') !== 'false';
-      imageMap.hasRetina = (element.getAttribute('data-hasRetina') === 'true') && (window.devicePixelRatio > 1.5);
-      imageMap.preserveAspectRatio = element.getAttribute('data-preserveAspectRatio') === 'true';
+      var imageMap = {
+        element: elem,
+        src: getOption(options.src, elem.getAttribute('data-src')),
+        lazyLoad: getOption(options.lazyLoad, elem.getAttribute('data-lazyload') === 'true'),
+        isFlexible: getOption(options.isFlexible, elem.getAttribute('data-isFlexible') !== 'false'),
+        hasRetina: getOption(options.hasRetina, (elem.getAttribute('data-hasRetina') === 'true') && (window.devicePixelRatio > 1.5)),
+        preserveAspectRatio: getOption(options.preserveAspectRatio, elem.getAttribute('data-preserveAspectRatio') === 'true'),
+        checkIfVisible: getOption(options.checkIfVisible, function() {
+          return true;
+        })
+      };
 
-      var dimensionsString = element.getAttribute('data-knownDimensions');
-      if (dimensionsString && (dimensionsString !== 'false')) {
-        imageMap.knownDimensions = [
-          parseInteger(dimensionsString.split('x')[0]),
-          parseInteger(dimensionsString.split('x')[1])
-        ];
-      }
+      imageMap.knownDimensions = getOption(options.knownDimensions, function() {
+        var dimensionsString = elem.getAttribute('data-knownDimensions');
+        if (dimensionsString && (dimensionsString !== 'false')) {
+          return [
+            parseInteger(dimensionsString.split('x')[0]),
+            parseInteger(dimensionsString.split('x')[1])
+          ];
+        }
+      }, true);
 
-      imageMap.knownSizes = getBreakpointSizes(imageMap.element);
+      imageMap.knownSizes = getBreakpointSizes(elem);
 
       if (imageMap.knownDimensions && imageMap.preserveAspectRatio) {
         applyAspectRatioPadding(imageMap);
@@ -3069,7 +3136,8 @@ define("morlock/core/responsive-image",
      * @param {ResponsiveImage} image The image data.
      */
     function applyAspectRatioPadding(image) {
-      image.element.style.paddingBottom = ((image.knownDimensions[1] / image.knownDimensions[0]) * 100.0) + '%';
+      var ratioPadding = (image.knownDimensions[1] / image.knownDimensions[0]) * 100.0;
+      setStyle(image.element, 'paddingBottom', ratioPadding + '%');
     }
 
     /**
@@ -3101,20 +3169,21 @@ define("morlock/core/responsive-image",
         return;
       }
 
+      var rect = getRect(image.element);
       var foundBreakpoint;
 
       for (var i = 0; i < image.knownSizes.length; i++) {
         var s = image.knownSizes[i];
-        var mq = 'only screen and (max-width: ' + s + 'px)';
-        if (i === 0) {
-          mq = 'only screen';
-        }
 
-        if (testMQ(mq)) {
+        if (rect.width <= s) {
           foundBreakpoint = s;
         } else {
           break;
         }
+      }
+
+      if (!foundBreakpoint) {
+        foundBreakpoint = image.knownSizes[0];
       }
 
       if (foundBreakpoint !== image.currentBreakpoint) {
@@ -3123,7 +3192,15 @@ define("morlock/core/responsive-image",
       }
     }
 
-    /**
+    function checkVisibility(image) {
+      if (!image.lazyLoad) {
+        return;
+      }
+
+      image.observer.recalculateOffsets();
+    }
+
+    __exports__.checkVisibility = checkVisibility;/**
      * Load the requested image.
      * @param {ResponsiveImage} image The ResponsiveImage instance.
      * @param {String} s Filename.
@@ -3135,22 +3212,22 @@ define("morlock/core/responsive-image",
         setImage(image, alreadyLoaded);
       } else {
         var img = new Image();
-        var path = getPath(image, s);
 
         img.onload = function() {
           image.loadedSizes[s] = img;
           setImage(image, img);
         };
 
+        // If requesting retina fails
         img.onerror = function() {
           if (image.hasRetina) {
-            img.src = path.replace('@2x', '');
+            img.src = image.getPath(image, s, false);
           } else {
             image.trigger('error', img);
           }
         };
 
-        img.src = path;
+        img.src = image.getPath(image, s, image.hasRetina);
       }
     }
 
@@ -3166,6 +3243,8 @@ define("morlock/core/responsive-image",
           image.element.className += ' loaded';
         }, 100);
       }
+
+      image.trigger('load', img);
 
       if (image.element.tagName.toLowerCase() === 'img') {
         return setImageTag(image, img);
@@ -3187,12 +3266,10 @@ define("morlock/core/responsive-image",
      * @param {Element} img Image element.
      */
     function setDivTag(image, img) {
-      image.element.style.backgroundImage = 'url(' + img.src + ')';
+      var setElemStyle = setStyle(image.element);
+      setElemStyle('backgroundImage', 'url(' + img.src + ')');
 
       if (image.preserveAspectRatio) {
-        var sizeVar = CustomModernizr.prefixed('backgroundSize');
-        image.element.style[sizeVar] = 'cover';
-
         var w, h;
 
         if (image.knownDimensions) {
@@ -3203,11 +3280,13 @@ define("morlock/core/responsive-image",
           h = img.height;
         }
 
+        setElemStyle('backgroundSize', 'cover');
+
         if (image.isFlexible) {
-          image.element.style.paddingBottom = ((h / w) * 100.0) + '%';
+          setElemStyle('paddingBottom', ((h / w) * 100.0) + '%');
         } else {
-          image.element.style.width = w + 'px';
-          image.element.style.height = h + 'px';
+          setElemStyle('width', w + 'px');
+          setElemStyle('height', h + 'px');
         }
       }
     }
@@ -3215,21 +3294,24 @@ define("morlock/core/responsive-image",
     /**
      * Get the path for the image given the current breakpoints and
      * browser features.
+     * @param {ResponsiveImage} image The image data.
      * @param {String} s Requested path.
+     * @param {boolean} wantsRetina If we should look for retina.
      * @return {String} The resulting path.
      */
-    function getPath(image, s) {
+    function getPath(image, s, wantsRetina) {
       if (s === 0) { return image.src; }
 
       var parts = image.src.split('.');
       var ext = parts.pop();
 
-      return parts.join('.') + '-' + s + (image.hasRetina ? '@2x' : '') + '.' + ext;
+      return parts.join('.') + '-' + s + (wantsRetina ? '@2x' : '') + '.' + ext;
     }
 
     __exports__.create = create;
     __exports__.createFromElement = createFromElement;
     __exports__.update = update;
+    __exports__.checkVisibility = checkVisibility;
   });
 define("morlock/api", 
   ["morlock/controllers/resize-controller","morlock/controllers/breakpoint-controller","morlock/controllers/scroll-controller","morlock/controllers/element-visible-controller","morlock/controllers/scroll-position-controller","morlock/controllers/sticky-element-controller","morlock/core/util","morlock/core/events","morlock/core/buffer","morlock/core/stream","exports"],
@@ -3364,12 +3446,13 @@ define("morlock/api",
     __exports__["default"] = morlock;
   });
 define("morlock/jquery", 
-  ["morlock/api","morlock/controllers/breakpoint-controller","morlock/controllers/sticky-element-controller","exports"],
-  function(__dependency1__, __dependency2__, __dependency3__, __exports__) {
+  ["morlock/api","morlock/controllers/breakpoint-controller","morlock/controllers/sticky-element-controller","morlock/core/responsive-image","exports"],
+  function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __exports__) {
     
     var morlock = __dependency1__["default"];
     var BreakpointController = __dependency2__["default"];
     var StickyElementController = __dependency3__["default"];
+    var ResponsiveImage = __dependency4__;
 
     function defineJQueryPlugins($) {
       $.fn.morlockResize = function(options) {
@@ -3462,6 +3545,23 @@ define("morlock/jquery",
               new StickyElementController(this, container, options)
             );
           });
+        });
+      };
+
+      $.fn.morlockResponsiveImage = function(options) {
+        return $(this).each(function() {
+          var container = this;
+          var $this = $(this);
+
+          var controller = ResponsiveImage.createFromElement(this, options);
+          controller.on('load', function(img) {
+            $this.trigger('morlockResponsiveImageLoaded', img);
+          });
+
+          $this.data(
+            'morlockResponsiveImageController',
+            controller
+          );
         });
       };
     }
