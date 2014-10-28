@@ -91,9 +91,6 @@ function setupPositions(stickyElement) {
   stickyElement.originalZIndex = getStyle(stickyElement.elem, 'zIndex');
   stickyElement.originalPosition = getStyle(stickyElement.elem, 'position');
   stickyElement.originalOffsetTop = getStyle(stickyElement.elem, 'top');
-<<<<<<< HEAD
-  stickyElement.originalTransform = getStyle(stickyElement.elem, 'transform');
-=======
   stickyElement.originalWidth = getStyle(stickyElement.elem, 'width');
   stickyElement.originalHeight = getStyle(stickyElement.elem, 'height');
   stickyElement.originalDisplay = getStyle(stickyElement.elem, 'display');
@@ -102,7 +99,6 @@ function setupPositions(stickyElement) {
   if (stickyElement.useTransform) {
     stickyElement.originalTransform = getStyle(stickyElement.elem, 'transform');
   }
->>>>>>> upstream/master
 
   // Slow, avoid
   var dimensions = stickyElement.elem.getBoundingClientRect();
@@ -144,13 +140,8 @@ function setupPositions(stickyElement) {
     insertBefore(stickyElement.spacer, stickyElement.elem);
   }
 
-<<<<<<< HEAD
-  var whenToStick = stickyElement.containerTop - stickyElement.marginTop;
-
-=======
   var whenToStick = stickyElement.containerTop - evaluateOption(stickyElement, stickyElement.marginTop);
 
->>>>>>> upstream/master
   stickyElement.onBeforeHandler_ || (stickyElement.onBeforeHandler_ = partial(unfix, stickyElement));
   stickyElement.onAfterHandler_ || (stickyElement.onAfterHandler_ = partial(fix, stickyElement));
 
