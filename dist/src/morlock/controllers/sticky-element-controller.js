@@ -8,6 +8,7 @@ define("morlock/controllers/sticky-element-controller",
     var forEach = __dependency1__.forEach;
     var call = __dependency1__.call;
     var functionBind = __dependency1__.functionBind;
+    var isFunction = __dependency1__.isFunction;
     var getStyle = __dependency2__.getStyle;
     var setStyle = __dependency2__.setStyle;
     var setStyles = __dependency2__.setStyles;
@@ -41,6 +42,7 @@ define("morlock/controllers/sticky-element-controller",
 
       options || (options = {});
 
+      this.positionType = getOption(options.positionType, 'absolute');
       this.zIndex = getOption(options.zIndex, 1000);
       this.marginTop = getOption(options.marginTop, 0);
       this.marginBottom = getOption(options.marginBottom, 0);
@@ -56,6 +58,7 @@ define("morlock/controllers/sticky-element-controller",
       ];
 
       setupPositions(this);
+      onScroll(this, documentScrollY());
     }
 
     StickyElementController.prototype.onResize = function() {
@@ -79,12 +82,19 @@ define("morlock/controllers/sticky-element-controller",
       detachElement(stickyElement.spacer);
 
       setStyles(stickyElement.elem, {
-        'zIndex': stickyElement.originalZIndex,
+        'zIndex': '',
         'width': '',
-        'position': stickyElement.originalPosition,
+        'height': '',
+        'position': '',
         'left': '',
-        'top': stickyElement.originalOffsetTop
+        'top': '',
+        // 'overflow': '',
+        'display': ''
       });
+
+      if (stickyElement.useTransform) {
+        setStyle(stickyElement.elem, 'transform', '');
+      }
     }
 
     function setupPositions(stickyElement) {
@@ -96,6 +106,14 @@ define("morlock/controllers/sticky-element-controller",
       stickyElement.originalZIndex = getStyle(stickyElement.elem, 'zIndex');
       stickyElement.originalPosition = getStyle(stickyElement.elem, 'position');
       stickyElement.originalOffsetTop = getStyle(stickyElement.elem, 'top');
+      stickyElement.originalWidth = getStyle(stickyElement.elem, 'width');
+      stickyElement.originalHeight = getStyle(stickyElement.elem, 'height');
+      stickyElement.originalDisplay = getStyle(stickyElement.elem, 'display');
+      // stickyElement.originalOverflow = getStyle(stickyElement.elem, 'overflow');
+
+      if (stickyElement.useTransform) {
+        stickyElement.originalTransform = getStyle(stickyElement.elem, 'transform');
+      }
 
       // Slow, avoid
       var dimensions = stickyElement.elem.getBoundingClientRect();
@@ -113,7 +131,10 @@ define("morlock/controllers/sticky-element-controller",
         'position': 'absolute',
         'top': stickyElement.originalTop + 'px',
         'left': stickyElement.elem.offsetLeft + 'px',
-        'width': stickyElement.elemWidth + 'px'
+        'width': stickyElement.elemWidth + 'px',
+        'height': stickyElement.elemHeight + 'px',
+        // 'overflow': 'hidden',
+        'display': 'block'
       });
 
       if (stickyElement.originalPosition !== 'absolute') {
@@ -134,7 +155,7 @@ define("morlock/controllers/sticky-element-controller",
         insertBefore(stickyElement.spacer, stickyElement.elem);
       }
 
-      var whenToStick = stickyElement.containerTop - stickyElement.marginTop;
+      var whenToStick = stickyElement.containerTop - evaluateOption(stickyElement, stickyElement.marginTop);
       
       stickyElement.onBeforeHandler_ || (stickyElement.onBeforeHandler_ = partial(unfix, stickyElement));
       stickyElement.onAfterHandler_ || (stickyElement.onAfterHandler_ = partial(fix, stickyElement));
@@ -162,8 +183,8 @@ define("morlock/controllers/sticky-element-controller",
         scrollY = 0;
       }
 
-      var newTop = scrollY + stickyElement.marginTop - stickyElement.containerTop;
-      var maxTop = stickyElement.containerHeight - stickyElement.elemHeight - stickyElement.marginBottom;
+      var newTop = scrollY + evaluateOption(stickyElement, stickyElement.marginTop) - stickyElement.containerTop;
+      var maxTop = stickyElement.containerHeight - stickyElement.elemHeight - evaluateOption(stickyElement, stickyElement.marginBottom);
 
       if (stickyElement.useTransform) {
         maxTop -= stickyElement.originalTop;
@@ -174,10 +195,13 @@ define("morlock/controllers/sticky-element-controller",
       newTop = Math.max(0, Math.min(newTop, maxTop));
 
       if (stickyElement.currentTop !== newTop) {
-        if (stickyElement.useTransform) {
-          setStyle(stickyElement.elem, 'transform', 'translateY(' + newTop + 'px)');
-        } else {
-          setStyle(stickyElement.elem, 'top', newTop + 'px');
+
+        if (stickyElement.positionType !== 'fixed') {
+          if (stickyElement.useTransform) {
+            setStyle(stickyElement.elem, 'transform', 'translate3d(0, ' + newTop + 'px, 0)');
+          } else {
+            setStyle(stickyElement.elem, 'top', newTop + 'px');
+          }
         }
 
         stickyElement.currentTop = newTop;
@@ -189,6 +213,7 @@ define("morlock/controllers/sticky-element-controller",
 
       addClass(stickyElement.elem, 'fixed');
       setStyles(stickyElement.elem, {
+        'position': stickyElement.positionType,
         'zIndex': stickyElement.zIndex
       });
 
@@ -200,11 +225,20 @@ define("morlock/controllers/sticky-element-controller",
 
       removeClass(stickyElement.elem, 'fixed');
       setStyles(stickyElement.elem, {
+        'position': 'absolute',
         'zIndex': stickyElement.originalZIndex,
         'top': stickyElement.originalTop
       });
 
       stickyElement.fixed = false;
+    }
+
+    function evaluateOption(stickyElement, option) {
+      if (isFunction(option)) {
+        return option(stickyElement);
+      } else {
+        return option;
+      }
     }
 
     __exports__["default"] = StickyElementController;

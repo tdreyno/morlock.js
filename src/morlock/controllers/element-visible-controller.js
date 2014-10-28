@@ -57,14 +57,14 @@ ElementVisibleController.prototype.didResize = function() {
   this.recalculateOffsets();
 };
 
-ElementVisibleController.prototype.didScroll = function() {
-  this.update();
+ElementVisibleController.prototype.didScroll = function(currentScrollY) {
+  this.update(currentScrollY);
 };
 
 ElementVisibleController.prototype.recalculateOffsets = function() {
   this.viewportRect.height = getViewportHeight();
   this.recalculatePosition();
-  this.update();
+  this.update(null, true);
 };
 
 ElementVisibleController.prototype.recalculatePosition = function(currentScrollY) {
@@ -77,17 +77,20 @@ ElementVisibleController.prototype.recalculatePosition = function(currentScrollY
   this.rect.height += (this.buffer * 2);
 };
 
-ElementVisibleController.prototype.update = function(currentScrollY) {
+ElementVisibleController.prototype.update = function(currentScrollY, ignoreCurrentVisibility) {
   currentScrollY || (currentScrollY = documentScrollY());
 
   this.viewportRect.top = currentScrollY;
 
   var inY = this.intersects(this.viewportRect, this.rect);
 
-  if (this.isVisible && !inY) {
+  var isVisible = ignoreCurrentVisibility ? true : this.isVisible;
+  var isNotVisible = ignoreCurrentVisibility ? true : !this.isVisible;
+
+  if (isVisible && !inY) {
     this.isVisible = false;
     this.didExit();
-  } else if (!this.isVisible && inY) {
+  } else if (isNotVisible && inY) {
     this.isVisible = true;
     this.didEnter();
   }

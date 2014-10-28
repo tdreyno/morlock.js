@@ -1,6 +1,8 @@
-import { map, mapObject, sortBy, parseInteger, set, flip, getOption } from "morlock/core/util";
-import { testMQ, setStyle } from "morlock/core/dom";
+import { map, mapObject, sortBy, parseInteger, set, flip, getOption, partial } from "morlock/core/util";
+import { setStyle, getRect } from "morlock/core/dom";
+import ResizeController from "morlock/controllers/resize-controller";
 import ElementVisibleController from "morlock/controllers/element-visible-controller";
+module Emitter from "morlock/core/emitter";
 
 /**
  * Ghetto Record implementation.
@@ -32,39 +34,56 @@ function create(imageMap) {
     applyAspectRatioPadding(image);
   }
 
-  if (imageMap.lazyLoad) {
-    imageMap.observer = new ElementVisibleController(imageMap.element);
+  if (image.lazyLoad) {
+    image.observer = new ElementVisibleController(image.element);
 
-    imageMap.observer.on('enter', function onEnter_() {
-      imageMap.observer.off('enter', onEnter_);
+    image.observer.on('enter', function onEnter_() {
+      if (!image.checkIfVisible(image)) { return; }
+
+      image.observer.off('enter', onEnter_);
 
       image.lazyLoad = false;
-      update(image, true);
+      update(image);
     });
   }
+
+  var controller = new ResizeController({
+    debounceMs: getOption(imageMap.debounceMs, 200)
+  });
+
+  controller.on('resizeEnd', partial(update, image));
+
+  Emitter.mixin(image);
 
   return image;
 }
 
-function createFromElement(element, imageMap) {
-  imageMap || (imageMap = {});
-  imageMap.element = element;
-  imageMap.src = element.getAttribute('data-src');
+function createFromElement(elem, options) {
+  options || (options = {});
 
-  imageMap.lazyLoad = element.getAttribute('data-lazyload') === 'true';
-  imageMap.isFlexible = element.getAttribute('data-isFlexible') !== 'false';
-  imageMap.hasRetina = (element.getAttribute('data-hasRetina') === 'true') && (window.devicePixelRatio > 1.5);
-  imageMap.preserveAspectRatio = element.getAttribute('data-preserveAspectRatio') === 'true';
+  var imageMap = {
+    element: elem,
+    src: getOption(options.src, elem.getAttribute('data-src')),
+    lazyLoad: getOption(options.lazyLoad, elem.getAttribute('data-lazyload') === 'true'),
+    isFlexible: getOption(options.isFlexible, elem.getAttribute('data-isFlexible') !== 'false'),
+    hasRetina: getOption(options.hasRetina, (elem.getAttribute('data-hasRetina') === 'true') && (window.devicePixelRatio > 1.5)),
+    preserveAspectRatio: getOption(options.preserveAspectRatio, elem.getAttribute('data-preserveAspectRatio') === 'true'),
+    checkIfVisible: getOption(options.checkIfVisible, function() {
+      return true;
+    })
+  };
 
-  var dimensionsString = element.getAttribute('data-knownDimensions');
-  if (dimensionsString && (dimensionsString !== 'false')) {
-    imageMap.knownDimensions = [
-      parseInteger(dimensionsString.split('x')[0]),
-      parseInteger(dimensionsString.split('x')[1])
-    ];
-  }
+  imageMap.knownDimensions = getOption(options.knownDimensions, function() {
+    var dimensionsString = elem.getAttribute('data-knownDimensions');
+    if (dimensionsString && (dimensionsString !== 'false')) {
+      return [
+        parseInteger(dimensionsString.split('x')[0]),
+        parseInteger(dimensionsString.split('x')[1])
+      ];
+    }
+  }, true);
 
-  imageMap.knownSizes = getBreakpointSizes(imageMap.element);
+  imageMap.knownSizes = getBreakpointSizes(elem);
 
   if (imageMap.knownDimensions && imageMap.preserveAspectRatio) {
     applyAspectRatioPadding(imageMap);
@@ -111,20 +130,21 @@ function update(image) {
     return;
   }
 
+  var rect = getRect(image.element);
   var foundBreakpoint;
 
   for (var i = 0; i < image.knownSizes.length; i++) {
     var s = image.knownSizes[i];
-    var mq = 'only screen and (max-width: ' + s + 'px)';
-    if (i === 0) {
-      mq = 'only screen';
-    }
 
-    if (testMQ(mq)) {
+    if (rect.width <= s) {
       foundBreakpoint = s;
     } else {
       break;
     }
+  }
+
+  if (!foundBreakpoint) {
+    foundBreakpoint = image.knownSizes[0];
   }
 
   if (foundBreakpoint !== image.currentBreakpoint) {
@@ -133,7 +153,7 @@ function update(image) {
   }
 }
 
-export function recalculateOffsets(image) {
+export function checkVisibility(image) {
   if (!image.lazyLoad) {
     return;
   }
@@ -181,6 +201,8 @@ function setImage(image, img) {
       image.element.className += ' loaded';
     }, 100);
   }
+
+  image.trigger('load', img);
 
   if (image.element.tagName.toLowerCase() === 'img') {
     return setImageTag(image, img);
@@ -244,4 +266,4 @@ function getPath(image, s, wantsRetina) {
   return parts.join('.') + '-' + s + (wantsRetina ? '@2x' : '') + '.' + ext;
 }
 
-export { create, createFromElement, update };
+export { create, createFromElement, update, checkVisibility };

@@ -86,6 +86,13 @@ module.exports = function (grunt) {
       all: ["test/*.html"]
     },
 
+    'watch': {
+      scripts: {
+        files: ['src/**/*.js'],
+        tasks: ['build']
+      }
+    },
+
     release: {
       options: {
         file: 'bower.json',

@@ -1,6 +1,7 @@
 import morlock from "morlock/api";
 import BreakpointController from "morlock/controllers/breakpoint-controller";
 import StickyElementController from "morlock/controllers/sticky-element-controller";
+module ResponsiveImage from "morlock/core/responsive-image";
 
 export function defineJQueryPlugins($) {
   $.fn.morlockResize = function(options) {
@@ -93,6 +94,23 @@ export function defineJQueryPlugins($) {
           new StickyElementController(this, container, options)
         );
       });
+    });
+  };
+
+  $.fn.morlockResponsiveImage = function(options) {
+    return $(this).each(function() {
+      var container = this;
+      var $this = $(this);
+
+      var controller = ResponsiveImage.createFromElement(this, options);
+      controller.on('load', function(img) {
+        $this.trigger('morlockResponsiveImageLoaded', img);
+      });
+
+      $this.data(
+        'morlockResponsiveImageController',
+        controller
+      );
     });
   };
 }
