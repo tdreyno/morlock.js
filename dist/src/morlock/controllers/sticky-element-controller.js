@@ -46,6 +46,8 @@ define("morlock/controllers/sticky-element-controller",
       this.zIndex = getOption(options.zIndex, 1000);
       this.marginTop = getOption(options.marginTop, 0);
       this.marginBottom = getOption(options.marginBottom, 0);
+      this.fixCallBack = getOption(options.fixCallBack, null);
+      this.unfixCallBack = getOption(options.unfixCallBack, null);
 
       this.useTransform = CustomModernizr.csstransforms && getOption(options.useTransform, true);
 
@@ -156,7 +158,7 @@ define("morlock/controllers/sticky-element-controller",
       }
 
       var whenToStick = stickyElement.containerTop - evaluateOption(stickyElement, stickyElement.marginTop);
-      
+
       stickyElement.onBeforeHandler_ || (stickyElement.onBeforeHandler_ = partial(unfix, stickyElement));
       stickyElement.onAfterHandler_ || (stickyElement.onAfterHandler_ = partial(fix, stickyElement));
 
@@ -218,6 +220,11 @@ define("morlock/controllers/sticky-element-controller",
       });
 
       stickyElement.fixed = true;
+
+      if (isFunction(stickyElement.fixCallBack)) {
+        stickyElement.fixCallBack(stickyElement);
+      }
+
     }
 
     function unfix(stickyElement) {
@@ -231,6 +238,10 @@ define("morlock/controllers/sticky-element-controller",
       });
 
       stickyElement.fixed = false;
+
+      if (isFunction(stickyElement.unfixCallBack)) {
+        stickyElement.unfixCallBack(stickyElement);
+      }
     }
 
     function evaluateOption(stickyElement, option) {
