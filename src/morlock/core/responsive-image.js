@@ -173,6 +173,7 @@ function loadImageForBreakpoint(image, s) {
     setImage(image, alreadyLoaded);
   } else {
     var img = new Image();
+
     img.onload = function() {
       image.loadedSizes[s] = img;
       setImage(image, img);
@@ -182,6 +183,8 @@ function loadImageForBreakpoint(image, s) {
     img.onerror = function() {
       if (image.hasRetina) {
         img.src = image.getPath(image, s, false);
+      } else {
+        image.trigger('error', img);
       }
     };
 

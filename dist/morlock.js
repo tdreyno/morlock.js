@@ -20,6 +20,7 @@
   }
 }(this, function () {
   //almond, and your modules will be inlined here
+
 /**
  * @license almond 0.2.9 Copyright (c) 2011-2014, The Dojo Foundation All Rights Reserved.
  * Available via the MIT or new BSD license.
@@ -3223,6 +3224,7 @@ define("morlock/core/responsive-image",
         setImage(image, alreadyLoaded);
       } else {
         var img = new Image();
+
         img.onload = function() {
           image.loadedSizes[s] = img;
           setImage(image, img);
@@ -3232,6 +3234,8 @@ define("morlock/core/responsive-image",
         img.onerror = function() {
           if (image.hasRetina) {
             img.src = image.getPath(image, s, false);
+          } else {
+            image.trigger('error', img);
           }
         };
 
@@ -3606,7 +3610,6 @@ define("morlock/base",
     __exports__.ScrollPositionController = ScrollPositionController;
     __exports__.StickyElementController = StickyElementController;
   });
-
 require(["morlock/base"]);
   //The modules for your project will be inlined above
   //this snippet. Ask almond to synchronously require the

@@ -185,6 +185,7 @@ define("morlock/core/responsive-image",
         setImage(image, alreadyLoaded);
       } else {
         var img = new Image();
+
         img.onload = function() {
           image.loadedSizes[s] = img;
           setImage(image, img);
@@ -194,6 +195,8 @@ define("morlock/core/responsive-image",
         img.onerror = function() {
           if (image.hasRetina) {
             img.src = image.getPath(image, s, false);
+          } else {
+            image.trigger('error', img);
           }
         };
 
