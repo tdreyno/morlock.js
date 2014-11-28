@@ -5,17 +5,16 @@
     "almond": "^0.2.9"
   },
   "devDependencies": {
+    "esnext-loader": "^1.1.0",
     "grunt": "~0.4.1",
-    "grunt-contrib-clean": "~0.5.0",
-    "grunt-contrib-concat": "~0.3.0",
-    "grunt-contrib-jshint": "~0.10.0",
-    "grunt-contrib-requirejs": "~0.4.1",
-    "grunt-contrib-uglify": "~0.2.4",
-    "grunt-contrib-watch": "^0.6.1",
-    "grunt-es6-module-transpiler": "~0.6.0",
     "grunt-mocha-phantomjs": "~0.3.0",
     "grunt-release": "~0.6.0",
-    "matchdep": "~0.3.0"
+    "jshint": "^2.5.10",
+    "jshint-loader": "^0.8.0",
+    "matchdep": "~0.3.0",
+    "ramda": "ramda/ramda",
+    "webpack": "^1.4.13",
+    "webpack-dev-server": "^1.6.6"
   },
   "scripts": {
     "test": "grunt test"
