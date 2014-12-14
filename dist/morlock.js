@@ -20,7 +20,6 @@
   }
 }(this, function () {
   //almond, and your modules will be inlined here
-
 /**
  * @license almond 0.2.9 Copyright (c) 2011-2014, The Dojo Foundation All Rights Reserved.
  * Available via the MIT or new BSD license.
@@ -3114,6 +3113,7 @@ define("morlock/core/responsive-image",
 
       var imageMap = {
         element: elem,
+        getPath: options.getPath,
         src: getOption(options.src, elem.getAttribute('data-src')),
         lazyLoad: getOption(options.lazyLoad, elem.getAttribute('data-lazyload') === 'true'),
         isFlexible: getOption(options.isFlexible, elem.getAttribute('data-isFlexible') !== 'false'),
@@ -3609,6 +3609,7 @@ define("morlock/base",
     __exports__.ScrollPositionController = ScrollPositionController;
     __exports__.StickyElementController = StickyElementController;
   });
+
 require(["morlock/base"]);
   //The modules for your project will be inlined above
   //this snippet. Ask almond to synchronously require the

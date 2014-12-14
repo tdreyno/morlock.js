@@ -75,6 +75,7 @@ define("morlock/core/responsive-image",
 
       var imageMap = {
         element: elem,
+        getPath: options.getPath,
         src: getOption(options.src, elem.getAttribute('data-src')),
         lazyLoad: getOption(options.lazyLoad, elem.getAttribute('data-lazyload') === 'true'),
         isFlexible: getOption(options.isFlexible, elem.getAttribute('data-isFlexible') !== 'false'),
