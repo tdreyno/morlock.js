@@ -63,7 +63,6 @@ function createFromElement(elem, options) {
 
   var imageMap = {
     element: elem,
-    getPath: options.getPath,
     src: getOption(options.src, elem.getAttribute('data-src')),
     lazyLoad: getOption(options.lazyLoad, elem.getAttribute('data-lazyload') === 'true'),
     isFlexible: getOption(options.isFlexible, elem.getAttribute('data-isFlexible') !== 'false'),
@@ -73,6 +72,10 @@ function createFromElement(elem, options) {
       return true;
     })
   };
+
+  if ('function' === typeof options.getPath) {
+    imageMap.getPath = options.getPath;
+  }
 
   imageMap.knownDimensions = getOption(options.knownDimensions, function() {
     var dimensionsString = elem.getAttribute('data-knownDimensions');
