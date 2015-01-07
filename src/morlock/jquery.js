@@ -73,7 +73,7 @@ export function defineJQueryPlugins($) {
   $.fn.morlockElementVisible = function(options) {
     return $(this).each(function() {
       var $this = $(this);
-      
+
       var observer = morlock.observeElement(this, options);
 
       observer.on('enter', function() {
@@ -99,7 +99,6 @@ export function defineJQueryPlugins($) {
 
   $.fn.morlockResponsiveImage = function(options) {
     return $(this).each(function() {
-      var container = this;
       var $this = $(this);
 
       var controller = ResponsiveImage.createFromElement(this, options);

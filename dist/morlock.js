@@ -1161,8 +1161,8 @@ define("morlock/core/events",
       }
     };
 
-    var dispatchEvent_ = window.dispatchEvent || function (eventObject) {
-      return this.fireEvent('on' + eventObject.type, eventObject);
+    var dispatchEvent_ = window.dispatchEvent || function(eventObject) {
+      return this.fireEvent('on' + (eventObject.type || eventObject.eventType), eventObject);
     };
 
     var eventListenerInfo = { count: 0 };
@@ -1178,8 +1178,16 @@ define("morlock/core/events",
     }
 
     __exports__.eventListener = eventListener;function dispatchEvent(target, evType) {
-      var evObj = document.createEvent('HTMLEvents');
-      evObj.initEvent(evType, true, true);
+      var evObj;
+      if (document.createEvent) {
+        evObj = document.createEvent('HTMLEvents');
+        evObj.initEvent(evType, true, true);
+      } else {
+        evObj = document.createEventObject();
+        evObj.eventType = evType;
+      }
+      evObj.eventName = evType;
+
       dispatchEvent_.call(target, evObj);
     }
 
@@ -3524,7 +3532,7 @@ define("morlock/jquery",
       $.fn.morlockElementVisible = function(options) {
         return $(this).each(function() {
           var $this = $(this);
-          
+
           var observer = morlock.observeElement(this, options);
 
           observer.on('enter', function() {
@@ -3550,7 +3558,6 @@ define("morlock/jquery",
 
       $.fn.morlockResponsiveImage = function(options) {
         return $(this).each(function() {
-          var container = this;
           var $this = $(this);
 
           var controller = ResponsiveImage.createFromElement(this, options);
@@ -3565,6 +3572,7 @@ define("morlock/jquery",
         });
       };
     }
+
     __exports__.defineJQueryPlugins = defineJQueryPlugins;
   });
 define("morlock/base", 
