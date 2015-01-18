@@ -1,7 +1,7 @@
-import { getOption, partial } from "morlock/core/util";
-module Stream from "morlock/core/stream";
-module ScrollStream from "morlock/streams/scroll-stream";
-module Emitter from "morlock/core/emitter";
+import { getOption, partial } from 'morlock/core/util';
+import * as Stream from 'morlock/core/stream';
+import * as ScrollStream from 'morlock/streams/scroll-stream';
+import * as Emitter from 'morlock/core/emitter';
 
 /**
  * Provides a familiar OO-style API for tracking scroll events.
@@ -30,4 +30,4 @@ function ScrollController(options) {
   Stream.onValue(scrollEndStream, partial(this.trigger, 'scrollEnd'));
 }
 
-export default = ScrollController;
+export default ScrollController;

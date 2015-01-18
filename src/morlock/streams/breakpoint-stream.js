@@ -1,7 +1,7 @@
-import { objectVals, mapObject, apply, getOption, push } from "morlock/core/util";
-import { testMQ } from "morlock/core/dom";
-module Stream from "morlock/core/stream";
-module ResizeStream from "morlock/streams/resize-stream";
+import { objectVals, mapObject, apply, getOption, push } from 'morlock/core/util';
+import { testMQ } from 'morlock/core/dom';
+import * as Stream from 'morlock/core/stream';
+import * as ResizeStream from 'morlock/streams/resize-stream';
 
 /**
  * Create a new Stream containing events which fire when the browser

@@ -1,7 +1,7 @@
-module Stream from "morlock/core/stream";
-import { memoize, defer, partial } from "morlock/core/util";
-import { documentScrollY } from "morlock/core/dom";
-import { dispatchEvent } from "morlock/core/events";
+import * as Stream from 'morlock/core/stream';
+import { memoize, defer, partial } from 'morlock/core/util';
+import { documentScrollY } from 'morlock/core/dom';
+import { dispatchEvent } from 'morlock/core/events';
 
 /**
  * Create a stream of window.onscroll events, but only calculate their

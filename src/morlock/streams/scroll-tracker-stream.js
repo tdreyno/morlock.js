@@ -1,5 +1,5 @@
-module Stream from "morlock/core/stream";
-module ScrollStream from "morlock/streams/scroll-stream";
+import * as Stream from 'morlock/core/stream';
+import * as ScrollStream from 'morlock/streams/scroll-stream';
 
 /**
  * Create a new Stream containing events which fire when a position has

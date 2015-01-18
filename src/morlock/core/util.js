@@ -363,8 +363,8 @@ function eq(a, b, aStack, bStack) {
   switch (className) {
     // Strings, numbers, dates, and booleans are compared by value.
     case '[object String]':
-      // Primitives and their corresponding object wrappers are equivalent; thus, `"5"` is
-      // equivalent to `new String("5")`.
+      // Primitives and their corresponding object wrappers are equivalent; thus, `'5'` is
+      // equivalent to `new String('5')`.
       return a == String(b);
     case '[object Number]':
       // `NaN`s are equivalent, but non-reflexive. An `egal` comparison is performed for
@@ -483,7 +483,7 @@ function when(truth, f) {
 }
 
 /**
- * Bind a function's "this" value.
+ * Bind a function's 'this' value.
  * @param {function} f The function.
  * @param {object} obj The object.
  * @return {function} The bound function.

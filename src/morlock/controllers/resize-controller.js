@@ -1,7 +1,7 @@
-import { getOption, partial } from "morlock/core/util";
-module Stream from "morlock/core/stream";
-module ResizeStream from "morlock/streams/resize-stream";
-module Emitter from "morlock/core/emitter";
+import { getOption, partial } from 'morlock/core/util';
+import * as Stream from 'morlock/core/stream';
+import * as ResizeStream from 'morlock/streams/resize-stream';
+import * as Emitter from 'morlock/core/emitter';
 
 /**
  * Provides a familiar OO-style API for tracking resize events.
@@ -36,4 +36,4 @@ function ResizeController(options) {
   };
 }
 
-export default = ResizeController;
+export default ResizeController;

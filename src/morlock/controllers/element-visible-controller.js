@@ -1,9 +1,9 @@
-import { getOption, functionBind } from "morlock/core/util";
-import { getRect, getViewportHeight, documentScrollY } from "morlock/core/dom";
-module Stream from "morlock/core/stream";
-module Emitter from "morlock/core/emitter";
-import ScrollController from "morlock/controllers/scroll-controller";
-module ResizeStream from "morlock/streams/resize-stream";
+import { getOption, functionBind } from 'morlock/core/util';
+import { getRect, getViewportHeight, documentScrollY } from 'morlock/core/dom';
+import * as Stream from 'morlock/core/stream';
+import * as Emitter from 'morlock/core/emitter';
+import ScrollController from 'morlock/controllers/scroll-controller';
+import * as ResizeStream from 'morlock/streams/resize-stream';
 
 /**
  * Provides a familiar OO-style API for tracking element position.
@@ -117,4 +117,4 @@ ElementVisibleController.prototype.didExit = function() {
   this.trigger('both');
 };
 
-export default = ElementVisibleController;
+export default ElementVisibleController;

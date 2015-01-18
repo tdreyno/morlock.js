@@ -1,15 +1,15 @@
-import { eventListener } from "morlock/core/events";
+import { eventListener } from 'morlock/core/events';
 import { create as createBuffer,
          push as pushBuffer,
          clear as clearBuffer,
-         lastValue as lastBufferValue } from "morlock/core/buffer";
+         lastValue as lastBufferValue } from 'morlock/core/buffer';
 import { debounce as debounceCall,
          throttle as throttleCall,
          delay as delayCall,
          map as mapArray,
          memoize, first, apply, compose, when, equals, unary, flippedCall, isDefined,
          autoCurry,
-         partial, once, copyArray, indexOf, rAF } from "morlock/core/util";
+         partial, once, copyArray, indexOf, rAF } from 'morlock/core/util';
 
 // Internal tracking of how many streams have been created.
 var nextID = 0;

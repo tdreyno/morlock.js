@@ -1,7 +1,7 @@
-import { partial } from "morlock/core/util";
-module Stream from "morlock/core/stream";
-module ScrollTrackerStream from "morlock/streams/scroll-tracker-stream";
-module Emitter from "morlock/core/emitter";
+import { partial } from 'morlock/core/util';
+import * as Stream from 'morlock/core/stream';
+import * as ScrollTrackerStream from 'morlock/streams/scroll-tracker-stream';
+import * as Emitter from 'morlock/core/emitter';
 
 /**
  * Provides a familiar OO-style API for tracking scroll position.
@@ -28,4 +28,4 @@ function ScrollPositionController(targetScrollY) {
   Stream.onValue(afterStream, partial(this.trigger, 'after'));
 }
 
-export default = ScrollPositionController;
+export default ScrollPositionController;

@@ -1,13 +1,13 @@
-import ResizeController from "morlock/controllers/resize-controller";
-import BreakpointController from "morlock/controllers/breakpoint-controller";
-import ScrollController from "morlock/controllers/scroll-controller";
-import ElementVisibleController from "morlock/controllers/element-visible-controller";
-import ScrollPositionController from "morlock/controllers/scroll-position-controller";
-import StickyElementController from "morlock/controllers/sticky-element-controller";
-module Util from 'morlock/core/util';
-module Events from 'morlock/core/events';
-module Buffer from "morlock/core/buffer";
-module Stream from "morlock/core/stream";
+import ResizeController from 'morlock/controllers/resize-controller';
+import BreakpointController from 'morlock/controllers/breakpoint-controller';
+import ScrollController from 'morlock/controllers/scroll-controller';
+import ElementVisibleController from 'morlock/controllers/element-visible-controller';
+import ScrollPositionController from 'morlock/controllers/scroll-position-controller';
+import StickyElementController from 'morlock/controllers/sticky-element-controller';
+import * as Util from 'morlock/core/util';
+import * as Events from 'morlock/core/events';
+import * as Buffer from 'morlock/core/buffer';
+import * as Stream from 'morlock/core/stream';
 
 var getResizeTracker = Util.memoize(function(options) {
   return new ResizeController(options);
@@ -124,4 +124,4 @@ morlock.Events = Events;
 morlock.Buffer = Buffer;
 morlock.Util = Util;
 
-export default = morlock;
+export default morlock;

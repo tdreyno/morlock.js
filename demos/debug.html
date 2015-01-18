@@ -21,13 +21,13 @@
   <script src="../dist/morlock.js"></script>
   <script>
     function start() {
-      rc = new ResizeController();
+      rc = new morlock.ResizeController();
 
       rc.on('resize', function(e) {
         console.log('resize', e[0], e[1]);
       });
 
-      bc = new BreakpointController({
+      bc = new morlock.BreakpointController({
         breakpoints: {
           'mobile': { max: 767 },
           'tablet': { min: 768, max: 1043 },
@@ -52,11 +52,11 @@
       var responsiveImages = [];
       var elems = document.getElementsByClassName('js-responsive-image');
 
-      responsiveImages.push(ResponsiveImage.createFromElement(elems[0]));
+      responsiveImages.push(morlock.ResponsiveImage.createFromElement(elems[0]));
 
       var canShowLast = false;
 
-      var lastImage = ResponsiveImage.createFromElement(elems[1], {
+      var lastImage = morlock.ResponsiveImage.createFromElement(elems[1], {
         checkIfVisible: function() {
           return canShowLast;
         }
@@ -64,7 +64,7 @@
 
       window.showLast = function() {
         canShowLast = true;
-        ResponsiveImage.checkVisibility(lastImage);
+        morlock.ResponsiveImage.checkVisibility(lastImage);
       };
 
       responsiveImages.push(lastImage);
@@ -74,8 +74,8 @@
       });
 
       var lastImage = responsiveImages[responsiveImages.length-1];
-      ResponsiveImage.update(lastImage);
-      ResponsiveImage.update(lastImage);
+      morlock.ResponsiveImage.update(lastImage);
+      morlock.ResponsiveImage.update(lastImage);
 
       bc.on('breakpoint', function(e) {
         console.log('breakpoint', e);
@@ -85,7 +85,7 @@
         console.log('breakpoint:mobile', e[1]);
       });
 
-      sc = new ScrollController({
+      sc = new morlock.ScrollController({
         debounceMs: 400
       });
 
@@ -93,7 +93,7 @@
         console.log('scrollEnd');
       });
 
-      sc2 = new ScrollController({
+      sc2 = new morlock.ScrollController({
         debounceMs: 0
       });
 
@@ -101,7 +101,7 @@
         
       });
 
-      var observer = new ElementVisibleController(document.getElementById('hi'), { buffer: 100 });
+      var observer = new morlock.ElementVisibleController(document.getElementById('hi'), { buffer: 100 });
       observer.on('enter', function() {
         console.log('enter HI');
       });
@@ -117,7 +117,7 @@
         var onAfter = function() {
           console.log('ONOFF: after 200');
         };
-        var observer = new ScrollPositionController(200);
+        var observer = new morlock.ScrollPositionController(200);
         observer.on('before', onBefore);
         observer.on('after', onAfter);
 

@@ -4,38 +4,10 @@ module.exports = function (grunt) {
   // load all grunt tasks
   require('matchdep').filterDev('grunt-*').forEach(grunt.loadNpmTasks);
 
+  var webpackConfig = require('./webpack.config.js');
+
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
-
-    jshint: {
-      options: {
-        browser: true,
-        node: true,
-        forin: true,
-        curly: true,
-        camelcase: true,
-        immed: true,
-        indent: 2,
-        latedef: true,
-        newcap: true,
-        noempty: true,
-        nonbsp: true,
-        nonew: true,
-        undef: true,
-        unused: true,
-        strict: true,
-        trailing: true,
-        eqnull: true,
-        expr: true,
-        boss: true,
-        "-W041": true, // Comparing == against 0
-        globals: {
-          define: true,
-          jQuery: true
-        }
-      },
-      all: ['Gruntfile.js', 'dist/src/morlock/**/*.js']
-    },
 
     clean: {
       build: {
@@ -43,53 +15,29 @@ module.exports = function (grunt) {
       }
     },
 
-    transpile: {
-      amd: {
-        type: 'amd',
-        files: [{
-          expand: true,
-          cwd: 'src/',
-          src: ['**/*.js'],
-          dest: 'dist/src/'
-        }]
-      }
-    },
-
-    requirejs: {
-      options: {
-        name: "../../node_modules/almond/almond",
-        include: ["morlock/base"],
-        insertRequire: ['morlock/base'],
-        baseUrl: "dist/src/",
-
-        wrap: {
-          startFile: 'src/frags/start.frag',
-          endFile: 'src/frags/end.frag'
-        }
-      },
-
-      dist: {
-        options: {
-          out: 'dist/<%= pkg.name %>.min.js'
-        }
-      },
-
-      dev: {
-        options: {
-          optimize: 'none',
-          out: 'dist/<%= pkg.name %>.js'
-        }
-      }
-    },
-
     'mocha_phantomjs': {
       all: ["test/*.html"]
     },
 
-    'watch': {
-      scripts: {
-        files: ['src/**/*.js'],
-        tasks: ['build']
+    webpack: {
+      options: webpackConfig,
+
+      dist: {
+        watch: false
+      }
+    },
+
+    "webpack-dev-server": {
+      options: {
+        webpack: webpackConfig,
+        publicPath: "/" + webpackConfig.output.publicPath
+      },
+      start: {
+        keepAlive: true,
+        webpack: {
+          devtool: "eval",
+          debug: true
+        }
       }
     },
 
@@ -106,10 +54,8 @@ module.exports = function (grunt) {
     }
   });
 
-  grunt.registerTask('build', ['clean', 'transpile:amd', 'requirejs:dev', 'requirejs:dist']);
-  grunt.registerTask('hint', ['build', 'jshint']);
-  grunt.registerTask('test', ['clean', 'transpile:amd', 'requirejs:dev', 'jshint', 'mocha_phantomjs']);
-  grunt.registerTask('default', [
-    'build'
-  ]);
+  grunt.registerTask('watch', ['clean', 'webpack-dev-server:start']);
+  grunt.registerTask('build', ['clean', 'webpack:dist']);
+  grunt.registerTask('test', ['clean', 'webpack:dist', 'mocha_phantomjs']);
+  grunt.registerTask('default', ['build']);
 };

@@ -1,8 +1,8 @@
-import { map, mapObject, sortBy, parseInteger, set, flip, getOption, partial } from "morlock/core/util";
-import { setStyle, getRect } from "morlock/core/dom";
-import ResizeController from "morlock/controllers/resize-controller";
-import ElementVisibleController from "morlock/controllers/element-visible-controller";
-module Emitter from "morlock/core/emitter";
+import { map, mapObject, sortBy, parseInteger, set, flip, getOption, partial } from 'morlock/core/util';
+import { setStyle, getRect } from 'morlock/core/dom';
+import ResizeController from 'morlock/controllers/resize-controller';
+import ElementVisibleController from 'morlock/controllers/element-visible-controller';
+import * as Emitter from 'morlock/core/emitter';
 
 /**
  * Ghetto Record implementation.

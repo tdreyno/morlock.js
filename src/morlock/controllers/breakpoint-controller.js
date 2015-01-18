@@ -1,7 +1,7 @@
-import { objectKeys, compose, isTrue, select, get } from "morlock/core/util";
-module Stream from "morlock/core/stream";
-module BreakpointStream from "morlock/streams/breakpoint-stream";
-module Emitter from "morlock/core/emitter";
+import { objectKeys, compose, isTrue, select, get } from 'morlock/core/util';
+import * as Stream from 'morlock/core/stream';
+import * as BreakpointStream from 'morlock/streams/breakpoint-stream';
+import * as Emitter from 'morlock/core/emitter';
 
 /**
  * Provides a familiar OO-style API for tracking breakpoint events.
@@ -39,4 +39,4 @@ function BreakpointController(options) {
   };
 }
 
-export default = BreakpointController;
+export default BreakpointController;

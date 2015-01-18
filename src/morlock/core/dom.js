@@ -1,5 +1,5 @@
-import { memoize, isDefined, mapObject, flip, indexOf, forEach, autoCurry } from "morlock/core/util";
-import CustomModernizr from "vendor/modernizr";
+import { memoize, isDefined, mapObject, flip, indexOf, forEach, autoCurry } from 'morlock/core/util';
+import CustomModernizr from 'vendor/modernizr';
 
 /**
  * Backwards compatible Media Query matcher.

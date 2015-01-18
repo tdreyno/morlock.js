@@ -1,5 +1,5 @@
-module Stream from "morlock/core/stream";
-import { getOption, memoize, defer } from "morlock/core/util";
+import * as Stream from 'morlock/core/stream';
+import { getOption, memoize, defer } from 'morlock/core/util';
 
 /**
  * Create a new Stream containing resize events.

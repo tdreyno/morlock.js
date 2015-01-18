@@ -1,4 +1,4 @@
-import { partial, indexOf } from "morlock/core/util";
+import { partial, indexOf } from 'morlock/core/util';
 
 function Emitter() {
   if (!(this instanceof Emitter)) {

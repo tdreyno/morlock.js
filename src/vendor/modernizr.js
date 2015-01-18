@@ -332,7 +332,7 @@
       }
     };
 
-    export default = Modernizr;
+    export default Modernizr;
 
     // return Modernizr;
 

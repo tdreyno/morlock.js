@@ -1,12 +1,12 @@
 import { getOption, autoCurry, partial, forEach, call,
-         functionBind, isFunction } from "morlock/core/util";
+         functionBind, isFunction } from 'morlock/core/util';
 import { getStyle, setStyle, setStyles, addClass, removeClass, insertBefore,
-         documentScrollY, detachElement } from "morlock/core/dom";
-module Stream from "morlock/core/stream";
-module ScrollStream from "morlock/streams/scroll-stream";
-module ResizeStream from "morlock/streams/resize-stream";
-import ScrollPositionController from "morlock/controllers/scroll-position-controller";
-import CustomModernizr from "vendor/modernizr";
+         documentScrollY, detachElement } from 'morlock/core/dom';
+import * as Stream from 'morlock/core/stream';
+import * as ScrollStream from 'morlock/streams/scroll-stream';
+import * as ResizeStream from 'morlock/streams/resize-stream';
+import ScrollPositionController from 'morlock/controllers/scroll-position-controller';
+import CustomModernizr from 'vendor/modernizr';
 
 function StickyElementController(elem, container, options) {
   if (!(this instanceof StickyElementController)) {
@@ -237,4 +237,4 @@ function evaluateOption(stickyElement, option) {
   }
 }
 
-export default = StickyElementController;
+export default StickyElementController;
