@@ -56,6 +56,5 @@ module.exports = function (grunt) {
 
   grunt.registerTask('watch', ['clean', 'webpack-dev-server:start']);
   grunt.registerTask('build', ['clean', 'webpack:dist']);
-  grunt.registerTask('test', ['clean', 'webpack:dist', 'mocha_phantomjs']);
   grunt.registerTask('default', ['build']);
 };

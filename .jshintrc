@@ -19,6 +19,7 @@
   "predef": ["-Promise", "-Set", "-Symbol"],
   "globals": {
     "Modernizr": true,
-    "__STATIC_BASE_EXPERIMENT__": true
+    "specify": true,
+    "describe": true
   }
 }

@@ -16,7 +16,7 @@ module.exports = {
     preLoaders: [
       {
         test: /\.js$/,
-        exclude: /node_modules|dist|demos|src\/vendor/,
+        exclude: /node_modules|dist|demos|src\/vendor|test/,
         loader: 'jshint-loader'
       }
     ],
@@ -29,7 +29,7 @@ module.exports = {
       {
         test: /\.js$/,
         exclude: /node_modules|dist|demos/,
-        loader: '6to5-loader?runtime'
+        loader: '6to5-loader?runtime&modules=umd'
       }
     ]
   },
