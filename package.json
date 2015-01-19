@@ -1,16 +1,18 @@
 {
   "name": "morlock",
+  "version": "0.2.9",
   "description": "Low level libraries for responsive & interactive websites",
+  "license": "MIT",
   "devDependencies": {
     "assert": "^1.3.0",
     "exports-loader": "^0.6.2",
     "expose-loader": "^0.6.0",
-    "grunt": "~0.4.1",
-    "grunt-contrib-clean": "~0.5.0",
-    "grunt-release": "~0.6.0",
+    "grunt": "~0.4.5",
+    "grunt-contrib-clean": "~0.6.0",
+    "grunt-release": "~0.10.0",
     "grunt-webpack": "^1.0.8",
     "imports-loader": "^0.6.3",
-    "jshint": "^2.5.10",
+    "jshint": "^2.5.11",
     "jshint-loader": "^0.8.0",
     "karma": "^0.12.31",
     "karma-cli": "0.0.4",
@@ -22,7 +24,12 @@
     "webpack": "^1.4.15",
     "webpack-dev-server": "^1.7.0"
   },
+  "directories": {
+    "example": "demos"
+  },
   "scripts": {
+    "build": "webpack -d",
+    "build-min": "webpack -p",
     "test": "karma start --single-run"
   },
   "repository": {

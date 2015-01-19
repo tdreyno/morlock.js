@@ -1,5 +1,5 @@
 var assert = require('assert');
-var buffer = require('core/buffer');
+var buffer = require('../core/buffer');
 
 describe('Buffer tests', function() {
 

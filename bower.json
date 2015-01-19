@@ -8,12 +8,13 @@
   "ignore": [
     "**/.*",
     "_*",
-    "docs",
-    "frags",
-    "src",
-    "test",
+    "node_modules",
+    "bower_components",
+    "tests",
     "demos",
-    "vendor"
+    "karma.conf.js",
+    "package.json",
+    "webpack.config.js"
   ],
   "keywords": [
     "responsive",

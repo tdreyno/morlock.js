@@ -1,5 +1,5 @@
 var assert = require('assert');
-var util = require('core/util');
+var util = require('../core/util');
 
 describe('Util tests', function(){
 

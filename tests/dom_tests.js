@@ -1,5 +1,5 @@
 var assert = require('assert');
-var util = require('core/dom');
+var util = require('../core/dom');
 
 describe('DOM tests', function(){
   specify('getViewportWidth', function(){

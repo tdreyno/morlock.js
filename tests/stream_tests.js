@@ -1,5 +1,5 @@
 var assert = require('assert');
-var Stream = require('core/stream');
+var Stream = require('../core/stream');
 
 describe('Stream tests', function(){
 
