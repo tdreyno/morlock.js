@@ -1,11 +1,7 @@
 var webpack = require('webpack');
 
 module.exports = {
-  entry: './src/morlock/index.js',
-
-  resolve: {
-    root: __dirname + '/src'
-  },
+  entry: './index.js',
 
   output: {
     path: __dirname + '/dist',
@@ -16,20 +12,15 @@ module.exports = {
     preLoaders: [
       {
         test: /\.js$/,
-        exclude: /node_modules|dist|demos|src\/vendor|test/,
+        exclude: /node_modules|dist|demos|vendor|test|externs/,
         loader: 'jshint-loader'
       }
     ],
 
     loaders: [
       {
-        test: require.resolve('./src/morlock/index'),
+        test: require.resolve('./index'),
         loader: 'expose?morlock'
-      },
-      {
-        test: /\.js$/,
-        exclude: /node_modules|dist|demos/,
-        loader: '6to5-loader?runtime&modules=umd'
       }
     ]
   },
