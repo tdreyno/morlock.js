@@ -31,7 +31,7 @@ define("morlock/controllers/sticky-element-controller",
       this.elem = elem;
       this.container = container;
       this.fixed = false;
-      this.useTransform = true;
+      this.useTransform = false;
       this.originalZIndex = '';
       this.elemWidth = 0;
       this.elemHeight = 0;
@@ -42,19 +42,18 @@ define("morlock/controllers/sticky-element-controller",
 
       options || (options = {});
 
-      this.positionType = getOption(options.positionType, 'absolute');
       this.zIndex = getOption(options.zIndex, 1000);
       this.marginTop = getOption(options.marginTop, 0);
       this.marginBottom = getOption(options.marginBottom, 0);
       this.fixCallBack = getOption(options.fixCallBack, null);
       this.unfixCallBack = getOption(options.unfixCallBack, null);
 
-      this.useTransform = CustomModernizr.csstransforms && getOption(options.useTransform, true);
+      this.useTransform = CustomModernizr.csstransforms && getOption(options.useTransform, false);
 
       this.subscribedListeners_ = [
         Stream.onValue(ScrollStream.create(), onScroll(this)),
         Stream.onValue(
-          Stream.debounce(64, ResizeStream.create()),
+          Stream.debounce(getOption(options.debounce, 64), ResizeStream.create()),
           functionBind(this.onResize, this)
         )
       ];
@@ -90,7 +89,6 @@ define("morlock/controllers/sticky-element-controller",
         'position': '',
         'left': '',
         'top': '',
-        // 'overflow': '',
         'display': ''
       });
 
@@ -107,11 +105,25 @@ define("morlock/controllers/sticky-element-controller",
 
       stickyElement.originalZIndex = getStyle(stickyElement.elem, 'zIndex');
       stickyElement.originalPosition = getStyle(stickyElement.elem, 'position');
-      stickyElement.originalOffsetTop = getStyle(stickyElement.elem, 'top');
+      stickyElement.originalOffsetTop = stickyElement.elem.offsetTop;
+      stickyElement.originalOffsetLeft = stickyElement.elem.offsetLeft;
+      stickyElement.originalFloat = getStyle(stickyElement.elem, 'float');
       stickyElement.originalWidth = getStyle(stickyElement.elem, 'width');
       stickyElement.originalHeight = getStyle(stickyElement.elem, 'height');
       stickyElement.originalDisplay = getStyle(stickyElement.elem, 'display');
-      // stickyElement.originalOverflow = getStyle(stickyElement.elem, 'overflow');
+
+      var obj = stickyElement.elem;
+      var computedTop = 0;
+      var computedLeft = 0;
+      if (obj.offsetParent) {
+        do {
+          computedTop += obj.offsetTop;
+          computedLeft += obj.offsetLeft;
+        } while (obj = obj.offsetParent);
+      }
+
+      stickyElement.originalPositionLeft = computedLeft;
+      stickyElement.originalPositionTop = computedTop;
 
       if (stickyElement.useTransform) {
         stickyElement.originalTransform = getStyle(stickyElement.elem, 'transform');
@@ -124,18 +136,18 @@ define("morlock/controllers/sticky-element-controller",
 
       var currentScroll = documentScrollY();
 
+      // Slow, avoid
       var containerDimensions = stickyElement.container.getBoundingClientRect();
       stickyElement.containerTop = containerDimensions.top + currentScroll;
       stickyElement.containerHeight = containerDimensions.height;
-      stickyElement.originalTop = stickyElement.elem.offsetTop;
+      stickyElement.maxTop = stickyElement.containerHeight - stickyElement.elemHeight - evaluateOption(stickyElement, stickyElement.marginBottom);
 
       setStyles(stickyElement.elem, {
         'position': 'absolute',
-        'top': stickyElement.originalTop + 'px',
-        'left': stickyElement.elem.offsetLeft + 'px',
+        'top': stickyElement.originalOffsetTop + 'px',
+        'left': stickyElement.originalOffsetLeft + 'px',
         'width': stickyElement.elemWidth + 'px',
         'height': stickyElement.elemHeight + 'px',
-        // 'overflow': 'hidden',
         'display': 'block'
       });
 
@@ -143,10 +155,10 @@ define("morlock/controllers/sticky-element-controller",
         addClass(stickyElement.spacer, 'stick-element-spacer');
 
         setStyles(stickyElement.spacer, {
-          // 'width': stickyElement.elemWidth + 'px',
+          'width': stickyElement.elemWidth + 'px',
           'height': stickyElement.elemHeight + 'px',
           'display': getStyle(stickyElement.elem, 'display'),
-          'float': getStyle(stickyElement.elem, 'float'),
+          'float': stickyElement.originalFloat,
           'pointerEvents': 'none',
           'visibility': 'hidden',
           'opacity': 0,
@@ -179,31 +191,43 @@ define("morlock/controllers/sticky-element-controller",
     }
 
     var onScroll = autoCurry(function onScroll_(stickyElement, scrollY) {
-      if (!stickyElement.fixed) { return; }
+      if (!stickyElement.fixed) {
+        return;
+      }
 
       if (scrollY < 0) {
         scrollY = 0;
       }
 
       var newTop = scrollY + evaluateOption(stickyElement, stickyElement.marginTop) - stickyElement.containerTop;
-      var maxTop = stickyElement.containerHeight - stickyElement.elemHeight - evaluateOption(stickyElement, stickyElement.marginBottom);
+      var maxTop = stickyElement.maxTop;
 
       if (stickyElement.useTransform) {
-        maxTop -= stickyElement.originalTop;
+        maxTop -= stickyElement.originalOffsetTop;
       } else {
-        newTop += stickyElement.originalTop;
+        newTop += stickyElement.originalOffsetTop;
       }
 
       newTop = Math.max(0, Math.min(newTop, maxTop));
 
       if (stickyElement.currentTop !== newTop) {
+        if (stickyElement.useTransform) {
+          setStyle(stickyElement.elem, 'transform', 'translate3d(0, ' + newTop + 'px, 0)');
+        } else if (newTop === maxTop) {
+          setStyles(stickyElement.elem, {
+            'position': 'absolute',
+            'top': (stickyElement.originalOffsetTop + stickyElement.containerHeight - stickyElement.elemHeight) + 'px',
+            'left': stickyElement.originalOffsetLeft + 'px'
+          });
 
-        if (stickyElement.positionType !== 'fixed') {
-          if (stickyElement.useTransform) {
-            setStyle(stickyElement.elem, 'transform', 'translate3d(0, ' + newTop + 'px, 0)');
-          } else {
-            setStyle(stickyElement.elem, 'top', newTop + 'px');
-          }
+          stickyElement.stuck = true;
+        } else if (newTop < maxTop && stickyElement.stuck) {
+          stickyElement.stuck = false;
+          setStyles(stickyElement.elem, {
+            'position': 'fixed',
+            'top': stickyElement.marginTop + 'px',
+            'left': stickyElement.originalPositionLeft + 'px'
+          });
         }
 
         stickyElement.currentTop = newTop;
@@ -215,16 +239,22 @@ define("morlock/controllers/sticky-element-controller",
 
       addClass(stickyElement.elem, 'fixed');
       setStyles(stickyElement.elem, {
-        'position': stickyElement.positionType,
+        'position': (stickyElement.useTransform) ? 'absolute' : 'fixed',
         'zIndex': stickyElement.zIndex
       });
 
       stickyElement.fixed = true;
 
+      if (!stickyElement.useTransform) {
+        setStyles(stickyElement.elem, {
+          'top': stickyElement.marginTop + 'px',
+          'left': stickyElement.originalPositionLeft + 'px'
+        });
+      }
+
       if (isFunction(stickyElement.fixCallBack)) {
         stickyElement.fixCallBack(stickyElement);
       }
-
     }
 
     function unfix(stickyElement) {
@@ -234,7 +264,8 @@ define("morlock/controllers/sticky-element-controller",
       setStyles(stickyElement.elem, {
         'position': 'absolute',
         'zIndex': stickyElement.originalZIndex,
-        'top': stickyElement.originalTop
+        'top': stickyElement.originalOffsetTop + 'px',
+        'left': stickyElement.originalOffsetLeft + 'px'
       });
 
       stickyElement.fixed = false;

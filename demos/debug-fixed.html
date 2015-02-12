@@ -128,18 +128,19 @@
         zIndex: 20000,
         marginBottom: function() {
           return $(document.body).height() - 500;
-        }
+        },
+        debounce: 0
       });
 
       morlock.Util.forEach(function(container) {
         morlock.Util.forEach(function(elem) {
-          morlock.stickyElement(elem, container, { marginTop: headerHeight, useTransform: false });
+          morlock.stickyElement(elem, container, { marginTop: headerHeight, debounce: 0 });
         }, container.querySelectorAll('.headline'));
       }, document.querySelectorAll('#tableview1 .row'));
 
       morlock.enableJQuery();
-      $('#tableview2 .row').morlockStickyElement('.label', { marginTop: headerHeight });
-      $('#tableview3 .row').morlockStickyElement('.headline', { marginTop: headerHeight });
+      $('#tableview2 .row').morlockStickyElement('.label', { marginTop: headerHeight, debounce: 0 });
+      $('#tableview3 .row').morlockStickyElement('.headline', { marginTop: headerHeight, debounce: 0 });
     }
 
     start();
