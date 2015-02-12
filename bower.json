@@ -1,6 +1,6 @@
 {
   "name": "morlock",
-  "version": "0.2.6",
+  "version": "0.3.0",
   "description": "Low level libraries for responsive & interactive websites",
   "main": "dist/morlock.js",
   "dependencies": {},
@@ -8,12 +8,13 @@
   "ignore": [
     "**/.*",
     "_*",
-    "docs",
-    "frags",
-    "src",
-    "test",
+    "node_modules",
+    "bower_components",
+    "tests",
     "demos",
-    "vendor"
+    "karma.conf.js",
+    "package.json",
+    "webpack.config.js"
   ],
   "keywords": [
     "responsive",

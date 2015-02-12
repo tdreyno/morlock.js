@@ -1,0 +1,25 @@
+{
+  "browser": true,
+  "devel": true,
+  "esnext": true,
+  "curly": true,
+  "camelcase": true,
+  "eqeqeq": true,
+  "forin": true,
+  "freeze": true,
+  "indent": 2,
+  "latedef": "nofunc",
+  "noarg": true,
+  "noempty": true,
+  "nonbsp": true,
+  "nonew": true,
+  "quotmark": "single",
+  "undef": true,
+  "unused": true,
+  "predef": ["-Promise", "-Set", "-Symbol"],
+  "globals": {
+    "Modernizr": true,
+    "specify": true,
+    "describe": true
+  }
+}

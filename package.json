@@ -1,24 +1,36 @@
 {
   "name": "morlock",
+  "version": "0.3.0",
   "description": "Low level libraries for responsive & interactive websites",
-  "dependencies": {
-    "almond": "^0.2.9"
-  },
+  "license": "MIT",
   "devDependencies": {
-    "grunt": "~0.4.1",
-    "grunt-contrib-clean": "~0.5.0",
-    "grunt-contrib-concat": "~0.3.0",
-    "grunt-contrib-jshint": "~0.10.0",
-    "grunt-contrib-requirejs": "~0.4.1",
-    "grunt-contrib-uglify": "~0.2.4",
-    "grunt-contrib-watch": "^0.6.1",
-    "grunt-es6-module-transpiler": "~0.6.0",
-    "grunt-mocha-phantomjs": "~0.3.0",
-    "grunt-release": "~0.6.0",
-    "matchdep": "~0.3.0"
+    "assert": "^1.3.0",
+    "exports-loader": "^0.6.2",
+    "expose-loader": "^0.6.0",
+    "grunt": "~0.4.5",
+    "grunt-contrib-clean": "~0.6.0",
+    "grunt-release": "~0.10.0",
+    "grunt-webpack": "^1.0.8",
+    "imports-loader": "^0.6.3",
+    "jshint": "^2.5.11",
+    "jshint-loader": "^0.8.0",
+    "karma": "^0.12.31",
+    "karma-cli": "0.0.4",
+    "karma-mocha": "^0.1.10",
+    "karma-phantomjs-launcher": "^0.1.4",
+    "karma-webpack": "^1.5.0",
+    "matchdep": "~0.3.0",
+    "mocha": "^2.1.0",
+    "webpack": "^1.4.15",
+    "webpack-dev-server": "^1.7.0"
+  },
+  "directories": {
+    "example": "demos"
   },
   "scripts": {
-    "test": "grunt test"
+    "build": "webpack -d",
+    "build-min": "webpack -p",
+    "test": "karma start --single-run"
   },
   "repository": {
     "type": "git",
@@ -30,5 +42,6 @@
   "keywords": [
     "responsive"
   ],
-  "author": "Thomas Reynolds"
+  "author": "Thomas Reynolds",
+  "main": "index.js"
 }
