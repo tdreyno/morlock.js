@@ -401,41 +401,56 @@
 	  this.containerHeight = 0;
 	  this.spacer = document.createElement('div');
 
-	  options = options || (options = {});
+	  options || (options = {});
 
 	  this.zIndex = Util.getOption(options.zIndex, 1000);
 	  this.marginTop = Util.getOption(options.marginTop, 0);
 	  this.marginBottom = Util.getOption(options.marginBottom, 0);
 	  this.fixCallBack = Util.getOption(options.fixCallBack, null);
 	  this.unfixCallBack = Util.getOption(options.unfixCallBack, null);
+	  this.debounce = Util.getOption(options.debounce, 64);
 
-	  this.subscribedListeners_ = [
-	    Stream.onValue(ScrollStream.create(), onScroll(this)),
-	    Stream.onValue(
-	      Stream.debounce(Util.getOption(options.debounce, 64), ResizeStream.create()),
-	      Util.functionBind(this.onResize, this)
-	    )
-	  ];
-
-	  setupPositions(this);
+	  subscribeListeners(this);
 	  onScroll(this, DOM.documentScrollY());
 	}
 
 	StickyElementController.prototype.onResize = function() {
+	  if (this.disabled) { return; }
+
 	  resetPositions(this);
 	  setupPositions(this);
 	  onScroll(this, DOM.documentScrollY());
 	};
 
-	StickyElementController.prototype.destroy = function() {
+	StickyElementController.prototype.disable = function() {
+	  if (this.disabled) { return; }
+
 	  Util.forEach(Util.call, this.subscribedListeners_);
+	  if (this.topOfContainer_) {
+	    this.topOfContainer_.off('before', this.onBeforeHandler_);
+	    this.topOfContainer_.off('after', this.onAfterHandler_);
+	  }
+
 	  resetPositions(this);
 
-	  this.spacer = null;
+	  this.disabled = true;
+	};
+
+	StickyElementController.prototype.enable = function() {
+	  if (this.disabled !== undefined && !this.disabled) { return; }
+
+	  subscribeListeners(this);
+	  setupPositions(this);
+	  onScroll(this, DOM.documentScrollY())
+
+	  this.disabled = false;
 	};
 
 	function resetPositions(stickyElement) {
-	  unfix(stickyElement);
+	  DOM.removeClass(stickyElement.elem, 'fixed');
+
+	  stickyElement.sticky = false;
+	  stickyElement.fixed = false;
 
 	  stickyElement.currentTop = null;
 
@@ -525,10 +540,10 @@
 	    DOM.insertBefore(stickyElement.spacer, stickyElement.elem);
 	  }
 
-	  stickyElement.whenToStick = stickyElement.containerTop - stickyElement.evaluatedMarginTop + stickyElement.originalOffsetTop;
+	  stickyElement.whenToStick = stickyElement.containerTop - stickyElement.evaluatedMarginTop;
 
-	  stickyElement.onBeforeHandler_ = stickyElement.onBeforeHandler_ || (stickyElement.onBeforeHandler_ = Util.partial(unfix, stickyElement));
-	  stickyElement.onAfterHandler_ = stickyElement.onAfterHandler_ || (stickyElement.onAfterHandler_ = Util.partial(fix, stickyElement));
+	  stickyElement.onBeforeHandler_ || (stickyElement.onBeforeHandler_ = Util.partial(unfix, stickyElement));
+	  stickyElement.onAfterHandler_ || (stickyElement.onAfterHandler_ = Util.partial(fix, stickyElement));
 
 	  if (stickyElement.topOfContainer_) {
 	    stickyElement.topOfContainer_.off('before', stickyElement.onBeforeHandler_);
@@ -539,11 +554,21 @@
 	  stickyElement.topOfContainer_.on('before', stickyElement.onBeforeHandler_);
 	  stickyElement.topOfContainer_.on('after', stickyElement.onAfterHandler_);
 
-	  if (currentScroll < stickyElement.whenToStick) {
+	  if (currentScroll < stickyElement.whenToStick && stickyElement.originalPositionTop !== 0) {
 	    stickyElement.onBeforeHandler_();
 	  } else {
 	    stickyElement.onAfterHandler_();
 	  }
+	}
+
+	function subscribeListeners(stickyElement) {
+	  stickyElement.subscribedListeners_ = [
+	    Stream.onValue(ScrollStream.create(), onScroll(stickyElement)),
+	    Stream.onValue(
+	      Stream.debounce(stickyElement.debounce, ResizeStream.create()),
+	      Util.functionBind(stickyElement.onResize, stickyElement)
+	    )
+	  ];
 	}
 
 	var onScroll = Util.autoCurry(function onScroll_(stickyElement, scrollY) {
@@ -552,7 +577,7 @@
 	  }
 
 	  if (scrollY < 0) {
-	    scrollY = 0;
+	    return;
 	  }
 
 	  var newTop = scrollY + stickyElement.evaluatedMarginTop - stickyElement.containerTop + stickyElement.originalOffsetTop;
