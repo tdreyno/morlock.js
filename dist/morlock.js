@@ -178,7 +178,7 @@
 
 	var Util = __webpack_require__(11);
 	var Stream = __webpack_require__(14);
-	var ScrollStream = __webpack_require__(18);
+	var ScrollStream = __webpack_require__(19);
 	var Emitter = __webpack_require__(16);
 
 	/**
@@ -216,7 +216,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var Util = __webpack_require__(11);
-	var DOM = __webpack_require__(19);
+	var DOM = __webpack_require__(18);
 	var Stream = __webpack_require__(14);
 	var Emitter = __webpack_require__(16);
 	var ScrollController = __webpack_require__(4);
@@ -379,9 +379,9 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var Util = __webpack_require__(11);
-	var DOM = __webpack_require__(19);
+	var DOM = __webpack_require__(18);
 	var Stream = __webpack_require__(14);
-	var ScrollStream = __webpack_require__(18);
+	var ScrollStream = __webpack_require__(19);
 	var ResizeStream = __webpack_require__(15);
 	var ScrollPositionController = __webpack_require__(6);
 
@@ -508,9 +508,7 @@
 	  var containerDimensions = stickyElement.container.getBoundingClientRect();
 	  stickyElement.containerTop = containerDimensions.top + currentScroll;
 	  stickyElement.containerHeight = containerDimensions.height;
-	  stickyElement.evaluatedMarginBottom = evaluateOption(stickyElement, stickyElement.marginBottom);
-	  stickyElement.evaluatedMarginTop = evaluateOption(stickyElement, stickyElement.marginTop);
-	  stickyElement.maxTop = stickyElement.containerHeight - stickyElement.elemHeight - stickyElement.evaluatedMarginBottom;
+	  stickyElement.maxTop = stickyElement.containerHeight - stickyElement.elemHeight - evaluateOption(stickyElement, stickyElement.marginBottom);
 	  stickyElement.fixedTop = stickyElement.originalOffsetTop + stickyElement.containerHeight - stickyElement.elemHeight;
 
 	  DOM.setStyles(stickyElement.elem, {
@@ -540,7 +538,7 @@
 	    DOM.insertBefore(stickyElement.spacer, stickyElement.elem);
 	  }
 
-	  stickyElement.whenToStick = stickyElement.containerTop - stickyElement.evaluatedMarginTop;
+	  stickyElement.whenToStick = stickyElement.containerTop - evaluateOption(stickyElement, stickyElement.marginTop);
 
 	  stickyElement.onBeforeHandler_ || (stickyElement.onBeforeHandler_ = Util.partial(unfix, stickyElement));
 	  stickyElement.onAfterHandler_ || (stickyElement.onAfterHandler_ = Util.partial(fix, stickyElement));
@@ -580,21 +578,23 @@
 	    return;
 	  }
 
-	  var newTop = scrollY + stickyElement.evaluatedMarginTop - stickyElement.containerTop + stickyElement.originalOffsetTop;
+	  var newTop = scrollY + evaluateOption(stickyElement, stickyElement.marginTop) - stickyElement.containerTop + stickyElement.originalOffsetTop;
 	      newTop = Math.max(0, Math.min(newTop, stickyElement.maxTop));
 
 	  if (stickyElement.currentTop !== newTop) {
 	    if (newTop === stickyElement.maxTop && stickyElement.fixed) {
+	      var evalBottom = evaluateOption(stickyElement, stickyElement.marginBottom);
 	      DOM.setStyles(stickyElement.elem, {
 	        'position': 'absolute',
-	        'top': (stickyElement.evaluatedMarginBottom === 0) ? stickyElement.fixedTop : stickyElement.maxTop + 'px',
+	        'top': (evalBottom === 0) ? stickyElement.fixedTop : stickyElement.maxTop + 'px',
 	        'left': stickyElement.originalOffsetLeft + 'px'
 	      });
 
 	      stickyElement.fixed = false;
 	    } else if (newTop < stickyElement.maxTop && !stickyElement.fixed) {
+	      var evalTop = evaluateOption(stickyElement, stickyElement.marginTop);
 	      DOM.setStyles(stickyElement.elem, {
-	        'top': (stickyElement.evaluatedMarginTop + stickyElement.originalOffsetTop) + 'px',
+	        'top': (evalTop + stickyElement.originalOffsetTop) + 'px',
 	        'left': stickyElement.originalPositionLeft + 'px',
 	        'position': 'fixed'
 	      });
@@ -659,7 +659,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var Util = __webpack_require__(11);
-	var DOM = __webpack_require__(19);
+	var DOM = __webpack_require__(18);
 	var ResizeController = __webpack_require__(2);
 	var ElementVisibleController = __webpack_require__(5);
 	var Emitter = __webpack_require__(16);
@@ -2513,7 +2513,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var Util = __webpack_require__(11);
-	var DOM = __webpack_require__(19);
+	var DOM = __webpack_require__(18);
 	var Stream = __webpack_require__(14);
 	var ResizeStream = __webpack_require__(15);
 
@@ -2596,55 +2596,6 @@
 
 /***/ },
 /* 18 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var Stream = __webpack_require__(14);
-	var Util = __webpack_require__(11);
-	var DOM = __webpack_require__(19);
-	var Events = __webpack_require__(12);
-
-	/**
-	 * Create a stream of window.onscroll events, but only calculate their
-	 * position on requestAnimationFrame frames.
-	 * @return {Stream}
-	 */
-	var create = Util.memoize(function create_() {
-	  var oldScrollY;
-	  var scrollDirty = true;
-	  var scrollEventsStream = Stream.createFromEvents(window, 'scroll');
-
-	  Stream.onValue(scrollEventsStream, function onScrollSetDirtyBit_() {
-	    scrollDirty = true;
-	  });
-
-	  var rAF = Stream.createFromRAF();
-
-	  var didChangeOnRAFStream = Stream.filter(function filterDirtyFramesFromRAF_() {
-	    if (!scrollDirty) { return false; }
-	    scrollDirty = false;
-
-	    var newScrollY = DOM.documentScrollY();
-	    if (oldScrollY !== newScrollY) {
-	      oldScrollY = newScrollY;
-	      return true;
-	    }
-
-	    return false;
-	  }, rAF);
-
-	  // It's going to space, will you just give it a second!
-	  Util.defer(Util.partial(Events.dispatchEvent, window, 'scroll'), 10);
-
-	  return Stream.map(function getWindowPosition_() {
-	    return oldScrollY;
-	  }, didChangeOnRAFStream);
-	});
-
-	module.exports = { create: create };
-
-
-/***/ },
-/* 19 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var Util = __webpack_require__(11);
@@ -2868,11 +2819,60 @@
 
 
 /***/ },
+/* 19 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var Stream = __webpack_require__(14);
+	var Util = __webpack_require__(11);
+	var DOM = __webpack_require__(18);
+	var Events = __webpack_require__(12);
+
+	/**
+	 * Create a stream of window.onscroll events, but only calculate their
+	 * position on requestAnimationFrame frames.
+	 * @return {Stream}
+	 */
+	var create = Util.memoize(function create_() {
+	  var oldScrollY;
+	  var scrollDirty = true;
+	  var scrollEventsStream = Stream.createFromEvents(window, 'scroll');
+
+	  Stream.onValue(scrollEventsStream, function onScrollSetDirtyBit_() {
+	    scrollDirty = true;
+	  });
+
+	  var rAF = Stream.createFromRAF();
+
+	  var didChangeOnRAFStream = Stream.filter(function filterDirtyFramesFromRAF_() {
+	    if (!scrollDirty) { return false; }
+	    scrollDirty = false;
+
+	    var newScrollY = DOM.documentScrollY();
+	    if (oldScrollY !== newScrollY) {
+	      oldScrollY = newScrollY;
+	      return true;
+	    }
+
+	    return false;
+	  }, rAF);
+
+	  // It's going to space, will you just give it a second!
+	  Util.defer(Util.partial(Events.dispatchEvent, window, 'scroll'), 10);
+
+	  return Stream.map(function getWindowPosition_() {
+	    return oldScrollY;
+	  }, didChangeOnRAFStream);
+	});
+
+	module.exports = { create: create };
+
+
+/***/ },
 /* 20 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var Stream = __webpack_require__(14);
-	var ScrollStream = __webpack_require__(18);
+	var ScrollStream = __webpack_require__(19);
 
 	/**
 	 * Create a new Stream containing events which fire when a position has

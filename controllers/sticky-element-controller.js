@@ -128,9 +128,7 @@ function setupPositions(stickyElement) {
   var containerDimensions = stickyElement.container.getBoundingClientRect();
   stickyElement.containerTop = containerDimensions.top + currentScroll;
   stickyElement.containerHeight = containerDimensions.height;
-  stickyElement.evaluatedMarginBottom = evaluateOption(stickyElement, stickyElement.marginBottom);
-  stickyElement.evaluatedMarginTop = evaluateOption(stickyElement, stickyElement.marginTop);
-  stickyElement.maxTop = stickyElement.containerHeight - stickyElement.elemHeight - stickyElement.evaluatedMarginBottom;
+  stickyElement.maxTop = stickyElement.containerHeight - stickyElement.elemHeight - evaluateOption(stickyElement, stickyElement.marginBottom);
   stickyElement.fixedTop = stickyElement.originalOffsetTop + stickyElement.containerHeight - stickyElement.elemHeight;
 
   DOM.setStyles(stickyElement.elem, {
@@ -160,7 +158,7 @@ function setupPositions(stickyElement) {
     DOM.insertBefore(stickyElement.spacer, stickyElement.elem);
   }
 
-  stickyElement.whenToStick = stickyElement.containerTop - stickyElement.evaluatedMarginTop;
+  stickyElement.whenToStick = stickyElement.containerTop - evaluateOption(stickyElement, stickyElement.marginTop);
 
   stickyElement.onBeforeHandler_ || (stickyElement.onBeforeHandler_ = Util.partial(unfix, stickyElement));
   stickyElement.onAfterHandler_ || (stickyElement.onAfterHandler_ = Util.partial(fix, stickyElement));
@@ -200,21 +198,23 @@ var onScroll = Util.autoCurry(function onScroll_(stickyElement, scrollY) {
     return;
   }
 
-  var newTop = scrollY + stickyElement.evaluatedMarginTop - stickyElement.containerTop + stickyElement.originalOffsetTop;
+  var newTop = scrollY + evaluateOption(stickyElement, stickyElement.marginTop) - stickyElement.containerTop + stickyElement.originalOffsetTop;
       newTop = Math.max(0, Math.min(newTop, stickyElement.maxTop));
 
   if (stickyElement.currentTop !== newTop) {
     if (newTop === stickyElement.maxTop && stickyElement.fixed) {
+      var evalBottom = evaluateOption(stickyElement, stickyElement.marginBottom);
       DOM.setStyles(stickyElement.elem, {
         'position': 'absolute',
-        'top': (stickyElement.evaluatedMarginBottom === 0) ? stickyElement.fixedTop : stickyElement.maxTop + 'px',
+        'top': (evalBottom === 0) ? stickyElement.fixedTop : stickyElement.maxTop + 'px',
         'left': stickyElement.originalOffsetLeft + 'px'
       });
 
       stickyElement.fixed = false;
     } else if (newTop < stickyElement.maxTop && !stickyElement.fixed) {
+      var evalTop = evaluateOption(stickyElement, stickyElement.marginTop);
       DOM.setStyles(stickyElement.elem, {
-        'top': (stickyElement.evaluatedMarginTop + stickyElement.originalOffsetTop) + 'px',
+        'top': (evalTop + stickyElement.originalOffsetTop) + 'px',
         'left': stickyElement.originalPositionLeft + 'px',
         'position': 'fixed'
       });
