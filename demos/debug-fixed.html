@@ -106,6 +106,7 @@
   <script src="http://code.jquery.com/jquery-2.0.2.js"></script>
   <script src="../dist/morlock.js"></script>
   <script>
+    var headerStick;
     function start() {
       var header = document.getElementById('header');
       var container1 = document.getElementById('tableview1');
@@ -124,22 +125,26 @@
       container3.innerHTML = html.join('');
 
       var headerHeight = header.getBoundingClientRect().height;
-      headerStick = new StickyElementController(header, document.body, {
+
+      headerStick = new morlock.StickyElementController(header, document.body, {
         zIndex: 20000,
         marginBottom: function() {
           return $(document.body).height() - 500;
-        }
+        },
+        debounce: 0
       });
+
+      var sticky = [];
 
       morlock.Util.forEach(function(container) {
         morlock.Util.forEach(function(elem) {
-          morlock.stickyElement(elem, container, { marginTop: headerHeight, useTransform: false });
+          sticky.push(morlock.stickyElement(elem, container, { marginTop: headerHeight, debounce: 0 }));
         }, container.querySelectorAll('.headline'));
       }, document.querySelectorAll('#tableview1 .row'));
 
       morlock.enableJQuery();
-      $('#tableview2 .row').morlockStickyElement('.label', { marginTop: headerHeight });
-      $('#tableview3 .row').morlockStickyElement('.headline', { marginTop: headerHeight });
+      $('#tableview2 .row').morlockStickyElement('.label', { marginTop: headerHeight, debounce: 0 });
+      $('#tableview3 .row').morlockStickyElement('.headline', { marginTop: headerHeight, debounce: 0 });
     }
 
     start();

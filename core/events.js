@@ -23,8 +23,8 @@ var removeEventListener_ = window.removeEventListener || function fallbackRemove
   }
 };
 
-var dispatchEvent_ = window.dispatchEvent || function (eventObject) {
-  return this.fireEvent('on' + eventObject.type, eventObject);
+var dispatchEvent_ = window.dispatchEvent || function(eventObject) {
+  return this.fireEvent('on' + (eventObject.type || eventObject.eventType), eventObject);
 };
 
 var eventListenerInfo = { count: 0 };
@@ -40,8 +40,16 @@ function eventListener(target, eventName, cb) {
 }
 
 function dispatchEvent(target, evType) {
-  var evObj = document.createEvent('HTMLEvents');
-  evObj.initEvent(evType, true, true);
+  var evObj;
+  if (document.createEvent) {
+    evObj = document.createEvent('HTMLEvents');
+    evObj.initEvent(evType, true, true);
+  } else {
+    evObj = document.createEventObject();
+    evObj.eventType = evType;
+  }
+  evObj.eventName = evType;
+
   dispatchEvent_.call(target, evObj);
 }
 

@@ -73,7 +73,7 @@ function defineJQueryPlugins($) {
   $.fn.morlockElementVisible = function(options) {
     return $(this).each(function() {
       var $this = $(this);
-      
+
       var observer = morlock.observeElement(this, options);
 
       observer.on('enter', function() {
