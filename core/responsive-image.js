@@ -19,7 +19,7 @@ function ResponsiveImage() {
   this.src = null;
   this.isFlexible = false;
   this.hasRetina = false;
-  this.hasLoaded = false;
+  this.hasRunOnce = false;
   this.preserveAspectRatio = false;
   this.knownDimensions = null;
   this.hasLoaded = false;
@@ -152,7 +152,7 @@ function update(image) {
     foundBreakpoint = image.knownSizes[0];
   }
 
-  if (foundBreakpoint !== image.currentBreakpoint || !image.hasLoaded) {
+  if (foundBreakpoint !== image.currentBreakpoint || !image.hasRunOnce) {
     image.currentBreakpoint = foundBreakpoint;
     loadImageForBreakpoint(image, image.currentBreakpoint);
   }
@@ -184,7 +184,7 @@ function loadImageForBreakpoint(image, s) {
       setImage(image, img);
       update(image);
 
-      image.hasLoaded = true;
+      image.hasRunOnce = true;
     };
 
     // If requesting retina fails
