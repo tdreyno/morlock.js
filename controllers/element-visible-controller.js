@@ -27,23 +27,27 @@ function ElementVisibleController(elem, options) {
   this.buffer = Util.getOption(options.buffer, 0);
   this.isVisible = false;
   this.rect = null;
+  this.scrollTarget = options.scrollTarget;
 
   // Auto trigger if the last value on the stream is what we're looking for.
   var oldOn = this.on;
   this.on = function wrappedOn(eventName, callback, scope) {
     oldOn.apply(this, arguments);
-    
+
     if (('enter' === eventName) && this.isVisible) {
       scope ? callback.call(scope) : callback();
     }
   };
 
-  var sc = new ScrollController();
+  var sc = new ScrollController({
+    scrollTarget: this.scrollTarget
+  });
+
   sc.on('scroll', this.didScroll, this);
   sc.on('scrollEnd', this.recalculatePosition, this);
 
   Stream.onValue(ResizeStream.create(), Util.functionBind(this.didResize, this));
-  
+
   this.viewportRect = {
     height: window.innerHeight,
     top: 0
@@ -68,7 +72,7 @@ ElementVisibleController.prototype.recalculateOffsets = function() {
 };
 
 ElementVisibleController.prototype.recalculatePosition = function(currentScrollY) {
-  currentScrollY || (currentScrollY = DOM.documentScrollY());
+  currentScrollY || (currentScrollY = DOM.documentScrollY(this.scrollTarget && this.scrollTarget.parentNode));
 
   this.rect = DOM.getRect(this.elem);
   this.rect.top += currentScrollY;
@@ -78,7 +82,7 @@ ElementVisibleController.prototype.recalculatePosition = function(currentScrollY
 };
 
 ElementVisibleController.prototype.update = function(currentScrollY, ignoreCurrentVisibility) {
-  currentScrollY || (currentScrollY = DOM.documentScrollY());
+  currentScrollY || (currentScrollY = DOM.documentScrollY(this.scrollTarget && this.scrollTarget.parentNode));
 
   this.viewportRect.top = currentScrollY;
 

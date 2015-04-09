@@ -19,10 +19,10 @@ function ResponsiveImage() {
   this.src = null;
   this.isFlexible = false;
   this.hasRetina = false;
-  this.hasRunOnce = false;
   this.preserveAspectRatio = false;
   this.knownDimensions = null;
   this.hasLoaded = false;
+  this.hasRunOnce = false;
 }
 
 function create(imageMap) {
@@ -36,7 +36,12 @@ function create(imageMap) {
   }
 
   if (image.lazyLoad) {
-    image.observer = new ElementVisibleController(image.element);
+    image.observer = new ElementVisibleController(
+      image.element,
+      {
+        scrollTarget: imageMap.getScrollTarget(image.element)
+      }
+    );
 
     image.observer.on('enter', function onEnter_() {
       if (!image.checkIfVisible(image)) { return; }
@@ -71,6 +76,9 @@ function createFromElement(elem, options) {
     preserveAspectRatio: Util.getOption(options.preserveAspectRatio, elem.getAttribute('data-preserveAspectRatio') === 'true'),
     checkIfVisible: Util.getOption(options.checkIfVisible, function() {
       return true;
+    }),
+    getScrollTarget: Util.getOption(options.getScrollTarget, function() {
+      return window;
     })
   };
 

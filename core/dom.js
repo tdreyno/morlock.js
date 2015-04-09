@@ -36,9 +36,14 @@ var detectedIE10_ = (navigator.userAgent.indexOf('MSIE 10') !== -1);
 
 /**
  * Get the document scroll.
+ * @param {Element} targetElement - Optional target element.
  * @return {number}
  */
-function documentScrollY() {
+function documentScrollY(targetElement) {
+  if (targetElement && (targetElement !== window)) {
+    return targetElement.scrollTop;
+  }
+
   if (detectedIE10_ && (window.pageYOffset != document.documentElement.scrollTop)) {
     return document.documentElement.scrollTop;
   }
@@ -59,7 +64,7 @@ function getRect(elem) {
   if (!elem || 1 !== elem.nodeType) {
     return false;
   }
-  
+
   var bounds = elem.getBoundingClientRect();
 
   return {
@@ -111,7 +116,7 @@ function insertBefore(before, elem) {
 
 function detachElement(elem) {
   if (elem.parentNode) {
-    elem.parentNode.removeChild(elem); 
+    elem.parentNode.removeChild(elem);
   }
 }
 
