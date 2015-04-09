@@ -20,7 +20,10 @@ function ScrollController(options) {
 
   options = options || {};
 
-  var scrollStream = ScrollStream.create();
+  var scrollStream = ScrollStream.create({
+    scrollTarget: options.scrollTarget
+  });
+
   Stream.onValue(scrollStream, Util.partial(this.trigger, 'scroll'));
 
   var scrollEndStream = Stream.debounce(
