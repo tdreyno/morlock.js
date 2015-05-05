@@ -1,40 +1,50 @@
 var registry_ = [];
 
-var addEventListener_ = window.addEventListener || function fallbackAddRemoveEventListener_(type, listener) {
-  var target = this;
+function addEventListener_(target, type, listener) {
+  if (target.addEventListener) {
+    return target.addEventListener(type, listener);
+  } else {
+    registry_.unshift([target, type, listener, function (event) {
+      event.currentTarget = target;
+      event.preventDefault = function () { event.returnValue = false; };
+      event.stopPropagation = function () { event.cancelBubble = true; };
+      event.target = event.srcElement || target;
 
-  registry_.unshift([target, type, listener, function (event) {
-    event.currentTarget = target;
-    event.preventDefault = function () { event.returnValue = false; };
-    event.stopPropagation = function () { event.cancelBubble = true; };
-    event.target = event.srcElement || target;
+      listener.call(target, event);
+    }]);
 
-    listener.call(target, event);
-  }]);
-
-  this.attachEvent('on' + type, registry_[0][3]);
+    return target.attachEvent('on' + type, registry_[0][3]);
+  }
 };
 
-var removeEventListener_ = window.removeEventListener || function fallbackRemoveEventListener_(type, listener) {
-  for (var index = 0, register; (register = registry_[index]); ++index) {
-    if (register[0] == this && register[1] == type && register[2] == listener) {
-      return this.detachEvent('on' + type, registry_.splice(index, 1)[0][3]);
+function removeEventListener_(target, type, listener) {
+  if (target.removeEventListener) {
+    return target.removeEventListener(type, listener);
+  } else {
+    for (var index = 0, register; (register = registry_[index]); ++index) {
+      if (register[0] == target && register[1] == type && register[2] == listener) {
+        return target.detachEvent('on' + type, registry_.splice(index, 1)[0][3]);
+      }
     }
   }
 };
 
-var dispatchEvent_ = window.dispatchEvent || function(eventObject) {
-  return this.fireEvent('on' + (eventObject.type || eventObject.eventType), eventObject);
+function dispatchEvent_(target, eventObject) {
+  if (target.dispatchEvent) {
+    return target.dispatchEvent(eventObject);
+  } else {
+    return target.fireEvent('on' + (eventObject.type || eventObject.eventType), eventObject);
+  }
 };
 
 var eventListenerInfo = { count: 0 };
 
 function eventListener(target, eventName, cb) {
-  addEventListener_.call(target, eventName, cb, false);
+  addEventListener_(target, eventName, cb, false);
   eventListenerInfo.count++;
 
   return function eventListenerRemove_() {
-    removeEventListener_.call(target, eventName, cb, false);
+    removeEventListener_(target, eventName, cb, false);
     eventListenerInfo.count--;
   };
 }
@@ -50,7 +60,7 @@ function dispatchEvent(target, evType) {
   }
   evObj.eventName = evType;
 
-  dispatchEvent_.call(target, evObj);
+  dispatchEvent_(target, evObj);
 }
 
 module.exports = {
