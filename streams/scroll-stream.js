@@ -12,7 +12,7 @@ var Events = require('../core/events');
 function create(options) {
   options = options || {};
 
-  var scrollParent = options.scrollTarget ? options.scrollTarget.parentNode : window;
+  var scrollParent = (options.scrollTarget && options.scrollTarget.parentNode) || window;
 
   var oldScrollY;
   var scrollDirty = true;
