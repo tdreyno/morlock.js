@@ -39,7 +39,7 @@ function create(options) {
   }, rAF);
 
   // It's going to space, will you just give it a second!
-  Util.defer(Util.partial(Events.dispatchEvent, options.scrollTarget, 'scroll'), 10);
+  Util.defer(Util.partial(Events.dispatchEvent, scrollParent, 'scroll'), 10);
 
   return Stream.map(function getWindowPosition_() {
     return oldScrollY;
