@@ -23,6 +23,7 @@ function ResponsiveImage() {
   this.knownDimensions = null;
   this.hasLoaded = false;
   this.hasRunOnce = false;
+  this.hasLoadedFallback = false;
 }
 
 function create(imageMap) {
@@ -197,14 +198,22 @@ function loadImageForBreakpoint(image, s) {
 
     // If requesting retina fails
     img.onerror = function() {
-      if (image.hasRetina) {
-        img.src = image.getPath(image, s, false);
+      if (image.hasRetina && !image.hasLoadedFallback) {
+        image.hasLoadedFallback = true;
+        var path = image.getPath(image, s, false);
+        if (path) {
+          img.src = path;
+        }
       } else {
         image.trigger('error', img);
       }
     };
+    
+    var path = image.getPath(image, s, image.hasRetina);
 
-    img.src = image.getPath(image, s, image.hasRetina);
+    if (path) {
+      img.src = path;
+    }
   }
 }
 
